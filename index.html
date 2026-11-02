@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -1270,8 +1271,10 @@ async function loadDailyChallenge() {
     }
 
     const rawProgress = Number(data.progress_percent);
+
+    // Display actual progress, including values above 100%.
     const progress = Number.isFinite(rawProgress)
-      ? Math.max(0,Math.min(100,rawProgress))
+      ? Math.max(0,rawProgress)
       : 0;
 
     setChallengeText(
@@ -1279,9 +1282,10 @@ async function loadDailyChallenge() {
       progress.toFixed(2) + "%"
     );
 
+    // Keep the progress bar visually full after reaching 100%.
     document.getElementById(
       "challengeProgressBar"
-    ).style.width = progress + "%";
+    ).style.width = Math.min(100,progress) + "%";
 
     if (data.goal_completed) {
       setChallengeText(
@@ -1344,39 +1348,55 @@ async function loadChallengeHistory() {
       .select("challenge_date,progress_percent,goal_completed")
       .order("challenge_date",{ascending:false})
       .limit(30);
+
     if (error) throw error;
+
     container.replaceChildren();
+
     if (!data || !data.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent = "Completed challenges will appear here after midnight KST.";
+      empty.textContent =
+        "Completed challenges will appear here after midnight KST.";
       container.appendChild(empty);
       return;
     }
+
     for (const item of data) {
       const entry = document.createElement("div");
       entry.className = "history-entry";
+
       const top = document.createElement("div");
       top.className = "history-entry-top";
+
       const date = document.createElement("span");
       date.className = "history-date";
       date.textContent = formatHistoryDate(item.challenge_date);
+
       const percent = document.createElement("span");
       percent.className = "history-percent";
+
       const value = Number(item.progress_percent);
-      percent.textContent = (Number.isFinite(value) ? value : 0).toFixed(2) + "%";
+      percent.textContent =
+        (Number.isFinite(value) ? value : 0).toFixed(2) + "%";
+
       top.append(date,percent);
+
       const status = document.createElement("p");
-      status.className = "history-status" + (item.goal_completed ? " achieved" : "");
+      status.className = "history-status" +
+        (item.goal_completed ? " achieved" : "");
+
       status.textContent = item.goal_completed
         ? "✓ Goal Achieved"
         : "Goal Not Reached";
+
       entry.append(top,status);
       container.appendChild(entry);
     }
   } catch (error) {
     console.error("Challenge history error:",error);
-    container.textContent = "Challenge history is temporarily unavailable.";
+    container.textContent =
+      "Challenge history is temporarily unavailable.";
   } finally {
     historyLoading = false;
   }
