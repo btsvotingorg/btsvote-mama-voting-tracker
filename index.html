@@ -376,9 +376,12 @@ footer {
 
   <div class="notice">
     <strong>Daily submission rule:</strong>
-    Only voting certificates showing today's participation
-    date in Korea Standard Time (KST) are eligible.
-    The voting day resets at 12:00 AM KST.
+    To accommodate ARMY in different timezones, certificates
+    dated yesterday, today, or tomorrow relative to Korea
+    Standard Time (KST) may be submitted. Daily challenge
+    progress is credited on the KST upload date, not the
+    printed certificate date. The daily challenge resets
+    at 12:00 AM KST.
     <div id="todayKST" style="margin-top:7px;font-weight:bold;"></div>
   </div>
 
@@ -488,7 +491,7 @@ footer {
 <section class="card">
   <h2>Global ARMY Participation</h2>
   <p class="description">
-    Country progress compared with the current leading country.
+    Each country's share of unique voting certificates submitted worldwide.
   </p>
   <div id="leaderboard">
     <div class="empty">Loading participation data...</div>
@@ -685,6 +688,20 @@ function formatCertificateDate(year,month,day) {
     parsed.toISOString().slice(0,10) !== formatted
   ) return null;
   return formatted;
+}
+
+// Match the Supabase Edge Function's accepted certificate-date window.
+// This checks calendar dates only; it cannot authenticate a vote's time.
+function isWithinTimezoneWindow(participationDate) {
+  const certificateDate = new Date(participationDate + "T00:00:00Z");
+  const kstDate = new Date(getKSTDate() + "T00:00:00Z");
+  if (
+    Number.isNaN(certificateDate.getTime()) ||
+    Number.isNaN(kstDate.getTime())
+  ) return false;
+  const differenceInDays =
+    (certificateDate.getTime() - kstDate.getTime()) / 86400000;
+  return Math.abs(differenceInDays) <= 1;
 }
 
 /* CERTIFICATE OCR */
@@ -939,14 +956,13 @@ form.addEventListener("submit",async event => {
               file.name,"failed",
               "Participation date could not be detected. Please upload a clear certificate showing Participation Date."
             );
-          } else if (participationDate !== getKSTDate()) {
+          } else if (!isWithinTimezoneWindow(participationDate)) {
             failed++;
             addResult(
               file.name,"failed",
-              "Invalid participation date: " +
-              participationDate +
-              ". Today's KST voting date is " +
-              getKSTDate() + "."
+              "Certificate date " + participationDate +
+              " is outside the accepted timezone window " +
+              "(yesterday, today, or tomorrow relative to KST)."
             );
           } else if (seen.has(certificate)) {
             duplicates++;
