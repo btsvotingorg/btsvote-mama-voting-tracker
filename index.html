@@ -6,7 +6,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BTS Vote Project | MAMA 2026</title>
 <meta name="description" content="Global ARMY voting participation tracker for MAMA 2026.">
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
@@ -99,9 +98,7 @@ input {
 input:focus {
   outline:2px solid #d8c7eb;
 }
-input[type=file] {
-  font-size:13px;
-}
+input[type=file] { font-size:13px; }
 .hint {
   color:var(--muted);
   font-size:12px;
@@ -123,9 +120,7 @@ button:disabled {
   opacity:.6;
   cursor:wait;
 }
-.country-picker {
-  position:relative;
-}
+.country-picker { position:relative; }
 .country-list {
   display:none;
   position:absolute;
@@ -188,9 +183,7 @@ button:disabled {
   border-radius:10px;
   font-size:13px;
 }
-.batch-summary[hidden] {
-  display:none;
-}
+.batch-summary[hidden] { display:none; }
 .stats {
   display:grid;
   grid-template-columns:repeat(3,1fr);
@@ -224,10 +217,9 @@ button:disabled {
   width:0;
   background:var(--purple);
   border-radius:20px;
+  transition:width .4s;
 }
-.batch-results {
-  margin-top:15px;
-}
+.batch-results { margin-top:15px; }
 .batch-result {
   padding:10px;
   background:white;
@@ -236,18 +228,10 @@ button:disabled {
   margin-top:7px;
   overflow-wrap:anywhere;
 }
-.batch-result strong {
-  display:block;
-}
-.batch-result.duplicate {
-  background:#fff7e8;
-}
-.batch-result.failed {
-  background:#fff0f0;
-}
-.batch-result.accepted {
-  background:#eaf6ef;
-}
+.batch-result strong { display:block; }
+.batch-result.duplicate { background:#fff7e8; }
+.batch-result.failed { background:#fff0f0; }
+.batch-result.accepted { background:#eaf6ef; }
 .leaderboard-row {
   padding:15px 0;
   border-bottom:1px solid var(--border);
@@ -260,9 +244,7 @@ button:disabled {
   font-size:14px;
   margin-bottom:8px;
 }
-.country-name {
-  font-weight:bold;
-}
+.country-name { font-weight:bold; }
 .rank-number {
   color:var(--muted);
   margin-right:8px;
@@ -295,6 +277,52 @@ footer {
   position:absolute;
   left:-9999px;
   opacity:0;
+}
+.challenge-heading {
+  font-size:12px;
+  letter-spacing:1.4px;
+  color:var(--purple);
+  font-weight:bold;
+  margin:0 0 8px;
+}
+.challenge-metrics {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  margin:20px 0 15px;
+}
+.challenge-metric-label {
+  display:block;
+  font-size:12px;
+  color:var(--muted);
+}
+.challenge-metric-value {
+  display:block;
+  font-size:clamp(22px,5vw,29px);
+  font-weight:bold;
+}
+.challenge-percent {
+  color:var(--purple);
+  text-align:right;
+}
+.challenge-date {
+  font-size:13px;
+  color:var(--muted);
+  margin:5px 0;
+}
+.challenge-count {
+  font-size:13px;
+  color:var(--muted);
+  text-align:center;
+  margin:12px 0 0;
+}
+.challenge-status {
+  font-size:13px;
+  color:var(--purple);
+  font-weight:bold;
+  text-align:center;
+  margin:8px 0;
 }
 @media(max-width:600px) {
   .card { padding:19px; }
@@ -430,6 +458,52 @@ footer {
   </div>
 </section>
 
+<!-- GLOBAL ARMY DAILY CHALLENGE -->
+
+<section class="card" id="dailyChallengeCard" aria-labelledby="dailyChallengeTitle">
+  <p class="challenge-heading">ARMY, LET'S DO THIS TOGETHER 💜</p>
+  <h2 id="dailyChallengeTitle">GLOBAL ARMY DAILY CHALLENGE</h2>
+  <p class="description">
+    Every eligible certificate brings us closer to today's
+    global participation goal.
+  </p>
+
+  <p class="challenge-date" id="challengeDate">
+    Loading today's KST challenge...
+  </p>
+
+  <div class="challenge-metrics">
+    <div>
+      <span class="challenge-metric-label">DAILY TARGET</span>
+      <strong class="challenge-metric-value" id="challengeTarget">—</strong>
+    </div>
+    <div class="challenge-percent">
+      <span class="challenge-metric-label">PROGRESS</span>
+      <strong class="challenge-metric-value" id="challengePercent">0.00%</strong>
+    </div>
+  </div>
+
+  <div class="progress-track" style="height:13px">
+    <div id="challengeProgressBar" class="progress-fill"></div>
+  </div>
+
+  <p class="challenge-count" id="challengeCount">
+    Loading participation...
+  </p>
+
+  <p class="challenge-status" id="challengeStatus"
+     role="status" aria-live="polite"></p>
+
+  <div class="notice">
+    The challenge follows Korea Standard Time.
+    Only certificates with today's KST participation date count.
+    The displayed challenge switches after 12:00 AM KST.
+    Counts refresh approximately every minute.
+  </div>
+</section>
+
+<!-- GLOBAL COUNTRY LEADERBOARD -->
+
 <section class="card">
   <h2>Global ARMY Participation</h2>
   <p class="description">
@@ -441,10 +515,10 @@ footer {
   </div>
 
   <div class="notice">
-    This community tracker measures participation based on
-    unique submitted certificate numbers, including pending
-    submissions. It does not represent official MAMA voting
-    totals or the official MAMA ranking.
+    This community tracker measures participation based on unique
+    submitted certificate numbers, including pending submissions.
+    It does not represent official MAMA voting totals or the
+    official MAMA ranking.
   </div>
 </section>
 
@@ -531,12 +605,10 @@ const countries = [
 
 countries.sort((a,b) => a.localeCompare(b));
 
-// ----------------------------------------
 // KOREA STANDARD TIME
-// ----------------------------------------
 
 function getKSTDate() {
-  const parts = new Intl.DateTimeFormat("en-US", {
+  const parts = new Intl.DateTimeFormat("en-US",{
     timeZone:"Asia/Seoul",
     year:"numeric",
     month:"2-digit",
@@ -546,11 +618,9 @@ function getKSTDate() {
   const value = type =>
     parts.find(part => part.type === type)?.value || "";
 
-  return (
-    value("year") + "-" +
-    value("month") + "-" +
-    value("day")
-  );
+  return value("year") + "-" +
+         value("month") + "-" +
+         value("day");
 }
 
 function updateKSTDisplay() {
@@ -559,13 +629,9 @@ function updateKSTDisplay() {
 }
 
 updateKSTDisplay();
+setInterval(updateKSTDisplay,15000);
 
-// Refresh the displayed KST date while the page stays open.
-setInterval(updateKSTDisplay, 15000);
-
-// ----------------------------------------
 // COUNTRY SEARCH
-// ----------------------------------------
 
 function closeCountries() {
   countryList.style.display = "none";
@@ -576,7 +642,6 @@ function showCountries(query = "") {
   countryList.replaceChildren();
 
   const search = query.trim().toLowerCase();
-
   const matches = countries.filter(country =>
     country.toLowerCase().includes(search)
   );
@@ -590,7 +655,6 @@ function showCountries(query = "") {
 
   for (const country of matches) {
     const option = document.createElement("button");
-
     option.type = "button";
     option.className = "country-option";
     option.textContent = country;
@@ -627,9 +691,7 @@ document.addEventListener("click", event => {
   }
 });
 
-// ----------------------------------------
-// SUBMISSION MESSAGES
-// ----------------------------------------
+// SUBMISSION DISPLAY
 
 function showMessage(text,type) {
   message.textContent = text;
@@ -662,15 +724,11 @@ function updateProgress(done,total,pending,duplicates,failed) {
     (total ? Math.round(done / total * 100) : 0) + "%";
 }
 
-// ----------------------------------------
-// CERTIFICATE OCR
-// ----------------------------------------
+// CERTIFICATE DATE VALIDATION
 
 function formatCertificateDate(year,month,day) {
   const formatted =
-    year + "-" +
-    month.padStart(2,"0") + "-" +
-    day.padStart(2,"0");
+    year + "-" + month.padStart(2,"0") + "-" + day.padStart(2,"0");
 
   const parsed = new Date(formatted + "T00:00:00Z");
 
@@ -685,7 +743,6 @@ function formatCertificateDate(year,month,day) {
 }
 
 async function scanCertificate(file) {
-  // One OCR scan per screenshot.
   const result = await Tesseract.recognize(file,"eng");
 
   const text = result.data.text
@@ -694,7 +751,6 @@ async function scanCertificate(file) {
     .replace(/\s+/g," ")
     .trim();
 
-  // Find certificate reference number.
   const numberMatch = text.match(
     /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
   );
@@ -703,9 +759,6 @@ async function scanCertificate(file) {
     ? numberMatch[1].toUpperCase()
     : null;
 
-  // Find date next to "Participation Date".
-  // Expected certificate example:
-  // Participation Date 2026.11.02 16:09
   const dateMatch = text.match(
     /Participation\s*Date\s*[:\-]?\s*(20\d{2})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})\b/i
   );
@@ -724,16 +777,10 @@ async function scanCertificate(file) {
   };
 }
 
-// ----------------------------------------
-// SEND CERTIFICATE TO SUPABASE
-// ----------------------------------------
+// SEND PROOF TO SUPABASE
 
 async function submitCertificate(
-  file,
-  certificate,
-  participationDate,
-  username,
-  country
+  file,certificate,participationDate,username,country
 ) {
   const body = new FormData();
 
@@ -748,7 +795,7 @@ async function submitCertificate(
     {
       method:"POST",
       headers:{
-        "apikey":SUPABASE_PUBLISHABLE_KEY
+        apikey:SUPABASE_PUBLISHABLE_KEY
       },
       body
     }
@@ -770,9 +817,7 @@ async function submitCertificate(
   };
 }
 
-// ----------------------------------------
-// PROCESS MULTIPLE SCREENSHOTS
-// ----------------------------------------
+// MULTIPLE CERTIFICATE SUBMISSION
 
 form.addEventListener("submit",async event => {
   event.preventDefault();
@@ -809,18 +854,12 @@ form.addEventListener("submit",async event => {
   }
 
   if (!files.length) {
-    showMessage(
-      "Please select at least one screenshot.",
-      "error"
-    );
+    showMessage("Please select at least one screenshot.","error");
     return;
   }
 
   if (typeof Tesseract === "undefined") {
-    showMessage(
-      "Scanner failed to load. Please refresh.",
-      "error"
-    );
+    showMessage("Scanner failed to load. Please refresh.","error");
     return;
   }
 
@@ -843,8 +882,7 @@ form.addEventListener("submit",async event => {
   try {
     for (const file of files) {
       batchProgress.textContent =
-        "Scanning " + (done + 1) +
-        " of " + files.length;
+        "Scanning " + (done + 1) + " of " + files.length;
 
       let stop = false;
 
@@ -861,13 +899,11 @@ form.addEventListener("submit",async event => {
           file.size > 5 * 1024 * 1024
         ) {
           failed++;
-
           addResult(
             file.name,
             "failed",
             "Invalid image or over 5 MB."
           );
-
         } else {
           const scanned = await scanCertificate(file);
 
@@ -876,25 +912,20 @@ form.addEventListener("submit",async event => {
 
           if (!certificate) {
             failed++;
-
             addResult(
               file.name,
               "failed",
               "Certificate reference number not detected."
             );
-
           } else if (!participationDate) {
             failed++;
-
             addResult(
               file.name,
               "failed",
               "Participation date could not be detected. Please upload a clear certificate showing Participation Date."
             );
-
           } else if (participationDate !== getKSTDate()) {
             failed++;
-
             addResult(
               file.name,
               "failed",
@@ -903,16 +934,13 @@ form.addEventListener("submit",async event => {
               ". Today's KST voting date is " +
               getKSTDate() + "."
             );
-
           } else if (seen.has(certificate)) {
             duplicates++;
-
             addResult(
               file.name,
               "duplicate",
               "Repeated in this batch: " + certificate
             );
-
           } else {
             seen.add(certificate);
 
@@ -929,29 +957,24 @@ form.addEventListener("submit",async event => {
               response.data.duplicate
             ) {
               duplicates++;
-
               addResult(
                 file.name,
                 "duplicate",
                 "Already submitted: " + certificate
               );
-
             } else if (
               response.status === 401 ||
               response.status === 403
             ) {
               failed++;
               stop = true;
-
               addResult(
                 file.name,
                 "failed",
                 "Server authorization blocked the submission."
               );
-
             } else if (!response.ok) {
               failed++;
-
               addResult(
                 file.name,
                 "failed",
@@ -959,10 +982,8 @@ form.addEventListener("submit",async event => {
                 response.data.message ||
                 "Submission failed."
               );
-
             } else {
               pending++;
-
               addResult(
                 file.name,
                 "accepted",
@@ -976,24 +997,16 @@ form.addEventListener("submit",async event => {
         }
       } catch (error) {
         console.error("Processing error:",error);
-
         failed++;
-
         addResult(
           file.name,
           "failed",
           "Could not process or upload this screenshot."
         );
-
       } finally {
         done++;
-
         updateProgress(
-          done,
-          files.length,
-          pending,
-          duplicates,
-          failed
+          done,files.length,pending,duplicates,failed
         );
       }
 
@@ -1001,8 +1014,7 @@ form.addEventListener("submit",async event => {
     }
 
     showMessage(
-      "Processed " + done +
-      " of " + files.length +
+      "Processed " + done + " of " + files.length +
       " screenshots.\n" +
       pending + " saved as pending, " +
       duplicates + " duplicates, " +
@@ -1011,20 +1023,20 @@ form.addEventListener("submit",async event => {
     );
 
     if (pending) {
-      loadLeaderboard();
+      await Promise.all([
+        loadLeaderboard(),
+        loadDailyChallenge()
+      ]);
     }
 
   } finally {
     processing = false;
     submitButton.disabled = false;
-    submitButton.textContent =
-      "SCAN & SUBMIT CERTIFICATES";
+    submitButton.textContent = "SCAN & SUBMIT CERTIFICATES";
   }
 });
 
-// ----------------------------------------
 // GLOBAL COUNTRY LEADERBOARD
-// ----------------------------------------
 
 async function loadLeaderboard() {
   const container = document.getElementById("leaderboard");
@@ -1037,17 +1049,14 @@ async function loadLeaderboard() {
 
   if (error) {
     console.error("Leaderboard error:",error);
-
     container.textContent =
       "Participation data is temporarily unavailable.";
-
     return;
   }
 
   if (!data || !data.length) {
     container.textContent =
       "No submissions yet. Be the first to participate!";
-
     return;
   }
 
@@ -1097,8 +1106,168 @@ async function loadLeaderboard() {
   }
 }
 
-loadLeaderboard();
-</script>
+// GLOBAL ARMY DAILY CHALLENGE
 
+const challengeNumberFormat =
+  new Intl.NumberFormat("en-US");
+
+let challengeRequestInProgress = false;
+let displayedChallengeDate = getKSTDate();
+
+function setChallengeText(id,value) {
+  document.getElementById(id).textContent = value;
+}
+
+function resetChallengeDisplay() {
+  setChallengeText(
+    "challengeDate",
+    "KST voting date: " + getKSTDate()
+  );
+
+  setChallengeText("challengeTarget","—");
+  setChallengeText("challengePercent","0.00%");
+  setChallengeText(
+    "challengeCount",
+    "Loading today's participation..."
+  );
+  setChallengeText("challengeStatus","");
+
+  document.getElementById(
+    "challengeProgressBar"
+  ).style.width = "0%";
+}
+
+async function loadDailyChallenge() {
+  if (challengeRequestInProgress) return;
+
+  challengeRequestInProgress = true;
+  const requestedDate = getKSTDate();
+
+  try {
+    const {data,error} = await db
+      .from("daily_army_challenge")
+      .select(
+        "challenge_date,challenge_title," +
+        "target_certificates,submitted_certificates," +
+        "progress_percent,goal_completed"
+      )
+      .maybeSingle();
+
+    if (requestedDate !== getKSTDate()) {
+      resetChallengeDisplay();
+      return;
+    }
+
+    setChallengeText(
+      "challengeDate",
+      "KST voting date: " + requestedDate
+    );
+
+    if (error) {
+      console.error("Daily challenge error:",error);
+      setChallengeText(
+        "challengeCount",
+        "Challenge data is temporarily unavailable."
+      );
+      setChallengeText("challengeStatus","");
+      return;
+    }
+
+    if (!data || data.challenge_date !== requestedDate) {
+      setChallengeText("challengeTarget","—");
+      setChallengeText("challengePercent","0.00%");
+      setChallengeText(
+        "challengeCount",
+        "Today's challenge is not configured yet."
+      );
+      setChallengeText("challengeStatus","");
+
+      document.getElementById(
+        "challengeProgressBar"
+      ).style.width = "0%";
+
+      return;
+    }
+
+    const target = Math.max(
+      0,Number(data.target_certificates) || 0
+    );
+
+    const submitted = Math.max(
+      0,Number(data.submitted_certificates) || 0
+    );
+
+    const percentage = target > 0
+      ? (submitted / target) * 100
+      : 0;
+
+    setChallengeText(
+      "challengeTarget",
+      challengeNumberFormat.format(target)
+    );
+
+    setChallengeText(
+      "challengePercent",
+      percentage.toFixed(2) + "%"
+    );
+
+    setChallengeText(
+      "challengeCount",
+      challengeNumberFormat.format(submitted) +
+      " of " +
+      challengeNumberFormat.format(target) +
+      " certificates submitted"
+    );
+
+    document.getElementById(
+      "challengeProgressBar"
+    ).style.width =
+      Math.min(100,percentage) + "%";
+
+    setChallengeText(
+      "challengeStatus",
+      data.goal_completed ||
+      (target > 0 && submitted >= target)
+        ? "🎉 DAILY GOAL COMPLETED! THANK YOU, ARMY!"
+        : "KEEP GOING, ARMY! 💜"
+    );
+
+  } catch (error) {
+    console.error("Challenge loading error:",error);
+    setChallengeText(
+      "challengeCount",
+      "Unable to load today's challenge."
+    );
+  } finally {
+    challengeRequestInProgress = false;
+  }
+}
+
+// INITIAL LOAD
+
+resetChallengeDisplay();
+loadLeaderboard();
+loadDailyChallenge();
+
+// Refresh progress every 60 seconds.
+
+setInterval(loadDailyChallenge,60000);
+
+// Detect the KST date change while the page is open.
+
+setInterval(() => {
+  const today = getKSTDate();
+
+  if (today !== displayedChallengeDate) {
+    displayedChallengeDate = today;
+    resetChallengeDisplay();
+
+    if (!challengeRequestInProgress) {
+      loadDailyChallenge();
+    }
+  }
+},15000);
+
+</script>
 </body>
 </html>
