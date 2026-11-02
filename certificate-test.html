@@ -1,17 +1,15 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>BTS Vote Project | Certificate Scanner</title>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -54,17 +52,18 @@
 
     label {
       display: block;
-      margin-top: 24px;
+      margin-top: 20px;
       font-size: 14px;
       font-weight: bold;
     }
 
     input {
       width: 100%;
-      margin: 12px 0;
+      margin: 10px 0;
       padding: 12px;
       border: 1px solid #ddd3e8;
       border-radius: 8px;
+      font-size: 14px;
     }
 
     button {
@@ -83,6 +82,10 @@
     button:disabled {
       opacity: 0.6;
       cursor: wait;
+    }
+
+    #submitButton {
+      background: #46315f;
     }
 
     #result {
@@ -105,18 +108,31 @@
 </head>
 
 <body>
-
   <main class="container">
     <div class="card">
-
       <div class="brand">BTS VOTE PROJECT</div>
 
       <h1>MAMA 2026 Certificate Scanner</h1>
 
       <p>
-        Upload a MAMA 2026 voting certificate to test
-        automatic reference number detection.
+        Test certificate scanning and submission before
+        activating the public voting tracker.
       </p>
+
+      <label for="username">X Username</label>
+      <input
+        type="text"
+        id="username"
+        placeholder="@yourusername"
+        maxlength="16"
+      >
+
+      <label for="country">Country</label>
+      <input
+        type="text"
+        id="country"
+        placeholder="Philippines"
+      >
 
       <label for="certificate">
         Voting Certificate Screenshot
@@ -132,28 +148,54 @@
         SCAN CERTIFICATE
       </button>
 
+      <button id="submitButton" type="button" disabled>
+        SUBMIT TEST PROOF
+      </button>
+
       <div id="result" role="status" aria-live="polite"></div>
 
       <p class="notice">
-        Testing only. This scanner runs in your browser.
-        It does not submit screenshots, count votes,
-        or update the country leaderboard.
+        Testing only. Successful submissions are stored
+        as pending and are not counted on the public leaderboard.
+        OCR detection does not authenticate a certificate.
       </p>
-
     </div>
   </main>
 
   <script>
+    const SUPABASE_URL =
+      "https://vnhvyhfkvvqnlghikgck.supabase.co";
+
+    // Public publishable key, not the service-role key.
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
+
     const fileInput = document.getElementById("certificate");
-    const button = document.getElementById("scanButton");
+    const usernameInput = document.getElementById("username");
+    const countryInput = document.getElementById("country");
+    const scanButton = document.getElementById("scanButton");
+    const submitButton = document.getElementById("submitButton");
     const resultBox = document.getElementById("result");
+
+    let detectedCertificateNumber = null;
+    let scannedFile = null;
 
     function showResult(message) {
       resultBox.style.display = "block";
       resultBox.textContent = message;
     }
 
-    button.addEventListener("click", async () => {
+    function resetScan() {
+      detectedCertificateNumber = null;
+      scannedFile = null;
+      submitButton.disabled = true;
+    }
+
+    fileInput.addEventListener("change", resetScan);
+
+    scanButton.addEventListener("click", async () => {
+      resetScan();
+
       const file = fileInput.files[0];
 
       if (!file) {
@@ -161,80 +203,147 @@
         return;
       }
 
-      const allowedTypes = [
-        "image/png",
-        "image/jpeg",
-        "image/webp"
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
         showResult("Please upload a JPG, PNG, or WEBP image.");
         return;
       }
 
-      if (file.size > 5 * 1024 * 1024) {
-        showResult("The screenshot must be 5 MB or smaller.");
+      if (file.size === 0 || file.size > 5 * 1024 * 1024) {
+        showResult("The screenshot must be under 5 MB.");
         return;
       }
 
       if (typeof Tesseract === "undefined") {
-        showResult(
-          "OCR library failed to load. Check your internet connection."
-        );
+        showResult("OCR library failed to load.");
         return;
       }
 
-      button.disabled = true;
-      button.textContent = "SCANNING...";
+      scanButton.disabled = true;
+      scanButton.textContent = "SCANNING...";
 
       try {
-        showResult(
-          "Reading your certificate...\n" +
-          "The first scan may take a little longer."
-        );
+        showResult("Reading certificate. Please wait...");
 
-        const result = await Tesseract.recognize(
-          file,
-          "eng"
-        );
-
+        const result = await Tesseract.recognize(file, "eng");
         const extractedText = result.data.text;
 
-        // Find the reference number after "No."
         const match = extractedText.match(
           /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
         );
 
-        if (match) {
-          const certificateNumber = match[1].toUpperCase();
-
-          showResult(
-            "CERTIFICATE NUMBER DETECTED!\n\n" +
-            "Reference Number:\n" +
-            certificateNumber +
-            "\n\nThis is an OCR test only."
-          );
-        } else {
+        if (!match) {
           showResult(
             "Certificate number not detected.\n\n" +
-            "OCR text for troubleshooting:\n\n" +
-            extractedText
+            "Try a clearer screenshot."
           );
+          return;
         }
+
+        detectedCertificateNumber = match[1].toUpperCase();
+        scannedFile = file;
+        submitButton.disabled = false;
+
+        showResult(
+          "CERTIFICATE NUMBER DETECTED!\n\n" +
+          detectedCertificateNumber +
+          "\n\nYou can now submit this test proof."
+        );
 
       } catch (error) {
         console.error("OCR error:", error);
+        showResult("Scanning failed. Please try again.");
+      } finally {
+        scanButton.disabled = false;
+        scanButton.textContent = "SCAN CERTIFICATE";
+      }
+    });
 
-        showResult(
-          "Scanning failed:\n" + error.message
+    submitButton.addEventListener("click", async () => {
+      const username = usernameInput.value.trim().replace(/^@/, "");
+      const country = countryInput.value.trim();
+
+      if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
+        showResult("Please enter a valid X username.");
+        return;
+      }
+
+      if (!country || country.length > 100) {
+        showResult("Please enter a valid country.");
+        return;
+      }
+
+      if (!detectedCertificateNumber || !scannedFile) {
+        showResult("Please scan your certificate first.");
+        return;
+      }
+
+      submitButton.disabled = true;
+      submitButton.textContent = "SUBMITTING...";
+
+      try {
+        const form = new FormData();
+        form.append("x_username", username);
+        form.append("country", country);
+        form.append("certificate_number", detectedCertificateNumber);
+        form.append("proof", scannedFile);
+
+        const response = await fetch(
+          SUPABASE_URL + "/functions/v1/submit-proof-test",
+          {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_PUBLISHABLE_KEY
+            },
+            body: form
+          }
         );
 
+        const data = await response.json();
+
+        if (response.status === 401) {
+          showResult(
+            "Authentication blocked the request.\n\n" +
+            "The function's JWT verification setting " +
+            "may need adjustment after adding public-access safeguards."
+          );
+          return;
+        }
+
+        if (response.status === 409 && data.duplicate) {
+          showResult(
+            "DUPLICATE CERTIFICATE\n\n" +
+            "This certificate has already been submitted."
+          );
+          return;
+        }
+
+        if (!response.ok) {
+          showResult(
+            "Submission failed:\n" +
+            (data.error || data.message || "Unknown error.")
+          );
+          return;
+        }
+
+        showResult(
+          "TEST SUBMISSION SUCCESSFUL!\n\n" +
+          "Certificate: " + detectedCertificateNumber +
+          "\nStatus: PENDING\n\n" +
+          "This proof is saved but not counted yet."
+        );
+
+        resetScan();
+
+      } catch (error) {
+        console.error("Submission error:", error);
+        showResult(
+          "Could not connect to Supabase.\n" +
+          "Please check your internet connection."
+        );
       } finally {
-        button.disabled = false;
-        button.textContent = "SCAN CERTIFICATE";
+        submitButton.textContent = "SUBMIT TEST PROOF";
       }
     });
   </script>
-
 </body>
 </html>
