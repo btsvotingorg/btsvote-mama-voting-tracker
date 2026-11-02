@@ -4,15 +4,12 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
   <title>BTS Vote Project | Certificate Scanner</title>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
   <style>
-    * {
-      box-sizing: border-box;
-    }
+    * { box-sizing: border-box; }
 
     body {
       margin: 0;
@@ -28,7 +25,7 @@
     }
 
     .card {
-      background: #ffffff;
+      background: white;
       border: 1px solid #e9e1f1;
       border-radius: 16px;
       padding: 28px;
@@ -60,8 +57,7 @@
       font-weight: bold;
     }
 
-    input,
-    select {
+    input {
       width: 100%;
       margin: 10px 0;
       padding: 12px;
@@ -69,16 +65,68 @@
       border-radius: 8px;
       background: white;
       color: #30243d;
-      font-size: 14px;
+      font-size: 16px;
     }
 
-    input:focus,
-    select:focus {
+    input:focus {
       outline: 2px solid #a98bd1;
       outline-offset: 1px;
     }
 
-    button {
+    .country-picker {
+      position: relative;
+    }
+
+    .country-list {
+      display: none;
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      z-index: 10;
+      max-height: 220px;
+      overflow-y: auto;
+      background: white;
+      border: 1px solid #ddd3e8;
+      border-radius: 10px;
+      box-shadow: 0 8px 24px rgba(48,36,61,0.12);
+    }
+
+    .country-option {
+      display: block;
+      width: 100%;
+      margin: 0;
+      padding: 12px;
+      text-align: left;
+      border: 0;
+      border-bottom: 1px solid #f3eef7;
+      border-radius: 0;
+      background: white;
+      color: #30243d;
+      font-size: 14px;
+      font-weight: normal;
+      cursor: pointer;
+    }
+
+    .country-option:hover,
+    .country-option:focus {
+      background: #f4eef9;
+      outline: none;
+    }
+
+    .country-empty {
+      padding: 14px;
+      color: #777080;
+      font-size: 14px;
+    }
+
+    .country-hint {
+      margin-top: 2px;
+      color: #777080;
+      font-size: 12px;
+    }
+
+    button.primary {
       width: 100%;
       margin-top: 12px;
       padding: 14px;
@@ -91,7 +139,7 @@
       cursor: pointer;
     }
 
-    button:disabled {
+    button.primary:disabled {
       opacity: 0.6;
       cursor: not-allowed;
     }
@@ -120,7 +168,6 @@
 </head>
 
 <body>
-
   <main class="container">
     <div class="card">
 
@@ -134,7 +181,6 @@
       </p>
 
       <label for="username">X Username</label>
-
       <input
         type="text"
         id="username"
@@ -143,35 +189,51 @@
         autocomplete="off"
       >
 
-      <label for="country">Country</label>
+      <label for="countrySearch">Country</label>
+      <div class="country-picker">
+        <input
+          type="text"
+          id="countrySearch"
+          placeholder="Search your country..."
+          autocomplete="off"
+          aria-autocomplete="list"
+          aria-controls="countryList"
+          aria-expanded="false"
+        >
+        <div
+          id="countryList"
+          class="country-list"
+          role="listbox"
+        ></div>
+      </div>
 
-      <select id="country" required>
-        <option value="">Select your country</option>
-      </select>
+      <div class="country-hint">
+        Type your country and select it from the results.
+      </div>
 
       <label for="certificate">
         Voting Certificate Screenshot
       </label>
-
       <input
         type="file"
         id="certificate"
         accept="image/png,image/jpeg,image/webp"
       >
 
-      <button id="scanButton" type="button">
+      <button id="scanButton" class="primary" type="button">
         SCAN CERTIFICATE
       </button>
 
-      <button id="submitButton" type="button" disabled>
+      <button
+        id="submitButton"
+        class="primary"
+        type="button"
+        disabled
+      >
         SUBMIT TEST PROOF
       </button>
 
-      <div
-        id="result"
-        role="status"
-        aria-live="polite"
-      ></div>
+      <div id="result" role="status" aria-live="polite"></div>
 
       <p class="notice">
         Testing only. Successful submissions are stored
@@ -186,21 +248,22 @@
     const SUPABASE_URL =
       "https://vnhvyhfkvvqnlghikgck.supabase.co";
 
-    // This is a public publishable key, not a secret key.
+    // Public key only. Never put a service-role key in HTML.
     const SUPABASE_PUBLISHABLE_KEY =
       "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
 
-    const fileInput = document.getElementById("certificate");
     const usernameInput = document.getElementById("username");
-    const countryInput = document.getElementById("country");
+    const countrySearch = document.getElementById("countrySearch");
+    const countryList = document.getElementById("countryList");
+    const fileInput = document.getElementById("certificate");
     const scanButton = document.getElementById("scanButton");
     const submitButton = document.getElementById("submitButton");
     const resultBox = document.getElementById("result");
 
+    let selectedCountry = "";
     let detectedCertificateNumber = null;
     let scannedFile = null;
 
-    // Fixed country list: no duplicate declarations or region-code generation.
     const countries = [
       "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
       "Antigua and Barbuda", "Argentina", "Armenia", "Australia",
@@ -250,12 +313,70 @@
 
     countries.sort((a, b) => a.localeCompare(b));
 
-    for (const country of countries) {
-      const option = document.createElement("option");
-      option.value = country;
-      option.textContent = country;
-      countryInput.appendChild(option);
+    function closeCountryList() {
+      countryList.style.display = "none";
+      countrySearch.setAttribute("aria-expanded", "false");
     }
+
+    function showCountries(query = "") {
+      countryList.replaceChildren();
+
+      const search = query.trim().toLowerCase();
+      const matches = countries.filter(country =>
+        country.toLowerCase().includes(search)
+      );
+
+      if (matches.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "country-empty";
+        empty.textContent = "No matching countries found.";
+        countryList.appendChild(empty);
+      } else {
+        for (const country of matches) {
+          const option = document.createElement("button");
+          option.type = "button";
+          option.className = "country-option";
+          option.setAttribute("role", "option");
+          option.textContent = country;
+
+          option.addEventListener("click", () => {
+            selectedCountry = country;
+            countrySearch.value = country;
+            closeCountryList();
+          });
+
+          countryList.appendChild(option);
+        }
+      }
+
+      countryList.style.display = "block";
+      countrySearch.setAttribute("aria-expanded", "true");
+    }
+
+    countrySearch.addEventListener("focus", () => {
+      if (selectedCountry) {
+        showCountries("");
+      } else {
+        showCountries(countrySearch.value);
+      }
+    });
+
+    countrySearch.addEventListener("input", () => {
+      selectedCountry = "";
+      showCountries(countrySearch.value);
+    });
+
+    countrySearch.addEventListener("keydown", event => {
+      if (event.key === "Escape") {
+        closeCountryList();
+      }
+    });
+
+    document.addEventListener("click", event => {
+      if (!event.target.closest(".country-picker")) {
+        closeCountryList();
+      }
+    });
 
     function showResult(message) {
       resultBox.style.display = "block";
@@ -280,13 +401,7 @@
         return;
       }
 
-      const allowedTypes = [
-        "image/png",
-        "image/jpeg",
-        "image/webp"
-      ];
-
-      if (!allowedTypes.includes(file.type)) {
+      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
         showResult("Please upload a JPG, PNG, or WEBP image.");
         return;
       }
@@ -297,9 +412,7 @@
       }
 
       if (typeof Tesseract === "undefined") {
-        showResult(
-          "OCR library failed to load. Check your internet connection."
-        );
+        showResult("OCR library failed to load.");
         return;
       }
 
@@ -307,15 +420,11 @@
       scanButton.textContent = "SCANNING...";
 
       try {
-        showResult(
-          "Reading your certificate...\n" +
-          "The first scan may take a little longer."
-        );
+        showResult("Reading certificate. Please wait...");
 
         const result = await Tesseract.recognize(file, "eng");
-        const extractedText = result.data.text;
 
-        const match = extractedText.match(
+        const match = result.data.text.match(
           /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
         );
 
@@ -349,15 +458,18 @@
 
     submitButton.addEventListener("click", async () => {
       const username = usernameInput.value.trim().replace(/^@/, "");
-      const country = countryInput.value;
 
       if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
         showResult("Please enter a valid X username.");
         return;
       }
 
-      if (!countries.includes(country)) {
-        showResult("Please select a country from the list.");
+      if (
+        !selectedCountry ||
+        !countries.includes(selectedCountry) ||
+        countrySearch.value !== selectedCountry
+      ) {
+        showResult("Please select a country from the search results.");
         return;
       }
 
@@ -371,9 +483,8 @@
 
       try {
         const form = new FormData();
-
         form.append("x_username", username);
-        form.append("country", country);
+        form.append("country", selectedCountry);
         form.append("certificate_number", detectedCertificateNumber);
         form.append("proof", scannedFile);
 
@@ -434,6 +545,5 @@
       }
     });
   </script>
-
 </body>
 </html>
