@@ -414,7 +414,9 @@ footer {
     <strong>Privacy notice:</strong>
     Your X username, country, and uploaded screenshots
     are used to process submissions. Screenshots are stored
-    privately. Please do not upload screenshots
+    privately and scheduled for automatic deletion after
+    25 hours. Submission records and country participation
+    scores are retained. Please do not upload screenshots
     containing sensitive personal information.
   </div>
 </section>
@@ -430,8 +432,9 @@ footer {
   </div>
 
   <div class="notice">
-    This community tracker measures participation based on unique submitted certificate no. It does not represent official MAMA voting
-    totals or the official MAMA ranking.
+    This community tracker measures participation based on
+    unique submitted certificate numbers. It does not represent
+    official MAMA voting totals or the official MAMA ranking.
   </div>
 </section>
 
@@ -496,7 +499,7 @@ const countries = [
   "Micronesia","Moldova","Monaco","Mongolia","Montenegro",
   "Morocco","Mozambique","Myanmar","Namibia","Nauru",
   "Nepal","Netherlands","New Zealand","Nicaragua",
-  "Niger","Nigeria","North Korea","North Macedonia",
+  "Niger","Nigeria","North Macedonia",
   "Norway","Oman","Pakistan","Palau","Palestine","Panama",
   "Papua New Guinea","Paraguay","Peru","Philippines",
   "Poland","Portugal","Qatar","Romania","Russia","Rwanda",
@@ -607,14 +610,58 @@ function updateProgress(done,total,pending,duplicates,failed) {
     (total ? Math.round(done / total * 100) : 0) + "%";
 }
 
+// STEP 80: Scan certificate number and participation date.
 async function scanCertificate(file) {
   const result = await Tesseract.recognize(file,"eng");
 
-  const match = result.data.text.match(
+  const text = result.data.text;
+
+  const numberMatch = text.match(
     /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
   );
 
-  return match ? match[1].toUpperCase() : null;
+  // Example printed on certificate:
+  // Participation Date 2026.11.02 16:09
+  const dateMatch = text.match(
+    /Participation\s*Date\s*[:\-]?\s*(20\d{2})\s*[.\/-]\s*(\d{1,2})\s*[.\/-]\s*(\d{1,2})\s+(\d{1,2})\s*:\s*(\d{2})/i
+  );
+
+  let participationDate = null;
+
+  if (dateMatch) {
+    const year = Number(dateMatch[1]);
+    const month = Number(dateMatch[2]);
+    const day = Number(dateMatch[3]);
+    const hour = Number(dateMatch[4]);
+    const minute = Number(dateMatch[5]);
+
+    const parsed = new Date(
+      Date.UTC(year,month - 1,day)
+    );
+
+    const valid =
+      parsed.getUTCFullYear() === year &&
+      parsed.getUTCMonth() === month - 1 &&
+      parsed.getUTCDate() === day &&
+      hour >= 0 &&
+      hour <= 23 &&
+      minute >= 0 &&
+      minute <= 59;
+
+    if (valid) {
+      participationDate =
+        String(year) + "-" +
+        String(month).padStart(2,"0") + "-" +
+        String(day).padStart(2,"0");
+    }
+  }
+
+  return {
+    certificateNumber: numberMatch
+      ? numberMatch[1].toUpperCase()
+      : null,
+    participationDate
+  };
 }
 
 async function submitCertificate(file,certificate,username,country) {
@@ -624,6 +671,9 @@ async function submitCertificate(file,certificate,username,country) {
   body.append("country",country);
   body.append("certificate_number",certificate);
   body.append("proof",file);
+
+  // Participation date is NOT sent to the backend yet.
+  // Server-side image validation will be added next.
 
   const response = await fetch(
     SUPABASE_URL + "/functions/v1/submit-proof-test",
@@ -738,7 +788,8 @@ form.addEventListener("submit",async event => {
             "Invalid image or over 5 MB."
           );
         } else {
-          const certificate = await scanCertificate(file);
+          const scanned = await scanCertificate(file);
+          const certificate = scanned.certificateNumber;
 
           if (!certificate) {
             failed++;
@@ -796,7 +847,10 @@ form.addEventListener("submit",async event => {
               addResult(
                 file.name,
                 "accepted",
-                "Saved as pending: " + certificate
+                "Saved as pending: " + certificate +
+                (scanned.participationDate
+                  ? " | Detected date: " + scanned.participationDate
+                  : " | Participation date not detected")
               );
             }
           }
@@ -855,7 +909,7 @@ async function loadLeaderboard() {
 
   if (!data || !data.length) {
     container.textContent =
-      "No approved submissions yet. Be the first to participate!";
+      "No submissions yet. Be the first to participate!";
     return;
   }
 
