@@ -453,6 +453,7 @@ footer {
       Maximum 5 MB per original image. Screenshots are automatically
       compressed before upload when possible. Large batches may take
       longer. The participation date must be visible on each certificate.
+      English, Japanese, and Korean participation-date labels are supported.
     </p>
 
     <div class="hp" aria-hidden="true">
@@ -765,15 +766,16 @@ function isWithinTimezoneWindow(participationDate) {
   return Math.abs(differenceInDays) <= 1;
 }
 
-/* CERTIFICATE OCR */
-async function scanCertificate(file) {
-  const result = await Tesseract.recognize(file,"eng");
-  const text = result.data.text
-    .replace(/\r/g," ")
-    .replace(/\n/g," ")
-    .replace(/\s+/g," ")
+/* MULTILINGUAL CERTIFICATE OCR: ENGLISH, JAPANESE, KOREAN */
+function extractCertificateDetails(rawText) {
+  const text = rawText
+    .normalize("NFKC")
+    .replace(/\r/g, " ")
+    .replace(/\n/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
 
+  // Preserve the existing certificate-reference requirement.
   const numberMatch = text.match(
     /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
   );
@@ -781,16 +783,70 @@ async function scanCertificate(file) {
     ? numberMatch[1].toUpperCase()
     : null;
 
-  const dateMatch = text.match(
-    /Participation\s*Date\s*[:\-]?\s*(20\d{2})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})\b/i
-  );
-  const participationDate = dateMatch
-    ? formatCertificateDate(
-        dateMatch[1],dateMatch[2],dateMatch[3]
-      )
-    : null;
+  // Only look for the participation-date field, not unrelated dates.
+  // The exact translation may differ by Mnet Plus language/version.
+  const participationLabel =
+    /(?:Participation\s*Date|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일))/gi;
 
-  return {certificateNumber,participationDate};
+  // Supports 2026.11.02, 2026/11/02, 2026-11-02,
+  // 2026年11月2日, and 2026년 11월 2일.
+  const datePattern =
+    /(20\d{2})\s*(?:[.\/-]|年|년)\s*(\d{1,2})\s*(?:[.\/-]|月|월)\s*(\d{1,2})(?:\s*(?:日|일))?/;
+
+  let participationDate = null;
+  for (const match of text.matchAll(participationLabel)) {
+    // Search only immediately after the participation label.
+    const nearbyText = text.slice(
+      match.index + match[0].length,
+      match.index + match[0].length + 65
+    );
+    const nearbyMatch = nearbyText.match(
+      /^\s*[:：\-–—]?\s*/
+    );
+    const candidate = nearbyText
+      .slice(nearbyMatch[0].length)
+      .match(datePattern);
+
+    // Do not mistake a date far from the label for the participation date.
+    if (!candidate || candidate.index > 8) continue;
+
+    const parsed = formatCertificateDate(
+      candidate[1], candidate[2], candidate[3]
+    );
+    if (parsed) {
+      participationDate = parsed;
+      break;
+    }
+  }
+
+  return {certificateNumber, participationDate};
+}
+
+async function scanCertificate(file) {
+  // Fast path for existing English certificates.
+  const englishResult = await Tesseract.recognize(file, "eng");
+  const englishText = englishResult.data.text || "";
+  const details = extractCertificateDetails(englishText);
+
+  if (details.certificateNumber && details.participationDate) {
+    return details;
+  }
+
+  // Retry with Japanese, Korean, and English OCR language packs.
+  // These language packs may take longer to download on first use.
+  const multilingualResult = await Tesseract.recognize(
+    file, "jpn+kor+eng"
+  );
+  const multilingualText = multilingualResult.data.text || "";
+  const localizedDetails = extractCertificateDetails(multilingualText);
+
+  // OCR can detect the number in one pass and the date in another.
+  return {
+    certificateNumber:
+      details.certificateNumber || localizedDetails.certificateNumber,
+    participationDate:
+      details.participationDate || localizedDetails.participationDate
+  };
 }
 
 /* AUTOMATIC SCREENSHOT COMPRESSION */
@@ -1015,7 +1071,7 @@ form.addEventListener("submit",async event => {
             failed++;
             addResult(
               file.name,"failed",
-              "Participation date could not be detected. Please upload a clear certificate showing Participation Date."
+              "Participation date could not be detected in English, Japanese, or Korean. Please upload a clear certificate showing the participation date."
             );
           } else if (!isWithinTimezoneWindow(participationDate)) {
             failed++;
@@ -1271,8 +1327,6 @@ async function loadDailyChallenge() {
     }
 
     const rawProgress = Number(data.progress_percent);
-
-    // Display actual progress, including values above 100%.
     const progress = Number.isFinite(rawProgress)
       ? Math.max(0,rawProgress)
       : 0;
@@ -1282,7 +1336,6 @@ async function loadDailyChallenge() {
       progress.toFixed(2) + "%"
     );
 
-    // Keep the progress bar visually full after reaching 100%.
     document.getElementById(
       "challengeProgressBar"
     ).style.width = Math.min(100,progress) + "%";
@@ -1348,55 +1401,39 @@ async function loadChallengeHistory() {
       .select("challenge_date,progress_percent,goal_completed")
       .order("challenge_date",{ascending:false})
       .limit(30);
-
     if (error) throw error;
-
     container.replaceChildren();
-
     if (!data || !data.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
-      empty.textContent =
-        "Completed challenges will appear here after midnight KST.";
+      empty.textContent = "Completed challenges will appear here after midnight KST.";
       container.appendChild(empty);
       return;
     }
-
     for (const item of data) {
       const entry = document.createElement("div");
       entry.className = "history-entry";
-
       const top = document.createElement("div");
       top.className = "history-entry-top";
-
       const date = document.createElement("span");
       date.className = "history-date";
       date.textContent = formatHistoryDate(item.challenge_date);
-
       const percent = document.createElement("span");
       percent.className = "history-percent";
-
       const value = Number(item.progress_percent);
-      percent.textContent =
-        (Number.isFinite(value) ? value : 0).toFixed(2) + "%";
-
+      percent.textContent = (Number.isFinite(value) ? value : 0).toFixed(2) + "%";
       top.append(date,percent);
-
       const status = document.createElement("p");
-      status.className = "history-status" +
-        (item.goal_completed ? " achieved" : "");
-
+      status.className = "history-status" + (item.goal_completed ? " achieved" : "");
       status.textContent = item.goal_completed
         ? "✓ Goal Achieved"
         : "Goal Not Reached";
-
       entry.append(top,status);
       container.appendChild(entry);
     }
   } catch (error) {
     console.error("Challenge history error:",error);
-    container.textContent =
-      "Challenge history is temporarily unavailable.";
+    container.textContent = "Challenge history is temporarily unavailable.";
   } finally {
     historyLoading = false;
   }
