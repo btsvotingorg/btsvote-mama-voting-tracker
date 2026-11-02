@@ -1,0 +1,520 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ARMY Global Voting Tracker | MAMA 2026</title>
+  <meta name="description" content="A community-powered ARMY voting participation tracker for MAMA 2026.">
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
+  <style>
+    :root {
+      --purple: #7651a8;
+      --deep-purple: #392451;
+      --light-purple: #f3eef9;
+      --background: #faf9fc;
+      --white: #ffffff;
+      --text: #292333;
+      --muted: #81798c;
+      --border: #e9e3ef;
+      --success: #27845c;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background: var(--background);
+      color: var(--text);
+      font-family: Arial, Helvetica, sans-serif;
+      line-height: 1.6;
+    }
+
+    header {
+      background: var(--deep-purple);
+      color: white;
+      padding: 24px 20px;
+      text-align: center;
+    }
+
+    .brand {
+      font-size: 12px;
+      letter-spacing: 3px;
+      opacity: .8;
+      font-weight: bold;
+    }
+
+    header h1 {
+      font-size: clamp(25px, 5vw, 39px);
+      margin: 12px 0 5px;
+      letter-spacing: -.8px;
+    }
+
+    header p {
+      color: #e6d9f4;
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .container {
+      width: min(100% - 32px, 850px);
+      margin: 30px auto 60px;
+    }
+
+    .intro {
+      text-align: center;
+      margin-bottom: 26px;
+    }
+
+    .intro h2 {
+      font-size: 23px;
+      margin-bottom: 5px;
+    }
+
+    .intro p {
+      color: var(--muted);
+      font-size: 14px;
+      margin-top: 0;
+    }
+
+    .card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: 0 5px 20px rgba(48, 30, 70, .035);
+    }
+
+    .card h2 {
+      font-size: 19px;
+      margin: 0 0 5px;
+    }
+
+    .description {
+      color: var(--muted);
+      font-size: 13px;
+      margin: 0 0 20px;
+    }
+
+    label {
+      display: block;
+      font-weight: bold;
+      font-size: 13px;
+      margin: 16px 0 7px;
+    }
+
+    input, select {
+      display: block;
+      width: 100%;
+      padding: 12px 13px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    input:focus, select:focus {
+      outline: 2px solid #d8c7eb;
+      border-color: var(--purple);
+    }
+
+    input[type="file"] {
+      padding: 10px;
+      font-size: 13px;
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    button {
+      width: 100%;
+      margin-top: 21px;
+      padding: 13px;
+      border: 0;
+      border-radius: 8px;
+      background: var(--purple);
+      color: white;
+      font-size: 14px;
+      font-weight: bold;
+      cursor: pointer;
+    }
+
+    button:hover { background: var(--deep-purple); }
+    button:disabled { opacity: .6; cursor: wait; }
+
+    .message {
+      display: none;
+      margin-top: 15px;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 13px;
+    }
+
+    .message.success {
+      display: block;
+      background: #eaf6ef;
+      color: #216b49;
+    }
+
+    .message.error {
+      display: block;
+      background: #fff0f0;
+      color: #a33333;
+    }
+
+    .leaderboard-row {
+      padding: 15px 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .leaderboard-row:last-child { border-bottom: 0; }
+
+    .rank-line {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 12px;
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .country-name { font-weight: bold; }
+    .rank-number { color: var(--muted); margin-right: 8px; }
+    .percentage { color: var(--purple); font-weight: bold; }
+
+    .progress-track {
+      width: 100%;
+      height: 9px;
+      background: var(--light-purple);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: var(--purple);
+      border-radius: 20px;
+    }
+
+    .notice {
+      background: var(--light-purple);
+      border-radius: 10px;
+      padding: 15px;
+      font-size: 12px;
+      color: var(--deep-purple);
+      margin-top: 18px;
+    }
+
+    .empty {
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+      padding: 20px 0;
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 12px;
+      padding: 20px;
+    }
+
+    .hp {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+    }
+
+    @media (max-width: 600px) {
+      .card { padding: 19px; }
+      .container { margin-top: 22px; }
+    }
+  </style>
+</head>
+
+<body>
+  <header>
+    <div class="brand">ARMY GLOBAL PROJECT</div>
+    <h1>MAMA 2026</h1>
+    <p>One team. One goal. Together for BTS. 💜</p>
+  </header>
+
+  <main class="container">
+    <section class="intro">
+      <h2>Every effort counts.</h2>
+      <p>Help us track ARMY's verified voting participation around the world.</p>
+    </section>
+
+    <section class="card">
+      <h2>Submit Your Voting Proof</h2>
+      <p class="description">
+        Submit a screenshot of your MAMA 2026 voting activity.
+        Every approved screenshot counts as one verified proof.
+      </p>
+
+      <form id="proofForm">
+        <label for="username">X Username</label>
+        <input
+          id="username"
+          name="username"
+          type="text"
+          placeholder="@yourusername"
+          maxlength="16"
+          required
+        >
+
+        <label for="country">Country</label>
+        <select id="country" name="country" required>
+          <option value="">Select your country</option>
+          <option>Argentina</option>
+          <option>Australia</option>
+          <option>Bangladesh</option>
+          <option>Brazil</option>
+          <option>Brunei</option>
+          <option>Cambodia</option>
+          <option>Canada</option>
+          <option>Chile</option>
+          <option>China</option>
+          <option>Colombia</option>
+          <option>France</option>
+          <option>Germany</option>
+          <option>Ghana</option>
+          <option>Hong Kong</option>
+          <option>India</option>
+          <option>Indonesia</option>
+          <option>Italy</option>
+          <option>Japan</option>
+          <option>Kenya</option>
+          <option>Malaysia</option>
+          <option>Mexico</option>
+          <option>Myanmar</option>
+          <option>Nepal</option>
+          <option>Netherlands</option>
+          <option>New Zealand</option>
+          <option>Nigeria</option>
+          <option>Pakistan</option>
+          <option>Peru</option>
+          <option>Philippines</option>
+          <option>Portugal</option>
+          <option>Saudi Arabia</option>
+          <option>Singapore</option>
+          <option>South Africa</option>
+          <option>South Korea</option>
+          <option>Spain</option>
+          <option>Sri Lanka</option>
+          <option>Taiwan</option>
+          <option>Thailand</option>
+          <option>Turkey</option>
+          <option>United Arab Emirates</option>
+          <option>United Kingdom</option>
+          <option>United States</option>
+          <option>Vietnam</option>
+          <option>Other</option>
+        </select>
+
+        <label for="proof">Voting Screenshot</label>
+        <input
+          id="proof"
+          name="proof"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          required
+        >
+        <p class="hint">JPG, PNG or WEBP only. Maximum file size: 5 MB.</p>
+
+        <div class="hp" aria-hidden="true">
+          <label for="website">Leave this field empty</label>
+          <input id="website" type="text" tabindex="-1" autocomplete="off">
+        </div>
+
+        <button id="submitButton" type="submit">SUBMIT VOTING PROOF</button>
+        <div id="formMessage" class="message" role="status" aria-live="polite"></div>
+      </form>
+
+      <div class="notice">
+        <strong>Privacy notice:</strong> Your X username, country and screenshot
+        will be used for verification. Screenshots are intended to be deleted
+        seven days after moderation. Pending submissions may be retained until
+        reviewed. Please do not upload screenshots containing sensitive personal
+        information.
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Global ARMY Participation</h2>
+      <p class="description">
+        Country progress compared with the current leading country.
+      </p>
+
+      <div id="leaderboard">
+        <div class="empty">Loading participation data...</div>
+      </div>
+
+      <div class="notice">
+        This is a community participation tracker based on approved submitted
+        screenshots. It does not represent official MAMA voting totals,
+        actual votes cast, or the official MAMA ranking.
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    Made with 💜 by ARMY · MAMA 2026
+  </footer>
+
+  <script>
+    const SUPABASE_URL = "https://vnhvyhfkvvqnlghikgck.supabase.co";
+    const SUPABASE_PUBLISHABLE_KEY =
+      "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
+
+    const db = window.supabase.createClient(
+      SUPABASE_URL,
+      SUPABASE_PUBLISHABLE_KEY
+    );
+
+    const form = document.getElementById("proofForm");
+    const button = document.getElementById("submitButton");
+    const message = document.getElementById("formMessage");
+
+    form.addEventListener("submit", async (event) => {
+      event.preventDefault();
+
+      message.className = "message";
+      message.textContent = "";
+
+      if (document.getElementById("website").value.trim() !== "") {
+        return;
+      }
+
+      const username = document.getElementById("username").value
+        .trim().replace(/^@/, "");
+      const country = document.getElementById("country").value;
+      const file = document.getElementById("proof").files[0];
+
+      if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
+        showMessage("Please enter a valid X username.", "error");
+        return;
+      }
+
+      if (!file) {
+        showMessage("Please select your voting screenshot.", "error");
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        showMessage("Your screenshot must be 5 MB or smaller.", "error");
+        return;
+      }
+
+      button.disabled = true;
+      button.textContent = "SUBMITTING...";
+
+      try {
+        const data = new FormData();
+        data.append("x_username", username);
+        data.append("country", country);
+        data.append("proof", file);
+
+        const { data: result, error } =
+          await db.functions.invoke("submit-proof", { body: data });
+
+        if (error) throw error;
+        if (!result || !result.success) {
+          throw new Error(result?.error || "Submission unsuccessful.");
+        }
+
+        form.reset();
+        showMessage(
+          "Your voting proof has been submitted successfully! Thank you, ARMY. 💜",
+          "success"
+        );
+        loadLeaderboard();
+
+      } catch (error) {
+        console.error("Submission error:", error);
+        showMessage(
+          error.message || "We could not submit your proof. Please try again.",
+          "error"
+        );
+      } finally {
+        button.disabled = false;
+        button.textContent = "SUBMIT VOTING PROOF";
+      }
+    });
+
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = "message " + type;
+    }
+
+    async function loadLeaderboard() {
+      const container = document.getElementById("leaderboard");
+
+      const { data, error } = await db
+        .from("country_participation")
+        .select("country, country_rank, progress_percent")
+        .order("country_rank", { ascending: true })
+        .limit(50);
+
+      if (error) {
+        console.error("Leaderboard error:", error);
+        container.innerHTML =
+          '<div class="empty">Participation data is temporarily unavailable.</div>';
+        return;
+      }
+
+      if (!data || data.length === 0) {
+        container.innerHTML =
+          '<div class="empty">No approved submissions yet. Be the first to participate!</div>';
+        return;
+      }
+
+      container.replaceChildren();
+
+      data.forEach((item) => {
+        const row = document.createElement("div");
+        row.className = "leaderboard-row";
+
+        const line = document.createElement("div");
+        line.className = "rank-line";
+
+        const name = document.createElement("span");
+        name.className = "country-name";
+
+        const rank = document.createElement("span");
+        rank.className = "rank-number";
+        rank.textContent = "#" + item.country_rank;
+
+        name.append(rank, document.createTextNode(item.country));
+
+        const percent = document.createElement("span");
+        percent.className = "percentage";
+        percent.textContent = item.progress_percent + "%";
+
+        line.append(name, percent);
+
+        const track = document.createElement("div");
+        track.className = "progress-track";
+
+        const fill = document.createElement("div");
+        fill.className = "progress-fill";
+        fill.style.width = Math.max(
+          0, Math.min(100, item.progress_percent)
+        ) + "%";
+
+        track.append(fill);
+        row.append(line, track);
+        container.append(row);
+      });
+    }
+
+    loadLeaderboard();
+  </script>
+</body>
+</html>
