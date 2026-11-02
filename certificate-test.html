@@ -186,7 +186,7 @@
     const SUPABASE_URL =
       "https://vnhvyhfkvvqnlghikgck.supabase.co";
 
-    // Public publishable key. Never use a service-role key here.
+    // This is a public publishable key, not a secret key.
     const SUPABASE_PUBLISHABLE_KEY =
       "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
 
@@ -200,84 +200,62 @@
     let detectedCertificateNumber = null;
     let scannedFile = null;
 
-    // Build alphabetical country and territory dropdown.
-    const regionNames = new Intl.DisplayNames(["en"], {
-      type: "region"
-    });
+    // Fixed country list: no duplicate declarations or region-code generation.
+    const countries = [
+      "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
+      "Antigua and Barbuda", "Argentina", "Armenia", "Australia",
+      "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh",
+      "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
+      "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil",
+      "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde",
+      "Cambodia", "Cameroon", "Canada", "Central African Republic",
+      "Chad", "Chile", "China", "Colombia", "Comoros", "Congo",
+      "Costa Rica", "Côte d'Ivoire", "Croatia", "Cuba", "Cyprus",
+      "Czechia", "Democratic Republic of the Congo", "Denmark",
+      "Djibouti", "Dominica", "Dominican Republic", "Ecuador",
+      "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea",
+      "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland",
+      "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana",
+      "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
+      "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India",
+      "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy",
+      "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya",
+      "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia",
+      "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein",
+      "Lithuania", "Luxembourg", "Madagascar", "Malawi",
+      "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands",
+      "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova",
+      "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique",
+      "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands",
+      "New Zealand", "Nicaragua", "Niger", "Nigeria",
+      "North Korea", "North Macedonia", "Norway", "Oman",
+      "Pakistan", "Palau", "Palestine", "Panama",
+      "Papua New Guinea", "Paraguay", "Peru", "Philippines",
+      "Poland", "Portugal", "Qatar", "Romania", "Russia",
+      "Rwanda", "Saint Kitts and Nevis", "Saint Lucia",
+      "Saint Vincent and the Grenadines", "Samoa", "San Marino",
+      "São Tomé and Príncipe", "Saudi Arabia", "Senegal",
+      "Serbia", "Seychelles", "Sierra Leone", "Singapore",
+      "Slovakia", "Slovenia", "Solomon Islands", "Somalia",
+      "South Africa", "South Korea", "South Sudan", "Spain",
+      "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland",
+      "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand",
+      "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago",
+      "Tunisia", "Türkiye", "Turkmenistan", "Tuvalu", "Uganda",
+      "Ukraine", "United Arab Emirates", "United Kingdom",
+      "United States", "Uruguay", "Uzbekistan", "Vanuatu",
+      "Vatican City", "Venezuela", "Vietnam", "Yemen",
+      "Zambia", "Zimbabwe"
+    ];
 
-    const countries = [];
+    countries.sort((a, b) => a.localeCompare(b));
 
-    for (let a = 65; a <= 90; a++) {
-      for (let b = 65; b <= 90; b++) {
-        const code = String.fromCharCode(a, b);
-        const name = regionNames.of(code);
-
-        if (name && name !== code) {
-          countries.push({ code, name });
-        }
-      }
+    for (const country of countries) {
+      const option = document.createElement("option");
+      option.value = country;
+      option.textContent = country;
+      countryInput.appendChild(option);
     }
-
-    countries.sort((a, b) =>
-      a.name.localeCompare(b.name)
-    );
-
-    
-const countries = [
-  "Afghanistan", "Albania", "Algeria", "Andorra", "Angola",
-  "Antigua and Barbuda", "Argentina", "Armenia", "Australia",
-  "Austria", "Azerbaijan", "Bahamas", "Bahrain", "Bangladesh",
-  "Barbados", "Belarus", "Belgium", "Belize", "Benin", "Bhutan",
-  "Bolivia", "Bosnia and Herzegovina", "Botswana", "Brazil",
-  "Brunei", "Bulgaria", "Burkina Faso", "Burundi", "Cabo Verde",
-  "Cambodia", "Cameroon", "Canada", "Central African Republic",
-  "Chad", "Chile", "China", "Colombia", "Comoros", "Congo",
-  "Costa Rica", "Côte d'Ivoire", "Croatia", "Cuba", "Cyprus",
-  "Czechia", "Democratic Republic of the Congo", "Denmark",
-  "Djibouti", "Dominica", "Dominican Republic", "Ecuador",
-  "Egypt", "El Salvador", "Equatorial Guinea", "Eritrea",
-  "Estonia", "Eswatini", "Ethiopia", "Fiji", "Finland",
-  "France", "Gabon", "Gambia", "Georgia", "Germany", "Ghana",
-  "Greece", "Grenada", "Guatemala", "Guinea", "Guinea-Bissau",
-  "Guyana", "Haiti", "Honduras", "Hungary", "Iceland", "India",
-  "Indonesia", "Iran", "Iraq", "Ireland", "Israel", "Italy",
-  "Jamaica", "Japan", "Jordan", "Kazakhstan", "Kenya",
-  "Kiribati", "Kuwait", "Kyrgyzstan", "Laos", "Latvia",
-  "Lebanon", "Lesotho", "Liberia", "Libya", "Liechtenstein",
-  "Lithuania", "Luxembourg", "Madagascar", "Malawi",
-  "Malaysia", "Maldives", "Mali", "Malta", "Marshall Islands",
-  "Mauritania", "Mauritius", "Mexico", "Micronesia", "Moldova",
-  "Monaco", "Mongolia", "Montenegro", "Morocco", "Mozambique",
-  "Myanmar", "Namibia", "Nauru", "Nepal", "Netherlands",
-  "New Zealand", "Nicaragua", "Niger", "Nigeria",
-  "North Korea", "North Macedonia", "Norway", "Oman",
-  "Pakistan", "Palau", "Palestine", "Panama",
-  "Papua New Guinea", "Paraguay", "Peru", "Philippines",
-  "Poland", "Portugal", "Qatar", "Romania", "Russia",
-  "Rwanda", "Saint Kitts and Nevis", "Saint Lucia",
-  "Saint Vincent and the Grenadines", "Samoa", "San Marino",
-  "São Tomé and Príncipe", "Saudi Arabia", "Senegal",
-  "Serbia", "Seychelles", "Sierra Leone", "Singapore",
-  "Slovakia", "Slovenia", "Solomon Islands", "Somalia",
-  "South Africa", "South Korea", "South Sudan", "Spain",
-  "Sri Lanka", "Sudan", "Suriname", "Sweden", "Switzerland",
-  "Syria", "Taiwan", "Tajikistan", "Tanzania", "Thailand",
-  "Timor-Leste", "Togo", "Tonga", "Trinidad and Tobago",
-  "Tunisia", "Türkiye", "Turkmenistan", "Tuvalu", "Uganda",
-  "Ukraine", "United Arab Emirates", "United Kingdom",
-  "United States", "Uruguay", "Uzbekistan", "Vanuatu",
-  "Vatican City", "Venezuela", "Vietnam", "Yemen",
-  "Zambia", "Zimbabwe"
-];
-
-countries.sort((a, b) => a.localeCompare(b));
-
-for (const country of countries) {
-  const option = document.createElement("option");
-  option.value = country;
-  option.textContent = country;
-  countryInput.appendChild(option);
-}
 
     function showResult(message) {
       resultBox.style.display = "block";
@@ -313,17 +291,14 @@ for (const country of countries) {
         return;
       }
 
-      if (
-        file.size === 0 ||
-        file.size > 5 * 1024 * 1024
-      ) {
+      if (file.size === 0 || file.size > 5 * 1024 * 1024) {
         showResult("The screenshot must be 5 MB or smaller.");
         return;
       }
 
       if (typeof Tesseract === "undefined") {
         showResult(
-          "OCR library failed to load. Check your connection."
+          "OCR library failed to load. Check your internet connection."
         );
         return;
       }
@@ -337,11 +312,7 @@ for (const country of countries) {
           "The first scan may take a little longer."
         );
 
-        const result = await Tesseract.recognize(
-          file,
-          "eng"
-        );
-
+        const result = await Tesseract.recognize(file, "eng");
         const extractedText = result.data.text;
 
         const match = extractedText.match(
@@ -356,9 +327,7 @@ for (const country of countries) {
           return;
         }
 
-        detectedCertificateNumber =
-          match[1].toUpperCase();
-
+        detectedCertificateNumber = match[1].toUpperCase();
         scannedFile = file;
         submitButton.disabled = false;
 
@@ -371,11 +340,7 @@ for (const country of countries) {
 
       } catch (error) {
         console.error("OCR error:", error);
-
-        showResult(
-          "Scanning failed. Please try again."
-        );
-
+        showResult("Scanning failed. Please try again.");
       } finally {
         scanButton.disabled = false;
         scanButton.textContent = "SCAN CERTIFICATE";
@@ -383,10 +348,7 @@ for (const country of countries) {
     });
 
     submitButton.addEventListener("click", async () => {
-      const username = usernameInput.value
-        .trim()
-        .replace(/^@/, "");
-
+      const username = usernameInput.value.trim().replace(/^@/, "");
       const country = countryInput.value;
 
       if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
@@ -394,8 +356,8 @@ for (const country of countries) {
         return;
       }
 
-      if (!country) {
-        showResult("Please select your country.");
+      if (!countries.includes(country)) {
+        showResult("Please select a country from the list.");
         return;
       }
 
@@ -412,10 +374,7 @@ for (const country of countries) {
 
         form.append("x_username", username);
         form.append("country", country);
-        form.append(
-          "certificate_number",
-          detectedCertificateNumber
-        );
+        form.append("certificate_number", detectedCertificateNumber);
         form.append("proof", scannedFile);
 
         const response = await fetch(
@@ -434,8 +393,7 @@ for (const country of countries) {
         if (response.status === 401) {
           showResult(
             "Authentication blocked the request.\n\n" +
-            "The function's JWT verification setting " +
-            "may need adjustment after adding public-access safeguards."
+            "JWT verification is currently enabled for this function."
           );
           return;
         }
@@ -458,8 +416,7 @@ for (const country of countries) {
 
         showResult(
           "TEST SUBMISSION SUCCESSFUL!\n\n" +
-          "Certificate: " +
-          detectedCertificateNumber +
+          "Certificate: " + detectedCertificateNumber +
           "\nStatus: PENDING\n\n" +
           "Your proof was saved but has not been counted."
         );
@@ -468,12 +425,10 @@ for (const country of countries) {
 
       } catch (error) {
         console.error("Submission error:", error);
-
         showResult(
           "Could not connect to Supabase.\n" +
           "Please check your internet connection."
         );
-
       } finally {
         submitButton.textContent = "SUBMIT TEST PROOF";
       }
