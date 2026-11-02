@@ -4,12 +4,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
   <title>BTS Vote Project | Certificate Scanner</title>
 
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
   <style>
-    * { box-sizing: border-box; }
+    * {
+      box-sizing: border-box;
+    }
 
     body {
       margin: 0;
@@ -20,7 +23,7 @@
 
     .container {
       max-width: 560px;
-      margin: 60px auto;
+      margin: 50px auto;
       padding: 20px;
     }
 
@@ -52,18 +55,27 @@
 
     label {
       display: block;
-      margin-top: 20px;
+      margin-top: 22px;
       font-size: 14px;
       font-weight: bold;
     }
 
-    input {
+    input,
+    select {
       width: 100%;
       margin: 10px 0;
       padding: 12px;
       border: 1px solid #ddd3e8;
       border-radius: 8px;
+      background: white;
+      color: #30243d;
       font-size: 14px;
+    }
+
+    input:focus,
+    select:focus {
+      outline: 2px solid #a98bd1;
+      outline-offset: 1px;
     }
 
     button {
@@ -81,7 +93,7 @@
 
     button:disabled {
       opacity: 0.6;
-      cursor: wait;
+      cursor: not-allowed;
     }
 
     #submitButton {
@@ -108,8 +120,10 @@
 </head>
 
 <body>
+
   <main class="container">
     <div class="card">
+
       <div class="brand">BTS VOTE PROJECT</div>
 
       <h1>MAMA 2026 Certificate Scanner</h1>
@@ -120,19 +134,20 @@
       </p>
 
       <label for="username">X Username</label>
+
       <input
         type="text"
         id="username"
         placeholder="@yourusername"
         maxlength="16"
+        autocomplete="off"
       >
 
       <label for="country">Country</label>
-      <input
-        type="text"
-        id="country"
-        placeholder="Philippines"
-      >
+
+      <select id="country" required>
+        <option value="">Select your country</option>
+      </select>
 
       <label for="certificate">
         Voting Certificate Screenshot
@@ -152,13 +167,18 @@
         SUBMIT TEST PROOF
       </button>
 
-      <div id="result" role="status" aria-live="polite"></div>
+      <div
+        id="result"
+        role="status"
+        aria-live="polite"
+      ></div>
 
       <p class="notice">
         Testing only. Successful submissions are stored
         as pending and are not counted on the public leaderboard.
         OCR detection does not authenticate a certificate.
       </p>
+
     </div>
   </main>
 
@@ -166,7 +186,7 @@
     const SUPABASE_URL =
       "https://vnhvyhfkvvqnlghikgck.supabase.co";
 
-    // Public publishable key, not the service-role key.
+    // Public publishable key. Never use a service-role key here.
     const SUPABASE_PUBLISHABLE_KEY =
       "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
 
@@ -179,6 +199,35 @@
 
     let detectedCertificateNumber = null;
     let scannedFile = null;
+
+    // Build alphabetical country and territory dropdown.
+    const regionNames = new Intl.DisplayNames(["en"], {
+      type: "region"
+    });
+
+    const countries = [];
+
+    for (let a = 65; a <= 90; a++) {
+      for (let b = 65; b <= 90; b++) {
+        const code = String.fromCharCode(a, b);
+        const name = regionNames.of(code);
+
+        if (name && name !== code) {
+          countries.push({ code, name });
+        }
+      }
+    }
+
+    countries.sort((a, b) =>
+      a.name.localeCompare(b.name)
+    );
+
+    for (const country of countries) {
+      const option = document.createElement("option");
+      option.value = country.name;
+      option.textContent = country.name;
+      countryInput.appendChild(option);
+    }
 
     function showResult(message) {
       resultBox.style.display = "block";
@@ -203,18 +252,29 @@
         return;
       }
 
-      if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+      const allowedTypes = [
+        "image/png",
+        "image/jpeg",
+        "image/webp"
+      ];
+
+      if (!allowedTypes.includes(file.type)) {
         showResult("Please upload a JPG, PNG, or WEBP image.");
         return;
       }
 
-      if (file.size === 0 || file.size > 5 * 1024 * 1024) {
-        showResult("The screenshot must be under 5 MB.");
+      if (
+        file.size === 0 ||
+        file.size > 5 * 1024 * 1024
+      ) {
+        showResult("The screenshot must be 5 MB or smaller.");
         return;
       }
 
       if (typeof Tesseract === "undefined") {
-        showResult("OCR library failed to load.");
+        showResult(
+          "OCR library failed to load. Check your connection."
+        );
         return;
       }
 
@@ -222,9 +282,16 @@
       scanButton.textContent = "SCANNING...";
 
       try {
-        showResult("Reading certificate. Please wait...");
+        showResult(
+          "Reading your certificate...\n" +
+          "The first scan may take a little longer."
+        );
 
-        const result = await Tesseract.recognize(file, "eng");
+        const result = await Tesseract.recognize(
+          file,
+          "eng"
+        );
+
         const extractedText = result.data.text;
 
         const match = extractedText.match(
@@ -234,24 +301,31 @@
         if (!match) {
           showResult(
             "Certificate number not detected.\n\n" +
-            "Try a clearer screenshot."
+            "Please try a clearer screenshot."
           );
           return;
         }
 
-        detectedCertificateNumber = match[1].toUpperCase();
+        detectedCertificateNumber =
+          match[1].toUpperCase();
+
         scannedFile = file;
         submitButton.disabled = false;
 
         showResult(
           "CERTIFICATE NUMBER DETECTED!\n\n" +
+          "Reference Number:\n" +
           detectedCertificateNumber +
           "\n\nYou can now submit this test proof."
         );
 
       } catch (error) {
         console.error("OCR error:", error);
-        showResult("Scanning failed. Please try again.");
+
+        showResult(
+          "Scanning failed. Please try again."
+        );
+
       } finally {
         scanButton.disabled = false;
         scanButton.textContent = "SCAN CERTIFICATE";
@@ -259,16 +333,19 @@
     });
 
     submitButton.addEventListener("click", async () => {
-      const username = usernameInput.value.trim().replace(/^@/, "");
-      const country = countryInput.value.trim();
+      const username = usernameInput.value
+        .trim()
+        .replace(/^@/, "");
+
+      const country = countryInput.value;
 
       if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
         showResult("Please enter a valid X username.");
         return;
       }
 
-      if (!country || country.length > 100) {
-        showResult("Please enter a valid country.");
+      if (!country) {
+        showResult("Please select your country.");
         return;
       }
 
@@ -282,9 +359,13 @@
 
       try {
         const form = new FormData();
+
         form.append("x_username", username);
         form.append("country", country);
-        form.append("certificate_number", detectedCertificateNumber);
+        form.append(
+          "certificate_number",
+          detectedCertificateNumber
+        );
         form.append("proof", scannedFile);
 
         const response = await fetch(
@@ -327,23 +408,27 @@
 
         showResult(
           "TEST SUBMISSION SUCCESSFUL!\n\n" +
-          "Certificate: " + detectedCertificateNumber +
+          "Certificate: " +
+          detectedCertificateNumber +
           "\nStatus: PENDING\n\n" +
-          "This proof is saved but not counted yet."
+          "Your proof was saved but has not been counted."
         );
 
         resetScan();
 
       } catch (error) {
         console.error("Submission error:", error);
+
         showResult(
           "Could not connect to Supabase.\n" +
           "Please check your internet connection."
         );
+
       } finally {
         submitButton.textContent = "SUBMIT TEST PROOF";
       }
     });
   </script>
+
 </body>
 </html>
