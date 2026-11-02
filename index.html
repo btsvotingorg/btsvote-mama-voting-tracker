@@ -2,523 +2,909 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ARMY Global Voting Tracker | MAMA 2026</title>
-  <meta name="description" content="A community-powered ARMY voting participation tracker for MAMA 2026.">
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BTS Vote Project | MAMA 2026</title>
+<meta name="description" content="Global ARMY voting participation tracker for MAMA 2026.">
 
-  <style>
-    :root {
-      --purple: #7651a8;
-      --deep-purple: #392451;
-      --light-purple: #f3eef9;
-      --background: #faf9fc;
-      --white: #ffffff;
-      --text: #292333;
-      --muted: #81798c;
-      --border: #e9e3ef;
-      --success: #27845c;
-    }
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
-    * { box-sizing: border-box; }
-
-    body {
-      margin: 0;
-      background: var(--background);
-      color: var(--text);
-      font-family: Arial, Helvetica, sans-serif;
-      line-height: 1.6;
-    }
-
-    header {
-      background: var(--deep-purple);
-      color: white;
-      padding: 24px 20px;
-      text-align: center;
-    }
-
-    .brand {
-      font-size: 12px;
-      letter-spacing: 3px;
-      opacity: .8;
-      font-weight: bold;
-    }
-
-    header h1 {
-      font-size: clamp(25px, 5vw, 39px);
-      margin: 12px 0 5px;
-      letter-spacing: -.8px;
-    }
-
-    header p {
-      color: #e6d9f4;
-      margin: 0;
-      font-size: 14px;
-    }
-
-    .container {
-      width: min(100% - 32px, 850px);
-      margin: 30px auto 60px;
-    }
-
-    .intro {
-      text-align: center;
-      margin-bottom: 26px;
-    }
-
-    .intro h2 {
-      font-size: 23px;
-      margin-bottom: 5px;
-    }
-
-    .intro p {
-      color: var(--muted);
-      font-size: 14px;
-      margin-top: 0;
-    }
-
-    .card {
-      background: var(--white);
-      border: 1px solid var(--border);
-      border-radius: 15px;
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: 0 5px 20px rgba(48, 30, 70, .035);
-    }
-
-    .card h2 {
-      font-size: 19px;
-      margin: 0 0 5px;
-    }
-
-    .description {
-      color: var(--muted);
-      font-size: 13px;
-      margin: 0 0 20px;
-    }
-
-    label {
-      display: block;
-      font-weight: bold;
-      font-size: 13px;
-      margin: 16px 0 7px;
-    }
-
-    input, select {
-      display: block;
-      width: 100%;
-      padding: 12px 13px;
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      background: white;
-      color: var(--text);
-      font-size: 14px;
-    }
-
-    input:focus, select:focus {
-      outline: 2px solid #d8c7eb;
-      border-color: var(--purple);
-    }
-
-    input[type="file"] {
-      padding: 10px;
-      font-size: 13px;
-    }
-
-    .hint {
-      color: var(--muted);
-      font-size: 12px;
-      margin-top: 6px;
-    }
-
-    button {
-      width: 100%;
-      margin-top: 21px;
-      padding: 13px;
-      border: 0;
-      border-radius: 8px;
-      background: var(--purple);
-      color: white;
-      font-size: 14px;
-      font-weight: bold;
-      cursor: pointer;
-    }
-
-    button:hover { background: var(--deep-purple); }
-    button:disabled { opacity: .6; cursor: wait; }
-
-    .message {
-      display: none;
-      margin-top: 15px;
-      padding: 12px;
-      border-radius: 8px;
-      font-size: 13px;
-    }
-
-    .message.success {
-      display: block;
-      background: #eaf6ef;
-      color: #216b49;
-    }
-
-    .message.error {
-      display: block;
-      background: #fff0f0;
-      color: #a33333;
-    }
-
-    .leaderboard-row {
-      padding: 15px 0;
-      border-bottom: 1px solid var(--border);
-    }
-
-    .leaderboard-row:last-child { border-bottom: 0; }
-
-    .rank-line {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      gap: 12px;
-      font-size: 14px;
-      margin-bottom: 8px;
-    }
-
-    .country-name { font-weight: bold; }
-    .rank-number { color: var(--muted); margin-right: 8px; }
-    .percentage { color: var(--purple); font-weight: bold; }
-
-    .progress-track {
-      width: 100%;
-      height: 9px;
-      background: var(--light-purple);
-      border-radius: 20px;
-      overflow: hidden;
-    }
-
-    .progress-fill {
-      height: 100%;
-      background: var(--purple);
-      border-radius: 20px;
-    }
-
-    .notice {
-      background: var(--light-purple);
-      border-radius: 10px;
-      padding: 15px;
-      font-size: 12px;
-      color: var(--deep-purple);
-      margin-top: 18px;
-    }
-
-    .empty {
-      color: var(--muted);
-      font-size: 13px;
-      text-align: center;
-      padding: 20px 0;
-    }
-
-    footer {
-      text-align: center;
-      color: var(--muted);
-      font-size: 12px;
-      padding: 20px;
-    }
-
-    .hp {
-      position: absolute;
-      left: -9999px;
-      opacity: 0;
-    }
-
-    @media (max-width: 600px) {
-      .card { padding: 19px; }
-      .container { margin-top: 22px; }
-    }
-  </style>
+<style>
+:root {
+  --purple:#7651a8;
+  --deep:#392451;
+  --light:#f3eef9;
+  --background:#faf9fc;
+  --border:#e9e3ef;
+  --muted:#81798c;
+}
+* { box-sizing:border-box; }
+body {
+  margin:0;
+  background:var(--background);
+  color:#292333;
+  font-family:Arial,Helvetica,sans-serif;
+  line-height:1.6;
+}
+header {
+  background:var(--deep);
+  color:white;
+  padding:24px 20px;
+  text-align:center;
+}
+.brand {
+  font-size:12px;
+  letter-spacing:3px;
+  opacity:.85;
+  font-weight:bold;
+}
+header h1 {
+  font-size:clamp(25px,5vw,39px);
+  margin:12px 0 5px;
+}
+header p {
+  color:#e6d9f4;
+  margin:0;
+  font-size:14px;
+}
+.container {
+  width:min(100% - 32px,850px);
+  margin:30px auto 60px;
+}
+.intro {
+  text-align:center;
+  margin-bottom:26px;
+}
+.intro h2 {
+  font-size:23px;
+  margin-bottom:5px;
+}
+.intro p,.description {
+  color:var(--muted);
+  font-size:14px;
+}
+.card {
+  background:white;
+  border:1px solid var(--border);
+  border-radius:15px;
+  padding:24px;
+  margin-bottom:20px;
+  box-shadow:0 5px 20px #30204609;
+}
+.card h2 {
+  font-size:19px;
+  margin:0 0 5px;
+}
+.description {
+  font-size:13px;
+  margin:0 0 20px;
+}
+label {
+  display:block;
+  font-weight:bold;
+  font-size:13px;
+  margin:16px 0 7px;
+}
+input {
+  display:block;
+  width:100%;
+  padding:12px 13px;
+  border:1px solid var(--border);
+  border-radius:8px;
+  background:white;
+  color:#292333;
+  font-size:16px;
+}
+input:focus {
+  outline:2px solid #d8c7eb;
+}
+input[type=file] {
+  font-size:13px;
+}
+.hint {
+  color:var(--muted);
+  font-size:12px;
+  margin-top:6px;
+}
+button {
+  width:100%;
+  margin-top:20px;
+  padding:13px;
+  border:0;
+  border-radius:8px;
+  background:var(--purple);
+  color:white;
+  font-size:14px;
+  font-weight:bold;
+  cursor:pointer;
+}
+button:disabled {
+  opacity:.6;
+  cursor:wait;
+}
+.country-picker {
+  position:relative;
+}
+.country-list {
+  display:none;
+  position:absolute;
+  z-index:20;
+  left:0;
+  right:0;
+  top:100%;
+  max-height:220px;
+  overflow-y:auto;
+  background:white;
+  border:1px solid var(--border);
+  border-radius:9px;
+  box-shadow:0 8px 20px #39245122;
+}
+.country-option {
+  display:block;
+  width:100%;
+  margin:0;
+  padding:12px;
+  border:0;
+  border-bottom:1px solid var(--border);
+  border-radius:0;
+  background:white;
+  color:#292333;
+  font-size:14px;
+  font-weight:normal;
+  text-align:left;
+}
+.country-option:hover,
+.country-option:focus {
+  background:var(--light);
+}
+.country-empty {
+  padding:12px;
+  color:var(--muted);
+  font-size:13px;
+}
+.message {
+  display:none;
+  margin-top:15px;
+  padding:12px;
+  border-radius:8px;
+  font-size:13px;
+  white-space:pre-wrap;
+}
+.message.success {
+  display:block;
+  background:#eaf6ef;
+  color:#216b49;
+}
+.message.error {
+  display:block;
+  background:#fff0f0;
+  color:#a33333;
+}
+.batch-summary {
+  margin-top:18px;
+  padding:16px;
+  background:var(--light);
+  border-radius:10px;
+  font-size:13px;
+}
+.batch-summary[hidden] {
+  display:none;
+}
+.stats {
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:8px;
+  margin:12px 0;
+}
+.stat {
+  background:white;
+  border-radius:8px;
+  padding:12px 5px;
+  text-align:center;
+}
+.stat strong {
+  display:block;
+  font-size:23px;
+}
+.stat span {
+  font-size:11px;
+  color:var(--muted);
+}
+.progress-track {
+  width:100%;
+  height:9px;
+  background:#e6dcef;
+  border-radius:20px;
+  overflow:hidden;
+  margin-top:10px;
+}
+.progress-fill {
+  height:100%;
+  width:0;
+  background:var(--purple);
+  border-radius:20px;
+}
+.batch-results {
+  margin-top:15px;
+}
+.batch-result {
+  padding:10px;
+  background:white;
+  border:1px solid var(--border);
+  border-radius:7px;
+  margin-top:7px;
+  overflow-wrap:anywhere;
+}
+.batch-result strong {
+  display:block;
+}
+.batch-result.duplicate {
+  background:#fff7e8;
+}
+.batch-result.failed {
+  background:#fff0f0;
+}
+.batch-result.accepted {
+  background:#eaf6ef;
+}
+.leaderboard-row {
+  padding:15px 0;
+  border-bottom:1px solid var(--border);
+}
+.rank-line {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+  font-size:14px;
+  margin-bottom:8px;
+}
+.country-name {
+  font-weight:bold;
+}
+.rank-number {
+  color:var(--muted);
+  margin-right:8px;
+}
+.percentage {
+  color:var(--purple);
+  font-weight:bold;
+}
+.notice {
+  background:var(--light);
+  border-radius:10px;
+  padding:15px;
+  font-size:12px;
+  color:var(--deep);
+  margin-top:18px;
+}
+.empty {
+  color:var(--muted);
+  font-size:13px;
+  text-align:center;
+  padding:20px 0;
+}
+footer {
+  text-align:center;
+  color:var(--muted);
+  font-size:12px;
+  padding:20px;
+}
+.hp {
+  position:absolute;
+  left:-9999px;
+  opacity:0;
+}
+@media(max-width:600px) {
+  .card { padding:19px; }
+  .container { margin-top:22px; }
+}
+</style>
 </head>
 
 <body>
-  <header>
+
+<header>
   <div class="brand">BTS VOTE PROJECT</div>
   <h1>BTS — Fans’ Choice Award &amp; Fans’ Choice of the Year with VISA</h1>
   <p>Teamwork makes the Dreamwork. 💜</p>
 </header>
 
-  <main class="container">
-    <section class="intro">
+<main class="container">
+
+<section class="intro">
   <h2>Every vote counts.</h2>
   <p>
-    ARMY, let's see how your country stands in our global voting
-    participation tracker! Submit your voting proof, represent your
-    country, and help bring it to the top of the leaderboard!
+    ARMY, let's see how your country stands in our global
+    voting participation tracker! Submit your voting proof,
+    represent your country, and help bring it to the top
+    of the leaderboard!
   </p>
 </section>
 
-    <section class="card">
-      <h2>Submit Your Voting Proof</h2>
-      <p class="description">
-        Submit a screenshot of your MAMA 2026 voting activity.
-        Every approved screenshot counts as one verified proof.
-      </p>
+<section class="card">
+  <h2>Submit Your Voting Proof</h2>
+  <p class="description">
+    Upload multiple MAMA 2026 voting certificates.
+    Each unique certificate reference number can be
+    submitted once. New submissions remain pending.
+  </p>
 
-      <form id="proofForm">
-        <label for="username">X Username</label>
-        <input
-          id="username"
-          name="username"
-          type="text"
-          placeholder="@yourusername"
-          maxlength="16"
-          required
-        >
+  <form id="proofForm">
 
-        <label for="country">Country</label>
-        <select id="country" name="country" required>
-          <option value="">Select your country</option>
-          <option>Argentina</option>
-          <option>Australia</option>
-          <option>Bangladesh</option>
-          <option>Brazil</option>
-          <option>Brunei</option>
-          <option>Cambodia</option>
-          <option>Canada</option>
-          <option>Chile</option>
-          <option>China</option>
-          <option>Colombia</option>
-          <option>France</option>
-          <option>Germany</option>
-          <option>Ghana</option>
-          <option>Hong Kong</option>
-          <option>India</option>
-          <option>Indonesia</option>
-          <option>Italy</option>
-          <option>Japan</option>
-          <option>Kenya</option>
-          <option>Malaysia</option>
-          <option>Mexico</option>
-          <option>Myanmar</option>
-          <option>Nepal</option>
-          <option>Netherlands</option>
-          <option>New Zealand</option>
-          <option>Nigeria</option>
-          <option>Pakistan</option>
-          <option>Peru</option>
-          <option>Philippines</option>
-          <option>Portugal</option>
-          <option>Saudi Arabia</option>
-          <option>Singapore</option>
-          <option>South Africa</option>
-          <option>South Korea</option>
-          <option>Spain</option>
-          <option>Sri Lanka</option>
-          <option>Taiwan</option>
-          <option>Thailand</option>
-          <option>Turkey</option>
-          <option>United Arab Emirates</option>
-          <option>United Kingdom</option>
-          <option>United States</option>
-          <option>Vietnam</option>
-          <option>Other</option>
-        </select>
+    <label for="username">X Username</label>
+    <input
+      id="username"
+      type="text"
+      placeholder="@yourusername"
+      maxlength="16"
+      required
+    >
 
-        <label for="proof">Voting Screenshot</label>
-        <input
-          id="proof"
-          name="proof"
-          type="file"
-          accept="image/jpeg,image/png,image/webp"
-          required
-        >
-        <p class="hint">JPG, PNG or WEBP only. Maximum file size: 5 MB.</p>
+    <label for="countrySearch">Country</label>
+    <div class="country-picker">
+      <input
+        id="countrySearch"
+        type="text"
+        placeholder="Search your country..."
+        autocomplete="off"
+        aria-controls="countryList"
+        aria-expanded="false"
+        required
+      >
+      <div id="countryList" class="country-list"></div>
+    </div>
+    <p class="hint">
+      Type your country and select it from the results.
+    </p>
 
-        <div class="hp" aria-hidden="true">
-          <label for="website">Leave this field empty</label>
-          <input id="website" type="text" tabindex="-1" autocomplete="off">
+    <label for="proof">Voting Certificate Screenshots</label>
+    <input
+      id="proof"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      multiple
+      required
+    >
+    <p class="hint">
+      Select multiple screenshots. No fixed batch-count limit.
+      Maximum 5 MB per image. Large batches may take longer.
+    </p>
+
+    <div class="hp" aria-hidden="true">
+      <label for="website">Leave this field empty</label>
+      <input id="website" type="text" tabindex="-1" autocomplete="off">
+    </div>
+
+    <button id="submitButton" type="submit">
+      SCAN &amp; SUBMIT CERTIFICATES
+    </button>
+
+    <div id="formMessage" class="message" role="status" aria-live="polite"></div>
+
+    <div id="batchSummary" class="batch-summary" hidden>
+      <strong>Submission Summary</strong>
+
+      <div class="stats">
+        <div class="stat">
+          <strong id="acceptedCount">0</strong>
+          <span>Pending</span>
         </div>
-
-        <button id="submitButton" type="submit">SUBMIT VOTING PROOF</button>
-        <div id="formMessage" class="message" role="status" aria-live="polite"></div>
-      </form>
-
-      <div class="notice">
-        <strong>Privacy notice:</strong> Your X username, country and screenshot
-        will be used for verification. Screenshots are intended to be deleted
-        seven days after moderation. Pending submissions may be retained until
-        reviewed. Please do not upload screenshots containing sensitive personal
-        information.
-      </div>
-    </section>
-
-    <section class="card">
-      <h2>Global ARMY Participation</h2>
-      <p class="description">
-        Country progress compared with the current leading country.
-      </p>
-
-      <div id="leaderboard">
-        <div class="empty">Loading participation data...</div>
+        <div class="stat">
+          <strong id="duplicateCount">0</strong>
+          <span>Duplicates</span>
+        </div>
+        <div class="stat">
+          <strong id="failedCount">0</strong>
+          <span>Failed</span>
+        </div>
       </div>
 
-      <div class="notice">
-        This is a community participation tracker based on approved submitted
-        screenshots. It does not represent official MAMA voting totals,
-        actual votes cast, or the official MAMA ranking.
+      <div id="batchProgress"></div>
+      <div class="progress-track">
+        <div id="batchBar" class="progress-fill"></div>
       </div>
-    </section>
-  </main>
 
-  <footer>
-  Made by btsvotingorg
-</footer>
+      <div id="batchResults" class="batch-results"></div>
+    </div>
+  </form>
 
-  <script>
-    const SUPABASE_URL = "https://vnhvyhfkvvqnlghikgck.supabase.co";
-    const SUPABASE_PUBLISHABLE_KEY =
-      "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
+  <div class="notice">
+    <strong>Privacy notice:</strong>
+    Your X username, country, and uploaded screenshots
+    are used to process submissions. Screenshots are stored
+    privately. Automatic deletion after seven days is not
+    yet implemented. Please do not upload screenshots
+    containing sensitive personal information.
+  </div>
+</section>
 
-    const db = window.supabase.createClient(
-      SUPABASE_URL,
-      SUPABASE_PUBLISHABLE_KEY
-    );
+<section class="card">
+  <h2>Global ARMY Participation</h2>
+  <p class="description">
+    Country progress compared with the current leading country.
+  </p>
 
-    const form = document.getElementById("proofForm");
-    const button = document.getElementById("submitButton");
-    const message = document.getElementById("formMessage");
+  <div id="leaderboard">
+    <div class="empty">Loading participation data...</div>
+  </div>
 
-    form.addEventListener("submit", async (event) => {
-      event.preventDefault();
+  <div class="notice">
+    This community tracker is based on approved submitted
+    certificates. It does not represent official MAMA voting
+    totals or the official MAMA ranking.
+  </div>
+</section>
 
-      message.className = "message";
-      message.textContent = "";
+</main>
 
-      if (document.getElementById("website").value.trim() !== "") {
-        return;
-      }
+<footer>Made by btsvotingorg</footer>
 
-      const username = document.getElementById("username").value
-        .trim().replace(/^@/, "");
-      const country = document.getElementById("country").value;
-      const file = document.getElementById("proof").files[0];
+<script>
+const SUPABASE_URL =
+  "https://vnhvyhfkvvqnlghikgck.supabase.co";
 
-      if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
-        showMessage("Please enter a valid X username.", "error");
-        return;
-      }
+const SUPABASE_PUBLISHABLE_KEY =
+  "sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI";
 
-      if (!file) {
-        showMessage("Please select your voting screenshot.", "error");
-        return;
-      }
+const db = window.supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_PUBLISHABLE_KEY
+);
 
-      if (file.size > 5 * 1024 * 1024) {
-        showMessage("Your screenshot must be 5 MB or smaller.", "error");
-        return;
-      }
+const form = document.getElementById("proofForm");
+const submitButton = document.getElementById("submitButton");
+const message = document.getElementById("formMessage");
+const countrySearch = document.getElementById("countrySearch");
+const countryList = document.getElementById("countryList");
+const fileInput = document.getElementById("proof");
 
-      button.disabled = true;
-      button.textContent = "SUBMITTING...";
+const batchSummary = document.getElementById("batchSummary");
+const acceptedCount = document.getElementById("acceptedCount");
+const duplicateCount = document.getElementById("duplicateCount");
+const failedCount = document.getElementById("failedCount");
+const batchProgress = document.getElementById("batchProgress");
+const batchBar = document.getElementById("batchBar");
+const batchResults = document.getElementById("batchResults");
 
-      try {
-        const data = new FormData();
-        data.append("x_username", username);
-        data.append("country", country);
-        data.append("proof", file);
+let selectedCountry = "";
+let processing = false;
 
-        const { data: result, error } =
-          await db.functions.invoke("submit-proof", { body: data });
+const countries = [
+  "Afghanistan","Albania","Algeria","Andorra","Angola",
+  "Antigua and Barbuda","Argentina","Armenia","Australia",
+  "Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh",
+  "Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil",
+  "Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde",
+  "Cambodia","Cameroon","Canada","Central African Republic",
+  "Chad","Chile","China","Colombia","Comoros","Congo",
+  "Costa Rica","Côte d'Ivoire","Croatia","Cuba","Cyprus",
+  "Czechia","Democratic Republic of the Congo","Denmark",
+  "Djibouti","Dominica","Dominican Republic","Ecuador",
+  "Egypt","El Salvador","Equatorial Guinea","Eritrea",
+  "Estonia","Eswatini","Ethiopia","Fiji","Finland",
+  "France","Gabon","Gambia","Georgia","Germany","Ghana",
+  "Greece","Grenada","Guatemala","Guinea","Guinea-Bissau",
+  "Guyana","Haiti","Honduras","Hong Kong","Hungary",
+  "Iceland","India","Indonesia","Iran","Iraq","Ireland",
+  "Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan",
+  "Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos",
+  "Latvia","Lebanon","Lesotho","Liberia","Libya",
+  "Liechtenstein","Lithuania","Luxembourg","Madagascar",
+  "Malawi","Malaysia","Maldives","Mali","Malta",
+  "Marshall Islands","Mauritania","Mauritius","Mexico",
+  "Micronesia","Moldova","Monaco","Mongolia","Montenegro",
+  "Morocco","Mozambique","Myanmar","Namibia","Nauru",
+  "Nepal","Netherlands","New Zealand","Nicaragua",
+  "Niger","Nigeria","North Korea","North Macedonia",
+  "Norway","Oman","Pakistan","Palau","Palestine","Panama",
+  "Papua New Guinea","Paraguay","Peru","Philippines",
+  "Poland","Portugal","Qatar","Romania","Russia","Rwanda",
+  "Saint Kitts and Nevis","Saint Lucia",
+  "Saint Vincent and the Grenadines","Samoa","San Marino",
+  "São Tomé and Príncipe","Saudi Arabia","Senegal",
+  "Serbia","Seychelles","Sierra Leone","Singapore",
+  "Slovakia","Slovenia","Solomon Islands","Somalia",
+  "South Africa","South Korea","South Sudan","Spain",
+  "Sri Lanka","Sudan","Suriname","Sweden","Switzerland",
+  "Syria","Taiwan","Tajikistan","Tanzania","Thailand",
+  "Timor-Leste","Togo","Tonga","Trinidad and Tobago",
+  "Tunisia","Türkiye","Turkmenistan","Tuvalu","Uganda",
+  "Ukraine","United Arab Emirates","United Kingdom",
+  "United States","Uruguay","Uzbekistan","Vanuatu",
+  "Vatican City","Venezuela","Vietnam","Yemen",
+  "Zambia","Zimbabwe"
+];
 
-        if (error) throw error;
-        if (!result || !result.success) {
-          throw new Error(result?.error || "Submission unsuccessful.");
-        }
+countries.sort((a,b) => a.localeCompare(b));
 
-        form.reset();
-        showMessage(
-          "Your voting proof has been submitted successfully! Thank you, ARMY. 💜",
-          "success"
-        );
-        loadLeaderboard();
+function closeCountries() {
+  countryList.style.display = "none";
+  countrySearch.setAttribute("aria-expanded","false");
+}
 
-      } catch (error) {
-        console.error("Submission error:", error);
-        showMessage(
-          error.message || "We could not submit your proof. Please try again.",
-          "error"
-        );
-      } finally {
-        button.disabled = false;
-        button.textContent = "SUBMIT VOTING PROOF";
-      }
+function showCountries(query = "") {
+  countryList.replaceChildren();
+
+  const search = query.trim().toLowerCase();
+  const matches = countries.filter(country =>
+    country.toLowerCase().includes(search)
+  );
+
+  if (!matches.length) {
+    const empty = document.createElement("div");
+    empty.className = "country-empty";
+    empty.textContent = "No matching countries";
+    countryList.appendChild(empty);
+  }
+
+  for (const country of matches) {
+    const option = document.createElement("button");
+    option.type = "button";
+    option.className = "country-option";
+    option.textContent = country;
+
+    option.addEventListener("click", () => {
+      selectedCountry = country;
+      countrySearch.value = country;
+      closeCountries();
     });
 
-    function showMessage(text, type) {
-      message.textContent = text;
-      message.className = "message " + type;
+    countryList.appendChild(option);
+  }
+
+  countryList.style.display = "block";
+  countrySearch.setAttribute("aria-expanded","true");
+}
+
+countrySearch.addEventListener("focus", () => {
+  showCountries(selectedCountry ? "" : countrySearch.value);
+});
+
+countrySearch.addEventListener("input", () => {
+  selectedCountry = "";
+  showCountries(countrySearch.value);
+});
+
+countrySearch.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeCountries();
+});
+
+document.addEventListener("click", event => {
+  if (!event.target.closest(".country-picker")) {
+    closeCountries();
+  }
+});
+
+function showMessage(text,type) {
+  message.textContent = text;
+  message.className = "message " + type;
+}
+
+function addResult(filename,status,detail) {
+  const row = document.createElement("div");
+  row.className = "batch-result " + status;
+
+  const title = document.createElement("strong");
+  title.textContent = filename;
+
+  const description = document.createElement("span");
+  description.textContent = detail;
+
+  row.append(title,description);
+  batchResults.appendChild(row);
+}
+
+function updateProgress(done,total,pending,duplicates,failed) {
+  acceptedCount.textContent = pending;
+  duplicateCount.textContent = duplicates;
+  failedCount.textContent = failed;
+
+  batchProgress.textContent =
+    "Processed " + done + " of " + total + " screenshots";
+
+  batchBar.style.width =
+    (total ? Math.round(done / total * 100) : 0) + "%";
+}
+
+async function scanCertificate(file) {
+  const result = await Tesseract.recognize(file,"eng");
+
+  const match = result.data.text.match(
+    /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
+  );
+
+  return match ? match[1].toUpperCase() : null;
+}
+
+async function submitCertificate(file,certificate,username,country) {
+  const body = new FormData();
+
+  body.append("x_username",username);
+  body.append("country",country);
+  body.append("certificate_number",certificate);
+  body.append("proof",file);
+
+  const response = await fetch(
+    SUPABASE_URL + "/functions/v1/submit-proof-test",
+    {
+      method:"POST",
+      headers:{
+        "apikey":SUPABASE_PUBLISHABLE_KEY
+      },
+      body
     }
+  );
 
-    async function loadLeaderboard() {
-      const container = document.getElementById("leaderboard");
+  const raw = await response.text();
+  let data;
 
-      const { data, error } = await db
-        .from("country_participation")
-        .select("country, country_rank, progress_percent")
-        .order("country_rank", { ascending: true })
-        .limit(50);
+  try {
+    data = JSON.parse(raw);
+  } catch {
+    data = {error:raw.slice(0,200)};
+  }
 
-      if (error) {
-        console.error("Leaderboard error:", error);
-        container.innerHTML =
-          '<div class="empty">Participation data is temporarily unavailable.</div>';
-        return;
+  return {
+    status:response.status,
+    ok:response.ok,
+    data
+  };
+}
+
+form.addEventListener("submit",async event => {
+  event.preventDefault();
+
+  if (processing) return;
+
+  message.className = "message";
+  message.textContent = "";
+
+  if (document.getElementById("website").value.trim()) {
+    return;
+  }
+
+  const username = document.getElementById("username")
+    .value.trim().replace(/^@/,"");
+
+  const files = Array.from(fileInput.files || []);
+
+  if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
+    showMessage("Please enter a valid X username.","error");
+    return;
+  }
+
+  if (
+    !selectedCountry ||
+    !countries.includes(selectedCountry) ||
+    countrySearch.value !== selectedCountry
+  ) {
+    showMessage(
+      "Please select a country from the search results.",
+      "error"
+    );
+    return;
+  }
+
+  if (!files.length) {
+    showMessage("Please select at least one screenshot.","error");
+    return;
+  }
+
+  if (typeof Tesseract === "undefined") {
+    showMessage("Scanner failed to load. Please refresh.","error");
+    return;
+  }
+
+  processing = true;
+  submitButton.disabled = true;
+  submitButton.textContent = "PROCESSING CERTIFICATES...";
+
+  batchSummary.hidden = false;
+  batchResults.replaceChildren();
+
+  let pending = 0;
+  let duplicates = 0;
+  let failed = 0;
+  let done = 0;
+
+  const seen = new Set();
+
+  updateProgress(0,files.length,0,0,0);
+
+  try {
+    for (const file of files) {
+      batchProgress.textContent =
+        "Scanning " + (done + 1) + " of " + files.length;
+
+      let stop = false;
+
+      try {
+        const allowed = [
+          "image/jpeg",
+          "image/png",
+          "image/webp"
+        ];
+
+        if (
+          !allowed.includes(file.type) ||
+          file.size === 0 ||
+          file.size > 5 * 1024 * 1024
+        ) {
+          failed++;
+          addResult(
+            file.name,
+            "failed",
+            "Invalid image or over 5 MB."
+          );
+        } else {
+          const certificate = await scanCertificate(file);
+
+          if (!certificate) {
+            failed++;
+            addResult(
+              file.name,
+              "failed",
+              "Certificate reference number not detected."
+            );
+          } else if (seen.has(certificate)) {
+            duplicates++;
+            addResult(
+              file.name,
+              "duplicate",
+              "Repeated in this batch: " + certificate
+            );
+          } else {
+            seen.add(certificate);
+
+            const response = await submitCertificate(
+              file,certificate,username,selectedCountry
+            );
+
+            if (
+              response.status === 409 &&
+              response.data.duplicate
+            ) {
+              duplicates++;
+              addResult(
+                file.name,
+                "duplicate",
+                "Already submitted: " + certificate
+              );
+            } else if (
+              response.status === 401 ||
+              response.status === 403
+            ) {
+              failed++;
+              stop = true;
+              addResult(
+                file.name,
+                "failed",
+                "Server authorization blocked the submission."
+              );
+            } else if (!response.ok) {
+              failed++;
+              addResult(
+                file.name,
+                "failed",
+                response.data.error ||
+                response.data.message ||
+                "Submission failed."
+              );
+            } else {
+              pending++;
+              addResult(
+                file.name,
+                "accepted",
+                "Saved as pending: " + certificate
+              );
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Processing error:",error);
+        failed++;
+        addResult(
+          file.name,
+          "failed",
+          "Could not process or upload this screenshot."
+        );
+      } finally {
+        done++;
+        updateProgress(
+          done,files.length,pending,duplicates,failed
+        );
       }
 
-      if (!data || data.length === 0) {
-        container.innerHTML =
-          '<div class="empty">No approved submissions yet. Be the first to participate!</div>';
-        return;
-      }
-
-      container.replaceChildren();
-
-      data.forEach((item) => {
-        const row = document.createElement("div");
-        row.className = "leaderboard-row";
-
-        const line = document.createElement("div");
-        line.className = "rank-line";
-
-        const name = document.createElement("span");
-        name.className = "country-name";
-
-        const rank = document.createElement("span");
-        rank.className = "rank-number";
-        rank.textContent = "#" + item.country_rank;
-
-        name.append(rank, document.createTextNode(item.country));
-
-        const percent = document.createElement("span");
-        percent.className = "percentage";
-        percent.textContent = item.progress_percent + "%";
-
-        line.append(name, percent);
-
-        const track = document.createElement("div");
-        track.className = "progress-track";
-
-        const fill = document.createElement("div");
-        fill.className = "progress-fill";
-        fill.style.width = Math.max(
-          0, Math.min(100, item.progress_percent)
-        ) + "%";
-
-        track.append(fill);
-        row.append(line, track);
-        container.append(row);
-      });
+      if (stop) break;
     }
 
-    loadLeaderboard();
-  </script>
+    showMessage(
+      "Processed " + done + " of " + files.length +
+      " screenshots.\n" +
+      pending + " saved as pending, " +
+      duplicates + " duplicates, " +
+      failed + " failed.",
+      failed ? "error" : "success"
+    );
+
+    if (pending) loadLeaderboard();
+
+  } finally {
+    processing = false;
+    submitButton.disabled = false;
+    submitButton.textContent = "SCAN & SUBMIT CERTIFICATES";
+  }
+});
+
+async function loadLeaderboard() {
+  const container = document.getElementById("leaderboard");
+
+  const {data,error} = await db
+    .from("country_participation")
+    .select("country,country_rank,progress_percent")
+    .order("country_rank",{ascending:true})
+    .limit(50);
+
+  if (error) {
+    console.error("Leaderboard error:",error);
+    container.textContent =
+      "Participation data is temporarily unavailable.";
+    return;
+  }
+
+  if (!data || !data.length) {
+    container.textContent =
+      "No approved submissions yet. Be the first to participate!";
+    return;
+  }
+
+  container.replaceChildren();
+
+  for (const item of data) {
+    const row = document.createElement("div");
+    row.className = "leaderboard-row";
+
+    const line = document.createElement("div");
+    line.className = "rank-line";
+
+    const name = document.createElement("span");
+    name.className = "country-name";
+
+    const rank = document.createElement("span");
+    rank.className = "rank-number";
+    rank.textContent = "#" + item.country_rank;
+
+    name.append(
+      rank,
+      document.createTextNode(item.country)
+    );
+
+    const percentage = document.createElement("span");
+    percentage.className = "percentage";
+    percentage.textContent = item.progress_percent + "%";
+
+    line.append(name,percentage);
+
+    const track = document.createElement("div");
+    track.className = "progress-track";
+
+    const fill = document.createElement("div");
+    fill.className = "progress-fill";
+
+    fill.style.width =
+      Math.max(0,Math.min(100,item.progress_percent)) + "%";
+
+    track.appendChild(fill);
+    row.append(line,track);
+    container.appendChild(row);
+  }
+}
+
+loadLeaderboard();
+</script>
+
 </body>
 </html>
