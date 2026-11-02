@@ -343,6 +343,47 @@ footer {
   .challenge-card { padding:28px 19px; }
   .container { margin-top:22px; }
 }
+
+/* DAILY CHALLENGE TABS AND HISTORY */
+.challenge-tabs {
+  display:flex;
+  gap:9px;
+  margin:22px 0 24px;
+}
+.challenge-tab {
+  flex:1;
+  width:auto;
+  margin:0;
+  padding:12px 8px;
+  border:1px solid var(--border);
+  background:white;
+  color:var(--deep);
+}
+.challenge-tab.active {
+  background:var(--purple);
+  color:white;
+  border-color:var(--purple);
+}
+.challenge-tab:focus-visible { outline:3px solid #d8c7eb; }
+.history-entry {
+  text-align:left;
+  border-top:1px solid var(--border);
+  padding:17px 0;
+}
+.history-entry-top {
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  flex-wrap:wrap;
+}
+.history-date { font-size:14px; font-weight:bold; }
+.history-percent { font-size:23px; color:var(--purple); font-weight:bold; }
+.history-status { font-size:12px; color:var(--muted); margin:4px 0 0; }
+.history-status.achieved { color:#216b49; font-weight:bold; }
+.history-intro { font-size:13px; color:var(--muted); margin-bottom:15px; }
+[hidden] { display:none !important; }
+
 </style>
 </head>
 
@@ -466,26 +507,46 @@ footer {
     ARMY, LET'S DO THIS TOGETHER 💜
   </p>
   <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
-  <p class="description">
-    Every eligible certificate brings us closer
-    to today's goal.
-  </p>
-  <p class="challenge-date" id="challengeDate">
-    Loading today's challenge...
-  </p>
-  <div class="challenge-label">DAILY PROGRESS</div>
-  <div class="challenge-percentage" id="challengePercent">0.00%</div>
-  <div class="challenge-progress">
-    <div id="challengeProgressBar"
-      class="challenge-progress-fill"></div>
+  <div class="challenge-tabs" role="tablist" aria-label="Daily challenge sections">
+    <button type="button" class="challenge-tab active"
+      id="todayTab" role="tab" aria-selected="true"
+      aria-controls="todayChallengePanel">Today's Challenge</button>
+    <button type="button" class="challenge-tab"
+      id="historyTab" role="tab" aria-selected="false"
+      aria-controls="historyChallengePanel">Challenge History</button>
   </div>
-  <p class="challenge-status" id="challengeStatus"
-    role="status" aria-live="polite">
-    Loading challenge progress...
-  </p>
-  <p class="challenge-reset">
-    Progress resets daily at 12:00 AM KST.
-  </p>
+  <div id="todayChallengePanel" role="tabpanel" aria-labelledby="todayTab">
+    <p class="description">
+      Every eligible certificate brings us closer
+      to today's goal.
+    </p>
+    <p class="challenge-date" id="challengeDate">
+      Loading today's challenge...
+    </p>
+    <div class="challenge-label">DAILY PROGRESS</div>
+    <div class="challenge-percentage" id="challengePercent">0.00%</div>
+    <div class="challenge-progress">
+      <div id="challengeProgressBar"
+        class="challenge-progress-fill"></div>
+    </div>
+    <p class="challenge-status" id="challengeStatus"
+      role="status" aria-live="polite">
+      Loading challenge progress...
+    </p>
+    <p class="challenge-reset">
+      Progress resets daily at 12:00 AM KST.
+    </p>
+  </div>
+  <div id="historyChallengePanel" role="tabpanel"
+    aria-labelledby="historyTab" hidden>
+    <p class="history-intro">
+      Final daily progress for completed KST voting days,
+      starting November 2, 2026.
+    </p>
+    <div id="challengeHistory" aria-live="polite">
+      <div class="empty">Loading challenge history...</div>
+    </div>
+  </div>
 </section>
 
 <section class="card">
@@ -1246,13 +1307,93 @@ async function loadDailyChallenge() {
   }
 }
 
+
+/* DAILY CHALLENGE TABS AND HISTORY */
+const todayTab = document.getElementById("todayTab");
+const historyTab = document.getElementById("historyTab");
+const todayChallengePanel = document.getElementById("todayChallengePanel");
+const historyChallengePanel = document.getElementById("historyChallengePanel");
+
+function selectChallengeTab(tab) {
+  const showHistory = tab === "history";
+  todayTab.classList.toggle("active", !showHistory);
+  historyTab.classList.toggle("active", showHistory);
+  todayTab.setAttribute("aria-selected", String(!showHistory));
+  historyTab.setAttribute("aria-selected", String(showHistory));
+  todayChallengePanel.hidden = showHistory;
+  historyChallengePanel.hidden = !showHistory;
+  if (showHistory) loadChallengeHistory();
+  else loadDailyChallenge();
+}
+
+todayTab.addEventListener("click", () => selectChallengeTab("today"));
+historyTab.addEventListener("click", () => selectChallengeTab("history"));
+
+function formatHistoryDate(value) {
+  return new Date(value + "T12:00:00Z").toLocaleDateString("en-US", {
+    timeZone:"UTC", month:"long", day:"numeric", year:"numeric"
+  });
+}
+
+let historyLoading = false;
+async function loadChallengeHistory() {
+  if (historyLoading) return;
+  historyLoading = true;
+  const container = document.getElementById("challengeHistory");
+  try {
+    const {data,error} = await db
+      .from("daily_challenge_history")
+      .select("challenge_date,progress_percent,goal_completed")
+      .order("challenge_date",{ascending:false})
+      .limit(30);
+    if (error) throw error;
+    container.replaceChildren();
+    if (!data || !data.length) {
+      const empty = document.createElement("div");
+      empty.className = "empty";
+      empty.textContent = "Completed challenges will appear here after midnight KST.";
+      container.appendChild(empty);
+      return;
+    }
+    for (const item of data) {
+      const entry = document.createElement("div");
+      entry.className = "history-entry";
+      const top = document.createElement("div");
+      top.className = "history-entry-top";
+      const date = document.createElement("span");
+      date.className = "history-date";
+      date.textContent = formatHistoryDate(item.challenge_date);
+      const percent = document.createElement("span");
+      percent.className = "history-percent";
+      const value = Number(item.progress_percent);
+      percent.textContent = (Number.isFinite(value) ? value : 0).toFixed(2) + "%";
+      top.append(date,percent);
+      const status = document.createElement("p");
+      status.className = "history-status" + (item.goal_completed ? " achieved" : "");
+      status.textContent = item.goal_completed
+        ? "✓ Goal Achieved"
+        : "Goal Not Reached";
+      entry.append(top,status);
+      container.appendChild(entry);
+    }
+  } catch (error) {
+    console.error("Challenge history error:",error);
+    container.textContent = "Challenge history is temporarily unavailable.";
+  } finally {
+    historyLoading = false;
+  }
+}
+
 /* INITIAL WEBSITE LOAD */
 resetChallengeDisplay();
 loadLeaderboard();
 loadDailyChallenge();
 
 /* AUTO-REFRESH CHALLENGE */
-setInterval(loadDailyChallenge,60000);
+setInterval(() => {
+  loadDailyChallenge();
+  if (!historyChallengePanel.hidden) loadChallengeHistory();
+},60000);
 
 setInterval(() => {
   const today = getKSTDate();
@@ -1260,6 +1401,7 @@ setInterval(() => {
     displayedChallengeDate = today;
     resetChallengeDisplay();
     if (!challengeLoading) loadDailyChallenge();
+    if (!historyChallengePanel.hidden) loadChallengeHistory();
   }
 },15000);
 </script>
