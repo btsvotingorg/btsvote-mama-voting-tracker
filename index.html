@@ -326,9 +326,18 @@ footer {
 <section class="card">
   <h2>Submit Your Voting Proof</h2>
   <p class="description">
-    You may upload multiple voting certificates, provided that each has a unique reference number. 
-    Any subsequent submission using the same reference number will be considered invalid.
+    Upload multiple MAMA 2026 voting certificates.
+    Each unique certificate reference number can be
+    submitted once. New submissions remain pending.
   </p>
+
+  <div class="notice">
+    <strong>Daily submission rule:</strong>
+    Only voting certificates showing today's participation
+    date in Korea Standard Time (KST) are eligible.
+    The voting day resets at 12:00 AM KST.
+    <div id="todayKST" style="margin-top:7px;font-weight:bold;"></div>
+  </div>
 
   <form id="proofForm">
 
@@ -369,6 +378,7 @@ footer {
     <p class="hint">
       Select multiple screenshots. No fixed batch-count limit.
       Maximum 5 MB per image. Large batches may take longer.
+      The participation date must be visible on each certificate.
     </p>
 
     <div class="hp" aria-hidden="true">
@@ -432,8 +442,9 @@ footer {
 
   <div class="notice">
     This community tracker measures participation based on
-    unique submitted certificate numbers. It does not represent
-    official MAMA voting totals or the official MAMA ranking.
+    unique submitted certificate numbers, including pending
+    submissions. It does not represent official MAMA voting
+    totals or the official MAMA ranking.
   </div>
 </section>
 
@@ -498,7 +509,7 @@ const countries = [
   "Micronesia","Moldova","Monaco","Mongolia","Montenegro",
   "Morocco","Mozambique","Myanmar","Namibia","Nauru",
   "Nepal","Netherlands","New Zealand","Nicaragua",
-  "Niger","Nigeria","North Macedonia",
+  "Niger","Nigeria","North Korea","North Macedonia",
   "Norway","Oman","Pakistan","Palau","Palestine","Panama",
   "Papua New Guinea","Paraguay","Peru","Philippines",
   "Poland","Portugal","Qatar","Romania","Russia","Rwanda",
@@ -520,6 +531,42 @@ const countries = [
 
 countries.sort((a,b) => a.localeCompare(b));
 
+// ----------------------------------------
+// KOREA STANDARD TIME
+// ----------------------------------------
+
+function getKSTDate() {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone:"Asia/Seoul",
+    year:"numeric",
+    month:"2-digit",
+    day:"2-digit"
+  }).formatToParts(new Date());
+
+  const value = type =>
+    parts.find(part => part.type === type)?.value || "";
+
+  return (
+    value("year") + "-" +
+    value("month") + "-" +
+    value("day")
+  );
+}
+
+function updateKSTDisplay() {
+  document.getElementById("todayKST").textContent =
+    "Current KST voting date: " + getKSTDate();
+}
+
+updateKSTDisplay();
+
+// Refresh the displayed KST date while the page stays open.
+setInterval(updateKSTDisplay, 15000);
+
+// ----------------------------------------
+// COUNTRY SEARCH
+// ----------------------------------------
+
 function closeCountries() {
   countryList.style.display = "none";
   countrySearch.setAttribute("aria-expanded","false");
@@ -529,6 +576,7 @@ function showCountries(query = "") {
   countryList.replaceChildren();
 
   const search = query.trim().toLowerCase();
+
   const matches = countries.filter(country =>
     country.toLowerCase().includes(search)
   );
@@ -542,6 +590,7 @@ function showCountries(query = "") {
 
   for (const country of matches) {
     const option = document.createElement("button");
+
     option.type = "button";
     option.className = "country-option";
     option.textContent = country;
@@ -578,6 +627,10 @@ document.addEventListener("click", event => {
   }
 });
 
+// ----------------------------------------
+// SUBMISSION MESSAGES
+// ----------------------------------------
+
 function showMessage(text,type) {
   message.textContent = text;
   message.className = "message " + type;
@@ -609,70 +662,86 @@ function updateProgress(done,total,pending,duplicates,failed) {
     (total ? Math.round(done / total * 100) : 0) + "%";
 }
 
-// STEP 80: Scan certificate number and participation date.
+// ----------------------------------------
+// CERTIFICATE OCR
+// ----------------------------------------
+
+function formatCertificateDate(year,month,day) {
+  const formatted =
+    year + "-" +
+    month.padStart(2,"0") + "-" +
+    day.padStart(2,"0");
+
+  const parsed = new Date(formatted + "T00:00:00Z");
+
+  if (
+    Number.isNaN(parsed.getTime()) ||
+    parsed.toISOString().slice(0,10) !== formatted
+  ) {
+    return null;
+  }
+
+  return formatted;
+}
+
 async function scanCertificate(file) {
+  // One OCR scan per screenshot.
   const result = await Tesseract.recognize(file,"eng");
 
-  const text = result.data.text;
+  const text = result.data.text
+    .replace(/\r/g," ")
+    .replace(/\n/g," ")
+    .replace(/\s+/g," ")
+    .trim();
 
+  // Find certificate reference number.
   const numberMatch = text.match(
     /\bNo\.?\s*[:#-]?\s*([A-Z0-9]{12,24})\b/i
   );
 
-  // Example printed on certificate:
+  const certificateNumber = numberMatch
+    ? numberMatch[1].toUpperCase()
+    : null;
+
+  // Find date next to "Participation Date".
+  // Expected certificate example:
   // Participation Date 2026.11.02 16:09
   const dateMatch = text.match(
-    /Participation\s*Date\s*[:\-]?\s*(20\d{2})\s*[.\/-]\s*(\d{1,2})\s*[.\/-]\s*(\d{1,2})\s+(\d{1,2})\s*:\s*(\d{2})/i
+    /Participation\s*Date\s*[:\-]?\s*(20\d{2})\s*[.\-/]\s*(\d{1,2})\s*[.\-/]\s*(\d{1,2})\b/i
   );
 
-  let participationDate = null;
-
-  if (dateMatch) {
-    const year = Number(dateMatch[1]);
-    const month = Number(dateMatch[2]);
-    const day = Number(dateMatch[3]);
-    const hour = Number(dateMatch[4]);
-    const minute = Number(dateMatch[5]);
-
-    const parsed = new Date(
-      Date.UTC(year,month - 1,day)
-    );
-
-    const valid =
-      parsed.getUTCFullYear() === year &&
-      parsed.getUTCMonth() === month - 1 &&
-      parsed.getUTCDate() === day &&
-      hour >= 0 &&
-      hour <= 23 &&
-      minute >= 0 &&
-      minute <= 59;
-
-    if (valid) {
-      participationDate =
-        String(year) + "-" +
-        String(month).padStart(2,"0") + "-" +
-        String(day).padStart(2,"0");
-    }
-  }
+  const participationDate = dateMatch
+    ? formatCertificateDate(
+        dateMatch[1],
+        dateMatch[2],
+        dateMatch[3]
+      )
+    : null;
 
   return {
-    certificateNumber: numberMatch
-      ? numberMatch[1].toUpperCase()
-      : null,
+    certificateNumber,
     participationDate
   };
 }
 
-async function submitCertificate(file,certificate,username,country) {
+// ----------------------------------------
+// SEND CERTIFICATE TO SUPABASE
+// ----------------------------------------
+
+async function submitCertificate(
+  file,
+  certificate,
+  participationDate,
+  username,
+  country
+) {
   const body = new FormData();
 
   body.append("x_username",username);
   body.append("country",country);
   body.append("certificate_number",certificate);
+  body.append("participation_date",participationDate);
   body.append("proof",file);
-
-  // Participation date is NOT sent to the backend yet.
-  // Server-side image validation will be added next.
 
   const response = await fetch(
     SUPABASE_URL + "/functions/v1/submit-proof-test",
@@ -700,6 +769,10 @@ async function submitCertificate(file,certificate,username,country) {
     data
   };
 }
+
+// ----------------------------------------
+// PROCESS MULTIPLE SCREENSHOTS
+// ----------------------------------------
 
 form.addEventListener("submit",async event => {
   event.preventDefault();
@@ -736,12 +809,18 @@ form.addEventListener("submit",async event => {
   }
 
   if (!files.length) {
-    showMessage("Please select at least one screenshot.","error");
+    showMessage(
+      "Please select at least one screenshot.",
+      "error"
+    );
     return;
   }
 
   if (typeof Tesseract === "undefined") {
-    showMessage("Scanner failed to load. Please refresh.","error");
+    showMessage(
+      "Scanner failed to load. Please refresh.",
+      "error"
+    );
     return;
   }
 
@@ -764,7 +843,8 @@ form.addEventListener("submit",async event => {
   try {
     for (const file of files) {
       batchProgress.textContent =
-        "Scanning " + (done + 1) + " of " + files.length;
+        "Scanning " + (done + 1) +
+        " of " + files.length;
 
       let stop = false;
 
@@ -781,34 +861,67 @@ form.addEventListener("submit",async event => {
           file.size > 5 * 1024 * 1024
         ) {
           failed++;
+
           addResult(
             file.name,
             "failed",
             "Invalid image or over 5 MB."
           );
+
         } else {
           const scanned = await scanCertificate(file);
+
           const certificate = scanned.certificateNumber;
+          const participationDate = scanned.participationDate;
 
           if (!certificate) {
             failed++;
+
             addResult(
               file.name,
               "failed",
               "Certificate reference number not detected."
             );
+
+          } else if (!participationDate) {
+            failed++;
+
+            addResult(
+              file.name,
+              "failed",
+              "Participation date could not be detected. Please upload a clear certificate showing Participation Date."
+            );
+
+          } else if (participationDate !== getKSTDate()) {
+            failed++;
+
+            addResult(
+              file.name,
+              "failed",
+              "Invalid participation date: " +
+              participationDate +
+              ". Today's KST voting date is " +
+              getKSTDate() + "."
+            );
+
           } else if (seen.has(certificate)) {
             duplicates++;
+
             addResult(
               file.name,
               "duplicate",
               "Repeated in this batch: " + certificate
             );
+
           } else {
             seen.add(certificate);
 
             const response = await submitCertificate(
-              file,certificate,username,selectedCountry
+              file,
+              certificate,
+              participationDate,
+              username,
+              selectedCountry
             );
 
             if (
@@ -816,24 +929,29 @@ form.addEventListener("submit",async event => {
               response.data.duplicate
             ) {
               duplicates++;
+
               addResult(
                 file.name,
                 "duplicate",
                 "Already submitted: " + certificate
               );
+
             } else if (
               response.status === 401 ||
               response.status === 403
             ) {
               failed++;
               stop = true;
+
               addResult(
                 file.name,
                 "failed",
                 "Server authorization blocked the submission."
               );
+
             } else if (!response.ok) {
               failed++;
+
               addResult(
                 file.name,
                 "failed",
@@ -841,31 +959,41 @@ form.addEventListener("submit",async event => {
                 response.data.message ||
                 "Submission failed."
               );
+
             } else {
               pending++;
+
               addResult(
                 file.name,
                 "accepted",
-                "Saved as pending: " + certificate +
-                (scanned.participationDate
-                  ? " | Detected date: " + scanned.participationDate
-                  : " | Participation date not detected")
+                "Saved as pending: " +
+                certificate +
+                " | Participation date: " +
+                participationDate
               );
             }
           }
         }
       } catch (error) {
         console.error("Processing error:",error);
+
         failed++;
+
         addResult(
           file.name,
           "failed",
           "Could not process or upload this screenshot."
         );
+
       } finally {
         done++;
+
         updateProgress(
-          done,files.length,pending,duplicates,failed
+          done,
+          files.length,
+          pending,
+          duplicates,
+          failed
         );
       }
 
@@ -873,7 +1001,8 @@ form.addEventListener("submit",async event => {
     }
 
     showMessage(
-      "Processed " + done + " of " + files.length +
+      "Processed " + done +
+      " of " + files.length +
       " screenshots.\n" +
       pending + " saved as pending, " +
       duplicates + " duplicates, " +
@@ -881,14 +1010,21 @@ form.addEventListener("submit",async event => {
       failed ? "error" : "success"
     );
 
-    if (pending) loadLeaderboard();
+    if (pending) {
+      loadLeaderboard();
+    }
 
   } finally {
     processing = false;
     submitButton.disabled = false;
-    submitButton.textContent = "SCAN & SUBMIT CERTIFICATES";
+    submitButton.textContent =
+      "SCAN & SUBMIT CERTIFICATES";
   }
 });
+
+// ----------------------------------------
+// GLOBAL COUNTRY LEADERBOARD
+// ----------------------------------------
 
 async function loadLeaderboard() {
   const container = document.getElementById("leaderboard");
@@ -897,18 +1033,21 @@ async function loadLeaderboard() {
     .from("country_participation")
     .select("country,country_rank,progress_percent")
     .order("country_rank",{ascending:true})
-    .limit(50);
+    .limit(250);
 
   if (error) {
     console.error("Leaderboard error:",error);
+
     container.textContent =
       "Participation data is temporarily unavailable.";
+
     return;
   }
 
   if (!data || !data.length) {
     container.textContent =
       "No submissions yet. Be the first to participate!";
+
     return;
   }
 
@@ -935,7 +1074,8 @@ async function loadLeaderboard() {
 
     const percentage = document.createElement("span");
     percentage.className = "percentage";
-    percentage.textContent = item.progress_percent + "%";
+    percentage.textContent =
+      Number(item.progress_percent).toFixed(2) + "%";
 
     line.append(name,percentage);
 
@@ -946,7 +1086,10 @@ async function loadLeaderboard() {
     fill.className = "progress-fill";
 
     fill.style.width =
-      Math.max(0,Math.min(100,item.progress_percent)) + "%";
+      Math.max(
+        0,
+        Math.min(100,Number(item.progress_percent) || 0)
+      ) + "%";
 
     track.appendChild(fill);
     row.append(line,track);
