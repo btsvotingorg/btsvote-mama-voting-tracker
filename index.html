@@ -382,6 +382,34 @@ footer {
 .history-status { font-size:12px; color:var(--muted); margin:4px 0 0; }
 .history-status.achieved { color:#216b49; font-weight:bold; }
 .history-intro { font-size:13px; color:var(--muted); margin-bottom:15px; }
+
+/* DAILY AND OVERALL COUNTRY RANKINGS */
+.country-ranking-tabs {
+  display:flex;
+  gap:9px;
+  margin:18px 0 12px;
+}
+.country-ranking-tab {
+  flex:1;
+  width:auto;
+  margin:0;
+  padding:12px 8px;
+  border:1px solid var(--border);
+  background:white;
+  color:var(--deep);
+}
+.country-ranking-tab.active {
+  background:var(--purple);
+  color:white;
+  border-color:var(--purple);
+}
+.country-ranking-tab:focus-visible { outline:3px solid #d8c7eb; }
+.country-ranking-period {
+  font-size:12px;
+  color:var(--muted);
+  margin:0 0 14px;
+}
+
 [hidden] { display:none !important; }
 
 </style>
@@ -553,17 +581,26 @@ footer {
 <section class="card">
   <h2>Global ARMY Participation</h2>
   <p class="description">
-    Each country's share of unique voting certificates submitted worldwide.
+    See which countries are leading today and across the entire voting tracker.
   </p>
-  <div id="leaderboard">
+  <div class="country-ranking-tabs" role="tablist" aria-label="Country ranking period">
+    <button type="button" id="dailyRankingTab" class="country-ranking-tab active"
+      role="tab" aria-selected="true" aria-controls="leaderboard">Daily Ranking</button>
+    <button type="button" id="overallRankingTab" class="country-ranking-tab"
+      role="tab" aria-selected="false" aria-controls="leaderboard">Overall Ranking</button>
+  </div>
+  <p class="country-ranking-period" id="rankingPeriod">
+    Today's country rankings (KST) — resets at midnight KST.
+  </p>
+  <div id="leaderboard" role="tabpanel" aria-live="polite">
     <div class="empty">Loading participation data...</div>
   </div>
   <div class="notice">
-    This community tracker measures participation
-    based on unique submitted certificate numbers,
-    including pending submissions. It does not
-    represent official MAMA voting totals
-    or the official MAMA ranking.
+    Daily Ranking counts unique eligible certificates uploaded during the
+    current KST date. Overall Ranking accumulates eligible certificates
+    across all dates. Percentages show each country's share of submissions
+    for the selected period. Pending and verified submissions count.
+    These are community participation rankings, not official MAMA results.
   </div>
 </section>
 </main>
@@ -1188,15 +1225,47 @@ form.addEventListener("submit",async event => {
   }
 });
 
-/* GLOBAL COUNTRY LEADERBOARD */
+/* GLOBAL COUNTRY LEADERBOARD — DAILY AND ACCUMULATED */
+let selectedRankingPeriod = "daily";
+let leaderboardRequestId = 0;
+const dailyRankingTab = document.getElementById("dailyRankingTab");
+const overallRankingTab = document.getElementById("overallRankingTab");
+const rankingPeriod = document.getElementById("rankingPeriod");
+
+function selectRankingPeriod(period) {
+  selectedRankingPeriod = period;
+  const daily = period === "daily";
+  dailyRankingTab.classList.toggle("active",daily);
+  overallRankingTab.classList.toggle("active",!daily);
+  dailyRankingTab.setAttribute("aria-selected",String(daily));
+  overallRankingTab.setAttribute("aria-selected",String(!daily));
+  loadLeaderboard();
+}
+
+dailyRankingTab.addEventListener("click",() => selectRankingPeriod("daily"));
+overallRankingTab.addEventListener("click",() => selectRankingPeriod("overall"));
+
 async function loadLeaderboard() {
+  const requestId = ++leaderboardRequestId;
   const container = document.getElementById("leaderboard");
+  const daily = selectedRankingPeriod === "daily";
+  const viewName = daily
+    ? "country_daily_participation"
+    : "country_participation";
+
+  rankingPeriod.textContent = daily
+    ? "KST voting date: " + getKSTDate() + " · Resets at midnight KST"
+    : "Accumulated ranking · All eligible submissions since tracking began";
 
   const {data,error} = await db
-    .from("country_participation")
+    .from(viewName)
     .select("country,country_rank,progress_percent")
     .order("country_rank",{ascending:true})
+    .order("country",{ascending:true})
     .limit(250);
+
+  // Ignore older requests if a visitor switches tabs quickly.
+  if (requestId !== leaderboardRequestId) return;
 
   if (error) {
     console.error("Leaderboard error:",error);
@@ -1206,8 +1275,9 @@ async function loadLeaderboard() {
   }
 
   if (!data || !data.length) {
-    container.textContent =
-      "No submissions yet. Be the first to participate!";
+    container.textContent = daily
+      ? "No eligible certificates uploaded today yet. Be the first!"
+      : "No submissions yet. Be the first to participate!";
     return;
   }
 
@@ -1231,8 +1301,9 @@ async function loadLeaderboard() {
 
     const percentage = document.createElement("span");
     percentage.className = "percentage";
+    const share = Number(item.progress_percent);
     percentage.textContent =
-      Number(item.progress_percent).toFixed(2) + "%";
+      (Number.isFinite(share) ? share : 0).toFixed(2) + "%";
 
     line.append(name,percentage);
 
@@ -1242,7 +1313,7 @@ async function loadLeaderboard() {
     const fill = document.createElement("div");
     fill.className = "progress-fill";
     fill.style.width = Math.max(
-      0,Math.min(100,Number(item.progress_percent) || 0)
+      0,Math.min(100,share || 0)
     ) + "%";
 
     track.appendChild(fill);
@@ -1447,6 +1518,7 @@ loadDailyChallenge();
 /* AUTO-REFRESH CHALLENGE */
 setInterval(() => {
   loadDailyChallenge();
+  loadLeaderboard();
   if (!historyChallengePanel.hidden) loadChallengeHistory();
 },60000);
 
@@ -1455,6 +1527,7 @@ setInterval(() => {
   if (today !== displayedChallengeDate) {
     displayedChallengeDate = today;
     resetChallengeDisplay();
+    loadLeaderboard();
     if (!challengeLoading) loadDailyChallenge();
     if (!historyChallengePanel.hidden) loadChallengeHistory();
   }
