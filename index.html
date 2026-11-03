@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>BTS Vote | MAMA 2026</title>
+<title>BTS Vote Project | MAMA 2026</title>
 
 <meta name="description"
 content="Global ARMY voting participation tracker for MAMA 2026.">
@@ -574,6 +574,93 @@ footer {
   display:none !important;
 }
 
+
+/* ==========================================
+   SUCCESS SUBMISSION POP-UP
+========================================== */
+
+body.success-modal-open {
+  overflow:hidden;
+}
+
+.success-modal-overlay {
+  position:fixed;
+  inset:0;
+  z-index:1000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  background:rgba(33,24,45,.50);
+}
+
+.success-modal {
+  width:min(100%,340px);
+  padding:30px 24px 24px;
+  background:#fff;
+  border:1px solid #eee6f5;
+  border-radius:20px;
+  box-shadow:0 22px 65px rgba(36,22,55,.20);
+  text-align:center;
+  animation:success-appear .22s ease-out;
+}
+
+.success-modal-icon {
+  width:60px;
+  height:60px;
+  margin:0 auto 17px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#eee2fa;
+  border-radius:50%;
+  color:#7443a6;
+}
+
+.success-modal h2 {
+  margin:0 0 12px;
+  color:#292333;
+  font-size:21px;
+  line-height:1.35;
+}
+
+.success-modal p {
+  margin:0;
+  color:#51475d;
+  font-size:14px;
+  line-height:1.65;
+}
+
+.success-modal button {
+  display:block;
+  width:100%;
+  margin-top:24px;
+  padding:13px 16px;
+  border-radius:9px;
+  background:#7651a8;
+  color:white;
+  font-size:14px;
+  font-weight:bold;
+}
+
+.success-modal button:hover {
+  background:#664294;
+}
+
+.success-modal button:focus-visible {
+  outline:3px solid #d8c7eb;
+  outline-offset:3px;
+}
+
+@keyframes success-appear {
+  from { opacity:0; transform:translateY(10px) scale(.98); }
+  to { opacity:1; transform:translateY(0) scale(1); }
+}
+
+@media (prefers-reduced-motion:reduce) {
+  .success-modal { animation:none; }
+}
+
 </style>
 </head>
 
@@ -618,6 +705,9 @@ footer {
     To accommodate ARMY in different timezones,
     certificates dated yesterday, today, or tomorrow
     relative to Korea Standard Time (KST) may be submitted.
+
+    Daily challenge progress is credited on the KST
+    upload date, not the printed certificate date.
 
     The daily challenge resets at 12:00 AM KST.
 
@@ -676,10 +766,18 @@ footer {
     >
 
     <p class="hint">
-      You may select multiple MAMA voting certificates.
+      Select multiple screenshots. No fixed batch-count limit.
+      Maximum 5 MB per original image.
+
+      Screenshots are automatically compressed before upload
+      when possible.
+
+      Large batches may take longer.
 
       The participation date must be visible on each certificate.
 
+      English, Japanese, Korean, Simplified Chinese, and
+      Traditional Chinese participation-date labels are supported.
     </p>
 
     <div class="hp" aria-hidden="true">
@@ -751,6 +849,14 @@ footer {
     Your X username, country, and uploaded screenshots
     are used to process submissions.
 
+    Screenshots are stored privately and scheduled
+    for automatic deletion after 25 hours.
+
+    Submission records and country participation
+    scores are retained.
+
+    Please do not upload screenshots containing
+    sensitive personal information.
   </div>
 
 </section>
@@ -955,6 +1061,38 @@ footer {
 <footer>
   Made by btsvotingorg
 </footer>
+
+
+<!-- SUCCESSFUL SUBMISSION POP-UP -->
+<div
+  id="successPopup"
+  class="success-modal-overlay"
+  hidden
+>
+  <section
+    class="success-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="successPopupTitle"
+    aria-describedby="successPopupMessage"
+  >
+    <div class="success-modal-icon" aria-hidden="true">
+      <svg width="32" height="32" viewBox="0 0 24 24"
+           fill="none" stroke="currentColor" stroke-width="2.6"
+           stroke-linecap="round" stroke-linejoin="round">
+        <path d="M5 12.5l4.5 4.5L19 7.5" />
+      </svg>
+    </div>
+    <h2 id="successPopupTitle">Successfully Submitted!</h2>
+    <p id="successPopupMessage">
+      Keep voting and encourage more ARMY to join us.
+      Let's win this DAESANG together for BTS! 💜
+    </p>
+    <button id="continueVotingButton" type="button">
+      Continue Voting 💜
+    </button>
+  </section>
+</div>
 
 <script>
 
@@ -1261,6 +1399,49 @@ function updateProgress(
 
 }
 
+
+
+/* ==========================================
+   SUCCESS SUBMISSION POP-UP CONTROLS
+========================================== */
+
+const successPopup = document.getElementById("successPopup");
+const continueVotingButton = document.getElementById("continueVotingButton");
+let popupPreviousFocus = null;
+
+function showSuccessPopup() {
+  popupPreviousFocus = document.activeElement;
+  successPopup.hidden = false;
+  document.body.classList.add("success-modal-open");
+  continueVotingButton.focus();
+}
+
+function closeSuccessPopup() {
+  if (successPopup.hidden) return;
+  successPopup.hidden = true;
+  document.body.classList.remove("success-modal-open");
+  if (popupPreviousFocus && popupPreviousFocus.isConnected) {
+    popupPreviousFocus.focus();
+  }
+}
+
+continueVotingButton.addEventListener("click", closeSuccessPopup);
+
+successPopup.addEventListener("click", event => {
+  if (event.target === successPopup) closeSuccessPopup();
+});
+
+document.addEventListener("keydown", event => {
+  if (successPopup.hidden) return;
+  if (event.key === "Escape") {
+    event.preventDefault();
+    closeSuccessPopup();
+  } else if (event.key === "Tab") {
+    // The dialog contains one interactive control; keep focus in it.
+    event.preventDefault();
+    continueVotingButton.focus();
+  }
+});
 
 /* ==========================================
    CERTIFICATE DATE VALIDATION
@@ -1899,7 +2080,7 @@ form.addEventListener("submit",async event => {
             addResult(
               file.name,
               "failed",
-              "Participation date could not be detected in English, Japanese, or Korean. Please upload a clear certificate showing the participation date."
+              "Participation date could not be detected. Please upload a clear certificate showing the participation date."
             );
 
           } else if (
@@ -2074,15 +2255,22 @@ form.addEventListener("submit",async event => {
 
     );
 
-    if (pending) {
+    if (pending > 0) {
 
-      await Promise.all([
+      // Only show success when the server accepted at least one certificate.
+      // Display it before refreshing rankings, so a refresh error cannot
+      // prevent the confirmation from appearing.
+      showSuccessPopup();
 
+      const refreshResults = await Promise.allSettled([
         loadLeaderboard(),
-
         loadDailyChallenge()
-
       ]);
+      for (const result of refreshResults) {
+        if (result.status === "rejected") {
+          console.warn("Post-submission refresh failed:", result.reason);
+        }
+      }
 
     }
 
