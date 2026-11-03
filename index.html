@@ -614,6 +614,117 @@ footer {
   </p>
 </section>
 
+<!-- DAILY CHALLENGE -->
+
+<section
+  class="card challenge-card"
+  id="dailyChallengeCard">
+
+  <p class="challenge-heading">
+    ARMY, LET'S DO THIS TOGETHER 💜
+  </p>
+
+  <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
+
+  <div
+    class="challenge-tabs"
+    role="tablist"
+    aria-label="Daily challenge sections">
+
+    <button
+      type="button"
+      class="challenge-tab active"
+      id="todayTab"
+      role="tab"
+      aria-selected="true"
+      aria-controls="todayChallengePanel">
+      Today's Challenge
+    </button>
+
+    <button
+      type="button"
+      class="challenge-tab"
+      id="historyTab"
+      role="tab"
+      aria-selected="false"
+      aria-controls="historyChallengePanel">
+      Challenge History
+    </button>
+
+  </div>
+
+  <div
+    id="todayChallengePanel"
+    role="tabpanel"
+    aria-labelledby="todayTab">
+
+    <p class="description">
+      Every eligible certificate brings us closer
+      to today's goal.
+    </p>
+
+    <p
+      class="challenge-date"
+      id="challengeDate">
+      Loading today's challenge...
+    </p>
+
+    <div class="challenge-label">
+      DAILY PROGRESS
+    </div>
+
+    <div
+      class="challenge-percentage"
+      id="challengePercent">
+      0.00%
+    </div>
+
+    <div class="challenge-progress">
+      <div
+        id="challengeProgressBar"
+        class="challenge-progress-fill">
+      </div>
+    </div>
+
+    <p
+      class="challenge-status"
+      id="challengeStatus"
+      role="status"
+      aria-live="polite">
+      Loading challenge progress...
+    </p>
+
+    <p class="challenge-reset">
+      Progress resets daily at 12:00 AM KST.
+    </p>
+
+  </div>
+
+  <div
+    id="historyChallengePanel"
+    role="tabpanel"
+    aria-labelledby="historyTab"
+    hidden>
+
+    <p class="history-intro">
+      Final daily progress for completed KST voting days,
+      starting November 2, 2026.
+    </p>
+
+    <div
+      id="challengeHistory"
+      aria-live="polite">
+
+      <div class="empty">
+        Loading challenge history...
+      </div>
+
+    </div>
+
+  </div>
+
+</section>
+
 <section class="card">
 
   <h2>Submit Your Voting Proof</h2>
@@ -782,117 +893,6 @@ footer {
 
     Please do not upload screenshots containing
     sensitive personal information.
-  </div>
-
-</section>
-
-<!-- DAILY CHALLENGE -->
-
-<section
-  class="card challenge-card"
-  id="dailyChallengeCard">
-
-  <p class="challenge-heading">
-    ARMY, LET'S DO THIS TOGETHER 💜
-  </p>
-
-  <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
-
-  <div
-    class="challenge-tabs"
-    role="tablist"
-    aria-label="Daily challenge sections">
-
-    <button
-      type="button"
-      class="challenge-tab active"
-      id="todayTab"
-      role="tab"
-      aria-selected="true"
-      aria-controls="todayChallengePanel">
-      Today's Challenge
-    </button>
-
-    <button
-      type="button"
-      class="challenge-tab"
-      id="historyTab"
-      role="tab"
-      aria-selected="false"
-      aria-controls="historyChallengePanel">
-      Challenge History
-    </button>
-
-  </div>
-
-  <div
-    id="todayChallengePanel"
-    role="tabpanel"
-    aria-labelledby="todayTab">
-
-    <p class="description">
-      Every eligible certificate brings us closer
-      to today's goal.
-    </p>
-
-    <p
-      class="challenge-date"
-      id="challengeDate">
-      Loading today's challenge...
-    </p>
-
-    <div class="challenge-label">
-      DAILY PROGRESS
-    </div>
-
-    <div
-      class="challenge-percentage"
-      id="challengePercent">
-      0.00%
-    </div>
-
-    <div class="challenge-progress">
-      <div
-        id="challengeProgressBar"
-        class="challenge-progress-fill">
-      </div>
-    </div>
-
-    <p
-      class="challenge-status"
-      id="challengeStatus"
-      role="status"
-      aria-live="polite">
-      Loading challenge progress...
-    </p>
-
-    <p class="challenge-reset">
-      Progress resets daily at 12:00 AM KST.
-    </p>
-
-  </div>
-
-  <div
-    id="historyChallengePanel"
-    role="tabpanel"
-    aria-labelledby="historyTab"
-    hidden>
-
-    <p class="history-intro">
-      Final daily progress for completed KST voting days,
-      starting November 2, 2026.
-    </p>
-
-    <div
-      id="challengeHistory"
-      aria-live="polite">
-
-      <div class="empty">
-        Loading challenge history...
-      </div>
-
-    </div>
-
   </div>
 
 </section>
