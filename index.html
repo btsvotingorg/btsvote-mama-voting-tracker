@@ -224,13 +224,16 @@ button:disabled {
   font-size:13px;
 }
 
-.batch-summary[hidden] {
-  display:none;
+.batch-summary[hidden],
+.stat[hidden],
+#batchProgress[hidden],
+.progress-track[hidden] {
+  display:none !important;
 }
 
 .stats {
   display:grid;
-  grid-template-columns:repeat(3,1fr);
+  grid-template-columns:repeat(2,minmax(0,1fr));
   gap:8px;
   margin:12px 0;
 }
@@ -574,93 +577,6 @@ footer {
   display:none !important;
 }
 
-
-/* ==========================================
-   SUCCESS SUBMISSION POP-UP
-========================================== */
-
-body.success-modal-open {
-  overflow:hidden;
-}
-
-.success-modal-overlay {
-  position:fixed;
-  inset:0;
-  z-index:1000;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:20px;
-  background:rgba(33,24,45,.50);
-}
-
-.success-modal {
-  width:min(100%,340px);
-  padding:30px 24px 24px;
-  background:#fff;
-  border:1px solid #eee6f5;
-  border-radius:20px;
-  box-shadow:0 22px 65px rgba(36,22,55,.20);
-  text-align:center;
-  animation:success-appear .22s ease-out;
-}
-
-.success-modal-icon {
-  width:60px;
-  height:60px;
-  margin:0 auto 17px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:#eee2fa;
-  border-radius:50%;
-  color:#7443a6;
-}
-
-.success-modal h2 {
-  margin:0 0 12px;
-  color:#292333;
-  font-size:21px;
-  line-height:1.35;
-}
-
-.success-modal p {
-  margin:0;
-  color:#51475d;
-  font-size:14px;
-  line-height:1.65;
-}
-
-.success-modal button {
-  display:block;
-  width:100%;
-  margin-top:24px;
-  padding:13px 16px;
-  border-radius:9px;
-  background:#7651a8;
-  color:white;
-  font-size:14px;
-  font-weight:bold;
-}
-
-.success-modal button:hover {
-  background:#664294;
-}
-
-.success-modal button:focus-visible {
-  outline:3px solid #d8c7eb;
-  outline-offset:3px;
-}
-
-@keyframes success-appear {
-  from { opacity:0; transform:translateY(10px) scale(.98); }
-  to { opacity:1; transform:translateY(0) scale(1); }
-}
-
-@media (prefers-reduced-motion:reduce) {
-  .success-modal { animation:none; }
-}
-
 </style>
 </head>
 
@@ -776,8 +692,8 @@ body.success-modal-open {
 
       The participation date must be visible on each certificate.
 
-      English, Japanese, Korean, Simplified Chinese, and
-      Traditional Chinese participation-date labels are supported.
+      English, Japanese, and Korean participation-date labels
+      are supported.
     </p>
 
     <div class="hp" aria-hidden="true">
@@ -1062,38 +978,6 @@ body.success-modal-open {
   Made by btsvotingorg
 </footer>
 
-
-<!-- SUCCESSFUL SUBMISSION POP-UP -->
-<div
-  id="successPopup"
-  class="success-modal-overlay"
-  hidden
->
-  <section
-    class="success-modal"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="successPopupTitle"
-    aria-describedby="successPopupMessage"
-  >
-    <div class="success-modal-icon" aria-hidden="true">
-      <svg width="32" height="32" viewBox="0 0 24 24"
-           fill="none" stroke="currentColor" stroke-width="2.6"
-           stroke-linecap="round" stroke-linejoin="round">
-        <path d="M5 12.5l4.5 4.5L19 7.5" />
-      </svg>
-    </div>
-    <h2 id="successPopupTitle">Successfully Submitted!</h2>
-    <p id="successPopupMessage">
-      Keep voting and encourage more ARMY to join us.
-      Let's win this DAESANG together for BTS! 💜
-    </p>
-    <button id="continueVotingButton" type="button">
-      Continue Voting 💜
-    </button>
-  </section>
-</div>
-
 <script>
 
 /* ==========================================
@@ -1362,6 +1246,10 @@ function showMessage(text,type) {
 
 function addResult(filename,status,detail) {
 
+  // Successful files are represented by one confirmation message.
+  // Only actual duplicates and failures need individual details.
+  if (status === "accepted") return;
+
   const row = document.createElement("div");
 
   row.className = "batch-result " + status;
@@ -1390,6 +1278,11 @@ function updateProgress(
 
   failedCount.textContent = failed;
 
+  // Never show counters that have no relevant result.
+  acceptedCount.parentElement.hidden = true;
+  duplicateCount.parentElement.hidden = duplicates === 0;
+  failedCount.parentElement.hidden = failed === 0;
+
   batchProgress.textContent =
     "Processed " + done + " of " +
     total + " screenshots";
@@ -1399,49 +1292,6 @@ function updateProgress(
 
 }
 
-
-
-/* ==========================================
-   SUCCESS SUBMISSION POP-UP CONTROLS
-========================================== */
-
-const successPopup = document.getElementById("successPopup");
-const continueVotingButton = document.getElementById("continueVotingButton");
-let popupPreviousFocus = null;
-
-function showSuccessPopup() {
-  popupPreviousFocus = document.activeElement;
-  successPopup.hidden = false;
-  document.body.classList.add("success-modal-open");
-  continueVotingButton.focus();
-}
-
-function closeSuccessPopup() {
-  if (successPopup.hidden) return;
-  successPopup.hidden = true;
-  document.body.classList.remove("success-modal-open");
-  if (popupPreviousFocus && popupPreviousFocus.isConnected) {
-    popupPreviousFocus.focus();
-  }
-}
-
-continueVotingButton.addEventListener("click", closeSuccessPopup);
-
-successPopup.addEventListener("click", event => {
-  if (event.target === successPopup) closeSuccessPopup();
-});
-
-document.addEventListener("keydown", event => {
-  if (successPopup.hidden) return;
-  if (event.key === "Escape") {
-    event.preventDefault();
-    closeSuccessPopup();
-  } else if (event.key === "Tab") {
-    // The dialog contains one interactive control; keep focus in it.
-    event.preventDefault();
-    continueVotingButton.focus();
-  }
-});
 
 /* ==========================================
    CERTIFICATE DATE VALIDATION
@@ -1517,7 +1367,7 @@ function extractCertificateDetails(rawText) {
     : null;
 
   const participationLabel =
-    /(?:Participation\s*Date|参\s*与\s*(?:日\s*期|时\s*间|日\s*时)|參\s*與\s*(?:日\s*期|時\s*間|日\s*時)|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일))/gi;
+    /(?:Participation\s*Date|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일))/gi;
 
   const datePattern =
     /(20\d{2})\s*(?:[.\/-]|年|년)\s*(\d{1,2})\s*(?:[.\/-]|月|월)\s*(\d{1,2})(?:\s*(?:日|일))?/;
@@ -1568,60 +1418,45 @@ function extractCertificateDetails(rawText) {
 
 async function scanCertificate(file) {
 
-  // Fast pass for the most common English-language certificates.
-  const englishResult = await Tesseract.recognize(file, "eng");
-  const englishDetails = extractCertificateDetails(
-    englishResult.data.text || ""
+  const englishResult = await Tesseract.recognize(
+    file,
+    "eng"
   );
 
-  if (englishDetails.certificateNumber && englishDetails.participationDate) {
-    return englishDetails;
+  const englishText = englishResult.data.text || "";
+
+  let details = extractCertificateDetails(englishText);
+
+  if (
+    details.certificateNumber &&
+    details.participationDate
+  ) {
+    return details;
   }
 
-  // Preserve the existing Japanese / Korean / English recognition.
   const multilingualResult = await Tesseract.recognize(
     file,
     "jpn+kor+eng"
   );
-  const localizedDetails = extractCertificateDetails(
-    multilingualResult.data.text || ""
-  );
 
-  const combined = {
+  const multilingualText =
+    multilingualResult.data.text || "";
+
+  const localizedDetails =
+    extractCertificateDetails(multilingualText);
+
+  return {
+
     certificateNumber:
-      englishDetails.certificateNumber || localizedDetails.certificateNumber,
+      details.certificateNumber ||
+      localizedDetails.certificateNumber,
+
     participationDate:
-      englishDetails.participationDate || localizedDetails.participationDate
+      details.participationDate ||
+      localizedDetails.participationDate
+
   };
 
-  if (combined.certificateNumber && combined.participationDate) {
-    return combined;
-  }
-
-  // Chinese-language certificates may use 参与日期 or 參與日期.
-  // Load Chinese models only when the earlier passes are incomplete.
-  // Keep Simplified and Traditional separate for better OCR accuracy.
-  for (const language of ["chi_sim+eng", "chi_tra+eng"]) {
-    try {
-      const chineseResult = await Tesseract.recognize(file, language);
-      const chineseDetails = extractCertificateDetails(
-        chineseResult.data.text || ""
-      );
-
-      combined.certificateNumber =
-        combined.certificateNumber || chineseDetails.certificateNumber;
-      combined.participationDate =
-        combined.participationDate || chineseDetails.participationDate;
-
-      if (combined.certificateNumber && combined.participationDate) {
-        break;
-      }
-    } catch (error) {
-      console.warn("Chinese OCR unavailable for", language, error);
-    }
-  }
-
-  return combined;
 }
 
 
@@ -1999,6 +1834,10 @@ form.addEventListener("submit",async event => {
     "PROCESSING CERTIFICATES...";
 
   batchSummary.hidden = false;
+  batchProgress.hidden = false;
+  batchBar.parentElement.hidden = false;
+  const summaryHeading = batchSummary.querySelector("strong");
+  if (summaryHeading) summaryHeading.textContent = "Processing certificates";
 
   batchResults.replaceChildren();
 
@@ -2080,7 +1919,7 @@ form.addEventListener("submit",async event => {
             addResult(
               file.name,
               "failed",
-              "Participation date could not be detected. Please upload a clear certificate showing the participation date."
+              "Participation date could not be detected in English, Japanese, or Korean. Please upload a clear certificate showing the participation date."
             );
 
           } else if (
@@ -2240,37 +2079,40 @@ form.addEventListener("submit",async event => {
 
     }
 
-    showMessage(
+    // Show only the relevant outcome after processing finishes.
+    // No zero-value counters or successful-file detail list.
+    batchSummary.hidden = duplicates === 0 && failed === 0;
 
-      "Processed " + done +
-      " of " + files.length + " screenshots.\n" +
-
-      pending + " successfully submitted, " +
-
-      duplicates + " duplicates, " +
-
-      failed + " failed.",
-
-      failed ? "error" : "success"
-
-    );
+    if (!batchSummary.hidden) {
+      const summaryHeading = batchSummary.querySelector("strong");
+      if (summaryHeading) summaryHeading.textContent = "Items needing attention";
+      batchProgress.hidden = true;
+      batchBar.parentElement.hidden = true;
+    }
 
     if (pending > 0) {
+      showMessage(
+        "✓ " + pending + " voting certificate" +
+        (pending === 1 ? "" : "s") +
+        " submitted successfully!" +
+        (duplicates || failed ? " See the details below for other files." : ""),
+        "success"
+      );
+    } else if (duplicates > 0 || failed > 0) {
+      showMessage("No new certificates submitted. See the details below.", "error");
+    } else {
+      showMessage("No certificates were submitted.", "error");
+    }
 
-      // Only show success when the server accepted at least one certificate.
-      // Display it before refreshing rankings, so a refresh error cannot
-      // prevent the confirmation from appearing.
-      showSuccessPopup();
+    if (pending) {
 
-      const refreshResults = await Promise.allSettled([
+      await Promise.all([
+
         loadLeaderboard(),
+
         loadDailyChallenge()
+
       ]);
-      for (const result of refreshResults) {
-        if (result.status === "rejected") {
-          console.warn("Post-submission refresh failed:", result.reason);
-        }
-      }
 
     }
 
