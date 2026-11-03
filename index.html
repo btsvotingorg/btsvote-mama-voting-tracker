@@ -390,67 +390,6 @@ button:disabled {
   background:rgba(255,255,255,.65);
 }
 
-
-/* TOP THREE COUNTRY PODIUM — Daily and Overall */
-.top-three-podium {
-  display:grid;
-  grid-template-columns:minmax(0,1fr) minmax(0,1.12fr) minmax(0,1fr);
-  align-items:start;
-  gap:10px;
-  padding:12px 0 24px;
-  margin-bottom:14px;
-  border-bottom:1px solid var(--border);
-}
-.podium-card {
-  min-width:0;
-  min-height:174px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-self:start;
-  align-items:center;
-  text-align:center;
-  gap:7px;
-  padding:18px 8px 14px;
-  border:0;
-  border-radius:13px;
-  background:#E9D9F7;
-  box-shadow:none;
-  color:#523577;
-}
-.podium-card.podium-first {
-  min-height:212px;
-  background:#DCC1F3;
-  padding-top:25px;
-  padding-bottom:22px;
-  box-shadow:none;
-}
-.podium-card.podium-third {min-height:156px;background:#F0E6FA;}
-.podium-number {font-size:25px;font-weight:800;line-height:1;}
-.podium-first .podium-number {font-size:33px;}
-.podium-flag {font-size:34px;line-height:1.25;}
-.podium-first .podium-flag {font-size:41px;}
-.podium-country {font-size:13px;font-weight:800;line-height:1.3;overflow-wrap:anywhere;}
-.podium-value {font-size:12px;font-weight:700;overflow-wrap:anywhere;}
-.podium-movement {font-size:11px;font-weight:700;min-height:14px;}
-.podium-progress {width:100%;height:6px;border-radius:99px;background:rgba(255,255,255,.7);overflow:hidden;margin-top:3px;}
-.podium-progress-fill {height:100%;border-radius:99px;background:#9063BB;}
-.leaderboard-list-heading {font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin:6px 0 10px;}
-.leaderboard-row .country-flag {font-size:17px;margin-right:7px;vertical-align:middle;}
-@media (max-width:480px) {
-  .top-three-podium {gap:6px;padding-top:15px;}
-  .podium-card {min-height:150px;gap:5px;padding:14px 4px 11px;border-radius:12px;}
-  .podium-card.podium-first {min-height:190px;padding-top:20px;padding-bottom:17px;}
-  .podium-card.podium-third {min-height:130px;}
-  .podium-number {font-size:21px;}
-  .podium-first .podium-number {font-size:27px;}
-  .podium-flag {font-size:27px;}
-  .podium-first .podium-flag {font-size:32px;}
-  .podium-country {font-size:11px;}
-  .podium-value {font-size:10px;}
-  .podium-movement {font-size:10px;}
-}
-
 .rank-line {
   display:flex;
   justify-content:space-between;
@@ -2229,212 +2168,6 @@ overallRankingTab.addEventListener(
    LIVE RANKING MOVEMENT
 ========================================== */
 
-const COUNTRY_FLAG_CODES = {
-  "Afghanistan": "AF",
-  "Albania": "AL",
-  "Algeria": "DZ",
-  "Andorra": "AD",
-  "Angola": "AO",
-  "Antigua and Barbuda": "AG",
-  "Argentina": "AR",
-  "Armenia": "AM",
-  "Australia": "AU",
-  "Austria": "AT",
-  "Azerbaijan": "AZ",
-  "Bahamas": "BS",
-  "Bahrain": "BH",
-  "Bangladesh": "BD",
-  "Barbados": "BB",
-  "Belarus": "BY",
-  "Belgium": "BE",
-  "Belize": "BZ",
-  "Benin": "BJ",
-  "Bhutan": "BT",
-  "Bolivia": "BO",
-  "Bosnia and Herzegovina": "BA",
-  "Botswana": "BW",
-  "Brazil": "BR",
-  "Brunei": "BN",
-  "Bulgaria": "BG",
-  "Burkina Faso": "BF",
-  "Burundi": "BI",
-  "Cabo Verde": "CV",
-  "Cambodia": "KH",
-  "Cameroon": "CM",
-  "Canada": "CA",
-  "Central African Republic": "CF",
-  "Chad": "TD",
-  "Chile": "CL",
-  "China": "CN",
-  "Colombia": "CO",
-  "Comoros": "KM",
-  "Congo": "CG",
-  "Costa Rica": "CR",
-  "Côte d'Ivoire": "CI",
-  "Croatia": "HR",
-  "Cuba": "CU",
-  "Cyprus": "CY",
-  "Czechia": "CZ",
-  "Democratic Republic of the Congo": "CD",
-  "Denmark": "DK",
-  "Djibouti": "DJ",
-  "Dominica": "DM",
-  "Dominican Republic": "DO",
-  "Ecuador": "EC",
-  "Egypt": "EG",
-  "El Salvador": "SV",
-  "Equatorial Guinea": "GQ",
-  "Eritrea": "ER",
-  "Estonia": "EE",
-  "Eswatini": "SZ",
-  "Ethiopia": "ET",
-  "Fiji": "FJ",
-  "Finland": "FI",
-  "France": "FR",
-  "Gabon": "GA",
-  "Gambia": "GM",
-  "Georgia": "GE",
-  "Germany": "DE",
-  "Ghana": "GH",
-  "Greece": "GR",
-  "Grenada": "GD",
-  "Guatemala": "GT",
-  "Guinea": "GN",
-  "Guinea-Bissau": "GW",
-  "Guyana": "GY",
-  "Haiti": "HT",
-  "Honduras": "HN",
-  "Hong Kong": "HK",
-  "Hungary": "HU",
-  "Iceland": "IS",
-  "India": "IN",
-  "Indonesia": "ID",
-  "Iran": "IR",
-  "Iraq": "IQ",
-  "Ireland": "IE",
-  "Israel": "IL",
-  "Italy": "IT",
-  "Jamaica": "JM",
-  "Japan": "JP",
-  "Jordan": "JO",
-  "Kazakhstan": "KZ",
-  "Kenya": "KE",
-  "Kiribati": "KI",
-  "Kuwait": "KW",
-  "Kyrgyzstan": "KG",
-  "Laos": "LA",
-  "Latvia": "LV",
-  "Lebanon": "LB",
-  "Lesotho": "LS",
-  "Liberia": "LR",
-  "Libya": "LY",
-  "Liechtenstein": "LI",
-  "Lithuania": "LT",
-  "Luxembourg": "LU",
-  "Madagascar": "MG",
-  "Malawi": "MW",
-  "Malaysia": "MY",
-  "Maldives": "MV",
-  "Mali": "ML",
-  "Malta": "MT",
-  "Marshall Islands": "MH",
-  "Mauritania": "MR",
-  "Mauritius": "MU",
-  "Mexico": "MX",
-  "Micronesia": "FM",
-  "Moldova": "MD",
-  "Monaco": "MC",
-  "Mongolia": "MN",
-  "Montenegro": "ME",
-  "Morocco": "MA",
-  "Mozambique": "MZ",
-  "Myanmar": "MM",
-  "Namibia": "NA",
-  "Nauru": "NR",
-  "Nepal": "NP",
-  "Netherlands": "NL",
-  "New Zealand": "NZ",
-  "Nicaragua": "NI",
-  "Niger": "NE",
-  "Nigeria": "NG",
-  "North Korea": "KP",
-  "North Macedonia": "MK",
-  "Norway": "NO",
-  "Oman": "OM",
-  "Pakistan": "PK",
-  "Palau": "PW",
-  "Palestine": "PS",
-  "Panama": "PA",
-  "Papua New Guinea": "PG",
-  "Paraguay": "PY",
-  "Peru": "PE",
-  "Philippines": "PH",
-  "Poland": "PL",
-  "Portugal": "PT",
-  "Qatar": "QA",
-  "Romania": "RO",
-  "Russia": "RU",
-  "Rwanda": "RW",
-  "Saint Kitts and Nevis": "KN",
-  "Saint Lucia": "LC",
-  "Saint Vincent and the Grenadines": "VC",
-  "Samoa": "WS",
-  "San Marino": "SM",
-  "São Tomé and Príncipe": "ST",
-  "Saudi Arabia": "SA",
-  "Senegal": "SN",
-  "Serbia": "RS",
-  "Seychelles": "SC",
-  "Sierra Leone": "SL",
-  "Singapore": "SG",
-  "Slovakia": "SK",
-  "Slovenia": "SI",
-  "Solomon Islands": "SB",
-  "Somalia": "SO",
-  "South Africa": "ZA",
-  "South Korea": "KR",
-  "South Sudan": "SS",
-  "Spain": "ES",
-  "Sri Lanka": "LK",
-  "Sudan": "SD",
-  "Suriname": "SR",
-  "Sweden": "SE",
-  "Switzerland": "CH",
-  "Syria": "SY",
-  "Taiwan": "TW",
-  "Tajikistan": "TJ",
-  "Tanzania": "TZ",
-  "Thailand": "TH",
-  "Timor-Leste": "TL",
-  "Togo": "TG",
-  "Tonga": "TO",
-  "Trinidad and Tobago": "TT",
-  "Tunisia": "TN",
-  "Türkiye": "TR",
-  "Turkmenistan": "TM",
-  "Tuvalu": "TV",
-  "Uganda": "UG",
-  "Ukraine": "UA",
-  "United Arab Emirates": "AE",
-  "United Kingdom": "GB",
-  "United States": "US",
-  "Uruguay": "UY",
-  "Uzbekistan": "UZ",
-  "Vanuatu": "VU",
-  "Vatican City": "VA",
-  "Venezuela": "VE",
-  "Vietnam": "VN",
-  "Yemen": "YE",
-  "Zambia": "ZM",
-  "Zimbabwe": "ZW"
-};
-
-function countryFlag(country) {
-  const code = COUNTRY_FLAG_CODES[String(country || "").trim()];
-  if (!code || !/^[A-Z]{2}$/.test(code)) return "🌍";
-  return String.fromCodePoint(...[...code].map(letter => 127397 + letter.charCodeAt(0)));
-}
-
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
   const container = document.getElementById("leaderboard");
@@ -2445,7 +2178,7 @@ async function loadLeaderboard() {
     ? "KST voting date: " + getKSTDate() + " · Resets at midnight KST"
     : "Accumulated ranking · All eligible submissions since tracking began";
 
-  // Live ranking remains authoritative for positions, progress and movement.
+  // The live view is authoritative for positions, percentages and movement.
   const { data, error } = await db
     .from("country_rank_live")
     .select("country,country_rank,progress_percent,movement,moved_by")
@@ -2455,11 +2188,13 @@ async function loadLeaderboard() {
     .limit(250);
 
   if (requestId !== leaderboardRequestId) return;
+
   if (error) {
     console.error("Live ranking query failed:", error);
     container.textContent = "Participation data is temporarily unavailable.";
     return;
   }
+
   if (!data || !data.length) {
     container.textContent = daily
       ? "No eligible certificates uploaded today yet. Be the first!"
@@ -2467,26 +2202,35 @@ async function loadLeaderboard() {
     return;
   }
 
-  // Daily #31 onward uses cached certificate counts matched by country.
-  // This intentionally does not require the cached rank to match the live rank.
+  // Certificate counts come from the cache, matched by country name.
+  // Do NOT require cached rank to equal live rank: those sources can
+  // refresh at different times. Fetch the full daily cache, including
+  // tied positions, rather than filtering by cached rank >= 31.
   const counts = new Map();
   let cacheError = null;
-  if (daily && data.some(item => Number(item.country_rank) >= 31)) {
+
+  if (daily && data.some(row => Number(row.country_rank) >= 31)) {
     const result = await db
       .from("leaderboard_cache")
       .select("country,certificate_count")
       .eq("period", "daily")
       .order("country", { ascending: true })
       .limit(1000);
+
     if (requestId !== leaderboardRequestId) return;
+
     cacheError = result.error;
     if (cacheError) {
       console.error("Daily certificate cache could not be read:", cacheError);
     } else {
       for (const entry of result.data || []) {
         const n = Number(entry.certificate_count);
-        if (entry.country && entry.certificate_count != null &&
-            Number.isSafeInteger(n) && n >= 0) {
+        if (
+          entry.country &&
+          entry.certificate_count !== null &&
+          entry.certificate_count !== undefined &&
+          Number.isSafeInteger(n) && n >= 0
+        ) {
           counts.set(entry.country.trim().normalize("NFKC"), n);
         }
       }
@@ -2495,108 +2239,18 @@ async function loadLeaderboard() {
 
   container.replaceChildren();
   const missingCountries = [];
+
+  // Pastel purple from strongest (#1) to lightest (#10).
+  // Tied countries share the shade associated with their rank.
   const topTenPurples = [
     "#D5B8F0", "#DBC3F2", "#E0CBF4", "#E4D2F5", "#E8D9F7",
     "#EBDFF8", "#EEE4F9", "#F0E8FA", "#F3EDFB", "#F6F1FC"
   ];
 
-  function safeProgress(item) {
-    const share = Number(item.progress_percent);
-    return Number.isFinite(share) ? Math.max(0, share) : 0;
-  }
-
-  function movementLabel(item) {
-    const places = Math.max(0, Number(item.moved_by) || 0);
-    if (item.movement === "new") return "NEW";
-    if (item.movement === "up" && places > 0) return "↑ " + places;
-    if (item.movement === "down" && places > 0) return "↓ " + places;
-    return "–";
-  }
-
-  function rankingValue(item) {
-    const rank = Number(item.country_rank);
-    if (daily && rank >= 31) {
-      const key = String(item.country || "").trim().normalize("NFKC");
-      if (counts.has(key)) {
-        const count = counts.get(key);
-        return count.toLocaleString("en-US") + (count === 1 ? " vote" : " votes");
-      }
-      missingCountries.push(item.country);
-      return "Count unavailable";
-    }
-    return safeProgress(item).toFixed(2) + "%";
-  }
-
-  function makeProgress(item, trackClass, fillClass) {
-    const track = document.createElement("div");
-    track.className = trackClass;
-    const fill = document.createElement("div");
-    fill.className = fillClass;
-    fill.style.width = Math.min(100, safeProgress(item)) + "%";
-    track.appendChild(fill);
-    return track;
-  }
-
-  function makePodiumCard(item, placement) {
-    const card = document.createElement("div");
-    card.className = "podium-card podium-" +
-      (placement === 1 ? "first" : placement === 2 ? "second" : "third");
-
-    const number = document.createElement("div");
-    number.className = "podium-number";
-    // Ranking number only: no '1st Place', '2nd Place', etc.
-    number.textContent = String(item.country_rank);
-
-    const flag = document.createElement("div");
-    flag.className = "podium-flag";
-    flag.textContent = countryFlag(item.country);
-    flag.setAttribute("aria-label", "Flag of " + item.country);
-
-    const country = document.createElement("div");
-    country.className = "podium-country";
-    country.textContent = item.country;
-
-    const value = document.createElement("div");
-    value.className = "podium-value";
-    value.textContent = rankingValue(item);
-
-    const movement = document.createElement("div");
-    movement.className = "podium-movement";
-    movement.textContent = movementLabel(item);
-
-    card.append(number, flag, country, value, movement,
-      makeProgress(item, "podium-progress", "podium-progress-fill"));
-    return card;
-  }
-
-  // The three highest-listed countries appear as #2, #1, #3
-  // from left to right. Actual rank numbers remain accurate for ties.
-  const leaders = data.slice(0, 3);
-  if (leaders.length) {
-    const podium = document.createElement("div");
-    podium.className = "top-three-podium";
-    podium.setAttribute("aria-label", "Top three countries");
-    if (leaders[1]) podium.appendChild(makePodiumCard(leaders[1], 2));
-    podium.appendChild(makePodiumCard(leaders[0], 1));
-    if (leaders[2]) podium.appendChild(makePodiumCard(leaders[2], 3));
-    // For one or two entries, use an appropriate number of columns.
-    if (leaders.length < 3) {
-      podium.style.gridTemplateColumns = "repeat(" + leaders.length + ", minmax(0,1fr))";
-    }
-    container.appendChild(podium);
-  }
-
-  if (data.length > 3) {
-    const heading = document.createElement("div");
-    heading.className = "leaderboard-list-heading";
-    heading.textContent = "COUNTRY RANKINGS";
-    container.appendChild(heading);
-  }
-
-  // Remaining countries keep pastel Top 10 styling and movement arrows.
-  for (const item of data.slice(3)) {
+  for (const item of data) {
     const row = document.createElement("div");
     row.className = "leaderboard-row";
+
     const displayedRank = Number(item.country_rank);
     if (Number.isInteger(displayedRank) && displayedRank >= 1 && displayedRank <= 10) {
       row.classList.add("top-ten-purple");
@@ -2605,34 +2259,69 @@ async function loadLeaderboard() {
 
     const line = document.createElement("div");
     line.className = "rank-line";
+
     const name = document.createElement("span");
     name.className = "country-name";
 
     const rank = document.createElement("span");
     rank.className = "rank-number";
     rank.textContent = "#" + item.country_rank;
-
-    const flag = document.createElement("span");
-    flag.className = "country-flag";
-    flag.textContent = countryFlag(item.country);
+    name.append(rank, document.createTextNode(item.country));
 
     const movement = document.createElement("span");
     movement.className = "rank-movement";
-    movement.textContent = movementLabel(item);
-    name.append(rank, flag, document.createTextNode(item.country + " "), movement);
+    const places = Math.max(0, Number(item.moved_by) || 0);
+    if (item.movement === "new") {
+      movement.textContent = "NEW";
+    } else if (item.movement === "up" && places > 0) {
+      movement.textContent = "↑ " + places;
+    } else if (item.movement === "down" && places > 0) {
+      movement.textContent = "↓ " + places;
+    } else {
+      movement.textContent = "–";
+    }
+    name.appendChild(movement);
 
     const value = document.createElement("span");
     value.className = "percentage";
-    value.textContent = rankingValue(item);
+    const share = Number(item.progress_percent);
+    const safeShare = Number.isFinite(share) ? share : 0;
+    const rankNumber = Number(item.country_rank);
+
+    if (daily && rankNumber >= 31) {
+      const key = String(item.country || "").trim().normalize("NFKC");
+      if (counts.has(key)) {
+        const count = counts.get(key);
+        value.textContent = count.toLocaleString("en-US") +
+          (count === 1 ? " vote" : " votes");
+      } else {
+        // Never display a percentage in Daily rank #31 onward.
+        value.textContent = "Count unavailable";
+        value.title = "The certificate count could not be retrieved.";
+        missingCountries.push(item.country);
+      }
+    } else {
+      // Daily top 30 and every Overall ranking remain percentages.
+      value.textContent = safeShare.toFixed(2) + "%";
+    }
 
     line.append(name, value);
-    row.append(line, makeProgress(item, "progress-track", "progress-fill"));
+
+    const track = document.createElement("div");
+    track.className = "progress-track";
+    const fill = document.createElement("div");
+    fill.className = "progress-fill";
+    fill.style.width = Math.max(0, Math.min(100, safeShare)) + "%";
+    track.appendChild(fill);
+    row.append(line, track);
     container.appendChild(row);
   }
 
   if (missingCountries.length) {
-    console.warn("Missing daily certificate counts for:", missingCountries,
-      cacheError || "Check leaderboard_cache and public SELECT access.");
+    console.warn(
+      "Missing daily certificate counts for:", missingCountries,
+      cacheError || "Check leaderboard_cache records and public SELECT access."
+    );
   }
 }
 
