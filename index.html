@@ -577,6 +577,15 @@ footer {
   display:none !important;
 }
 
+
+/* Lightweight confirmation dialog */
+.success-overlay { position:fixed; inset:0; background:rgba(31,20,49,.52); display:flex; align-items:center; justify-content:center; padding:20px; z-index:1000; }
+.success-dialog { width:min(100%,390px); background:#fff; border-radius:18px; padding:30px 24px; text-align:center; box-shadow:0 18px 60px #24173540; }
+.success-icon { display:grid; place-items:center; margin:0 auto 16px; width:66px; height:66px; border-radius:50%; background:#f0e6fb; color:#7651a8; }
+.success-dialog h2 { color:#392451; font-size:23px; margin:0 0 12px; }
+.success-dialog p { font-size:14px; margin:0; color:#5c5268; }
+.success-dialog button { margin-top:22px; }
+
 </style>
 </head>
 
@@ -926,6 +935,7 @@ footer {
 
   </div>
 
+
   <p
     class="country-ranking-period"
     id="rankingPeriod">
@@ -977,6 +987,18 @@ footer {
 <footer>
   Made by btsvotingorg
 </footer>
+
+
+<div id="successOverlay" class="success-overlay" hidden>
+  <div class="success-dialog" role="dialog" aria-modal="true" aria-labelledby="successTitle" aria-describedby="successDescription">
+    <div class="success-icon" aria-hidden="true">
+      <svg width="37" height="37" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 21L17 29L32 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <h2 id="successTitle">Successfully Submitted!</h2>
+    <p id="successDescription">Keep voting and encourage more ARMY to join us. Let’s win this DAESANG together for BTS! 💜</p>
+    <button type="button" id="closeSuccess">Continue Voting 💜</button>
+  </div>
+</div>
 
 <script>
 
@@ -1244,6 +1266,26 @@ function showMessage(text,type) {
 
 }
 
+const successOverlay = document.getElementById("successOverlay");
+const closeSuccess = document.getElementById("closeSuccess");
+let successPreviousFocus = null;
+function showSuccessPopup() {
+  successPreviousFocus = document.activeElement;
+  successOverlay.hidden = false;
+  closeSuccess.focus();
+}
+function hideSuccessPopup() {
+  successOverlay.hidden = true;
+  if (successPreviousFocus?.focus) successPreviousFocus.focus();
+}
+closeSuccess.addEventListener("click", hideSuccessPopup);
+successOverlay.addEventListener("click", event => {
+  if (event.target === successOverlay) hideSuccessPopup();
+});
+document.addEventListener("keydown", event => {
+  if (!successOverlay.hidden && event.key === "Escape") hideSuccessPopup();
+});
+
 function addResult(filename,status,detail) {
 
   // Successful files are represented by one confirmation message.
@@ -1367,7 +1409,7 @@ function extractCertificateDetails(rawText) {
     : null;
 
   const participationLabel =
-    /(?:Participation\s*Date|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일))/gi;
+    /(?:Participation\s*Date|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일)|(?:参[与加]|參[與加]|投票)\s*(?:日\s*期|时\s*间|時\s*間))/gi;
 
   const datePattern =
     /(20\d{2})\s*(?:[.\/-]|年|년)\s*(\d{1,2})\s*(?:[.\/-]|月|월)\s*(\d{1,2})(?:\s*(?:日|일))?/;
@@ -1416,47 +1458,46 @@ function extractCertificateDetails(rawText) {
 
 }
 
-async function scanCertificate(file) {
-
-  const englishResult = await Tesseract.recognize(
-    file,
-    "eng"
-  );
-
-  const englishText = englishResult.data.text || "";
-
-  let details = extractCertificateDetails(englishText);
-
-  if (
-    details.certificateNumber &&
-    details.participationDate
-  ) {
-    return details;
+// Create OCR workers only when needed and reuse them across batch files.
+// This avoids downloading and initializing the same OCR models repeatedly.
+const ocrWorkerPromises = new Map();
+async function getOCRWorker(language) {
+  if (!ocrWorkerPromises.has(language)) {
+    const promise = Tesseract.createWorker(language).catch(error => {
+      ocrWorkerPromises.delete(language);
+      throw error;
+    });
+    ocrWorkerPromises.set(language, promise);
   }
+  return ocrWorkerPromises.get(language);
+}
 
-  const multilingualResult = await Tesseract.recognize(
-    file,
-    "jpn+kor+eng"
-  );
+async function recognizeCertificate(file, language) {
+  const worker = await getOCRWorker(language);
+  const result = await worker.recognize(file);
+  return extractCertificateDetails(result.data.text || "");
+}
 
-  const multilingualText =
-    multilingualResult.data.text || "";
+async function scanCertificate(file) {
+  // Fast path: most certificates can be read with the smaller English model.
+  const english = await recognizeCertificate(file, "eng");
+  if (english.certificateNumber && english.participationDate) return english;
 
-  const localizedDetails =
-    extractCertificateDetails(multilingualText);
+  let certificateNumber = english.certificateNumber;
+  let participationDate = english.participationDate;
 
-  return {
+  // Preserve the existing Japanese/Korean fallback.
+  const eastAsian = await recognizeCertificate(file, "jpn+kor+eng");
+  certificateNumber ||= eastAsian.certificateNumber;
+  participationDate ||= eastAsian.participationDate;
+  if (certificateNumber && participationDate) return { certificateNumber, participationDate };
 
-    certificateNumber:
-      details.certificateNumber ||
-      localizedDetails.certificateNumber,
-
-    participationDate:
-      details.participationDate ||
-      localizedDetails.participationDate
-
-  };
-
+  // Only run Chinese OCR if the preceding scans did not find both fields.
+  // The models are cached for subsequent screenshots in the same session.
+  const chinese = await recognizeCertificate(file, "chi_sim+chi_tra+eng");
+  certificateNumber ||= chinese.certificateNumber;
+  participationDate ||= chinese.participationDate;
+  return { certificateNumber, participationDate };
 }
 
 
@@ -1919,7 +1960,7 @@ form.addEventListener("submit",async event => {
             addResult(
               file.name,
               "failed",
-              "Participation date could not be detected in English, Japanese, or Korean. Please upload a clear certificate showing the participation date."
+              "Participation date could not be detected. Please upload a clear certificate showing the participation date."
             );
 
           } else if (
@@ -2105,14 +2146,16 @@ form.addEventListener("submit",async event => {
     }
 
     if (pending) {
+      showSuccessPopup();
 
-      await Promise.all([
+      // Update rankings in the background; do not delay the confirmation popup.
+      Promise.all([
 
         loadLeaderboard(),
 
         loadDailyChallenge()
 
-      ]);
+      ]).catch(error => console.warn("Background refresh failed:", error));
 
     }
 
