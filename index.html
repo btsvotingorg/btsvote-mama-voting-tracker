@@ -2565,11 +2565,10 @@ async function loadLeaderboard() {
     // a country that just crossed the Top 30.
 
     if (
-      showCertificateCount &&
-      cached &&
-      cached.rank === currentRank
-    ) {
-
+  showCertificateCount &&
+  cached &&
+  Number.isFinite(cached.count)
+)
       const count = cached.count;
 
       value.textContent =
