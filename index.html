@@ -577,6 +577,53 @@ footer {
   display:none !important;
 }
 
+
+/* Successful submission thank-you popup */
+.vote-thanks-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(33, 22, 48, .52);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.vote-thanks-card {
+  position: relative;
+  width: min(100%, 410px);
+  padding: 36px 26px 28px;
+  border-radius: 22px;
+  background: #fff;
+  box-shadow: 0 20px 60px rgba(36, 19, 57, .22);
+  text-align: center;
+  color: #352442;
+}
+.vote-thanks-heart { font-size: 38px; line-height: 1; margin-bottom: 16px; }
+.vote-thanks-card h2 { margin: 0 0 12px; font-size: 25px; color: #634187; }
+.vote-thanks-card p { margin: 0 0 22px; line-height: 1.55; font-size: 15px; }
+.vote-thanks-action {
+  border: 0;
+  border-radius: 999px;
+  background: #7752a2;
+  color: #fff;
+  padding: 12px 26px;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+.vote-thanks-action:hover { background: #604083; }
+.vote-thanks-close {
+  position: absolute;
+  right: 14px;
+  top: 12px;
+  border: 0;
+  background: transparent;
+  color: #6d6276;
+  font-size: 26px;
+  cursor: pointer;
+}
+
 </style>
 </head>
 
@@ -2105,6 +2152,7 @@ form.addEventListener("submit",async event => {
     }
 
     if (pending) {
+      showVoteThanks(pending);
 
       await Promise.all([
 
@@ -2129,6 +2177,61 @@ form.addEventListener("submit",async event => {
 
 });
 
+
+
+/* Show thank-you message only after a successful server submission. */
+const voteThanksOverlay = document.getElementById("voteThanksOverlay");
+const voteThanksClose = document.getElementById("voteThanksClose");
+const voteThanksAction = document.getElementById("voteThanksAction");
+const voteThanksText = document.getElementById("voteThanksText");
+let voteThanksPreviousFocus = null;
+
+function closeVoteThanks() {
+  voteThanksOverlay.hidden = true;
+  document.removeEventListener("keydown", handleVoteThanksKey);
+  if (voteThanksPreviousFocus && typeof voteThanksPreviousFocus.focus === "function") {
+    voteThanksPreviousFocus.focus();
+  }
+}
+
+function handleVoteThanksKey(event) {
+  if (event.key === "Escape") closeVoteThanks();
+  if (event.key === "Tab") {
+    const controls = [voteThanksClose, voteThanksAction];
+    const index = controls.indexOf(document.activeElement);
+    if (event.shiftKey && index <= 0) {
+      event.preventDefault();
+      voteThanksAction.focus();
+    } else if (!event.shiftKey && index === controls.length - 1) {
+      event.preventDefault();
+      voteThanksClose.focus();
+    }
+  }
+}
+
+function showVoteThanks(successCount) {
+  if (successCount < 1) return;
+  voteThanksPreviousFocus = document.activeElement;
+  voteThanksText.innerHTML = "";
+  const confirmation = document.createTextNode(
+    successCount + " voting certificate" + (successCount === 1 ? " has" : "s have") +
+    " been submitted successfully."
+  );
+  voteThanksText.appendChild(confirmation);
+  voteThanksText.appendChild(document.createElement("br"));
+  const encouragement = document.createElement("strong");
+  encouragement.textContent = "Vote more to help BTS win the DAESANG! 💜";
+  voteThanksText.appendChild(encouragement);
+  voteThanksOverlay.hidden = false;
+  voteThanksClose.focus();
+  document.addEventListener("keydown", handleVoteThanksKey);
+}
+
+voteThanksClose.addEventListener("click", closeVoteThanks);
+voteThanksAction.addEventListener("click", closeVoteThanks);
+voteThanksOverlay.addEventListener("click", event => {
+  if (event.target === voteThanksOverlay) closeVoteThanks();
+});
 
 /* ==========================================
    COUNTRY LEADERBOARD
@@ -2942,6 +3045,21 @@ setInterval(() => {
 },15000);
 
 </script>
+
+
+<!-- Shown only after at least one certificate is accepted by the server -->
+<div id="voteThanksOverlay" class="vote-thanks-overlay" hidden>
+  <section class="vote-thanks-card" role="dialog" aria-modal="true"
+           aria-labelledby="voteThanksTitle" aria-describedby="voteThanksText">
+    <button id="voteThanksClose" class="vote-thanks-close" type="button"
+            aria-label="Close thank-you message">&times;</button>
+    <div class="vote-thanks-heart" aria-hidden="true">💜</div>
+    <h2 id="voteThanksTitle">Thank you for voting!</h2>
+    <p id="voteThanksText">Your voting certificate has been submitted successfully.<br>
+      <strong>Vote more to help BTS win the DAESANG!</strong> 💜</p>
+    <button id="voteThanksAction" class="vote-thanks-action" type="button">Let's vote again!</button>
+  </section>
+</div>
 
 </body>
 </html>
