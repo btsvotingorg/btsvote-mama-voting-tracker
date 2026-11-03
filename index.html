@@ -1,992 +1,274 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-
 <title>BTS Vote Project | MAMA 2026</title>
-
-<meta name="description"
-content="Global ARMY voting participation tracker for MAMA 2026.">
-
+<meta name="description" content="Global ARMY voting participation tracker for MAMA 2026.">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
 <style>
-
-:root {
-  --purple:#7651a8;
-  --deep:#392451;
-  --light:#f3eef9;
-  --background:#faf9fc;
-  --border:#e9e3ef;
-  --muted:#81798c;
-}
-
-* {
-  box-sizing:border-box;
-}
-
-body {
-  margin:0;
-  background:var(--background);
-  color:#292333;
-  font-family:Arial,Helvetica,sans-serif;
-  line-height:1.6;
-}
-
-header {
-  background:var(--deep);
-  color:white;
-  padding:24px 20px;
-  text-align:center;
-}
-
-.brand {
-  font-size:12px;
-  letter-spacing:3px;
-  opacity:.85;
-  font-weight:bold;
-}
-
-header h1 {
-  font-size:clamp(25px,5vw,39px);
-  margin:12px 0 5px;
-}
-
-header p {
-  color:#e6d9f4;
-  margin:0;
-  font-size:14px;
-}
-
-.container {
-  width:min(100% - 32px,850px);
-  margin:30px auto 60px;
-}
-
-.intro {
-  text-align:center;
-  margin-bottom:26px;
-}
-
-.intro h2 {
-  font-size:23px;
-  margin-bottom:5px;
-}
-
-.intro p,
-.description {
-  color:var(--muted);
-  font-size:14px;
-}
-
-.card {
-  background:white;
-  border:1px solid var(--border);
-  border-radius:15px;
-  padding:24px;
-  margin-bottom:20px;
-  box-shadow:0 5px 20px #30204609;
-}
-
-.card h2 {
-  font-size:19px;
-  margin:0 0 5px;
-}
-
-.description {
-  font-size:13px;
-  margin:0 0 20px;
-}
-
-label {
-  display:block;
-  font-weight:bold;
-  font-size:13px;
-  margin:16px 0 7px;
-}
-
-input {
-  display:block;
-  width:100%;
-  padding:12px 13px;
-  border:1px solid var(--border);
-  border-radius:8px;
-  background:white;
-  color:#292333;
-  font-size:16px;
-}
-
-input:focus {
-  outline:2px solid #d8c7eb;
-}
-
-input[type=file] {
-  font-size:13px;
-}
-
-.hint {
-  color:var(--muted);
-  font-size:12px;
-  margin-top:6px;
-}
-
-button {
-  width:100%;
-  margin-top:20px;
-  padding:13px;
-  border:0;
-  border-radius:8px;
-  background:var(--purple);
-  color:white;
-  font-size:14px;
-  font-weight:bold;
-  cursor:pointer;
-}
-
-button:disabled {
-  opacity:.6;
-  cursor:wait;
-}
-
-.country-picker {
-  position:relative;
-}
-
-.country-list {
-  display:none;
-  position:absolute;
-  z-index:20;
-  left:0;
-  right:0;
-  top:100%;
-  max-height:220px;
-  overflow-y:auto;
-  background:white;
-  border:1px solid var(--border);
-  border-radius:9px;
-  box-shadow:0 8px 20px #39245122;
-}
-
-.country-option {
-  display:block;
-  width:100%;
-  margin:0;
-  padding:12px;
-  border:0;
-  border-bottom:1px solid var(--border);
-  border-radius:0;
-  background:white;
-  color:#292333;
-  font-size:14px;
-  font-weight:normal;
-  text-align:left;
-}
-
-.country-option:hover,
-.country-option:focus {
-  background:var(--light);
-}
-
-.country-empty {
-  padding:12px;
-  color:var(--muted);
-  font-size:13px;
-}
-
-.message {
-  display:none;
-  margin-top:15px;
-  padding:12px;
-  border-radius:8px;
-  font-size:13px;
-  white-space:pre-wrap;
-}
-
-.message.success {
-  display:block;
-  background:#eaf6ef;
-  color:#216b49;
-}
-
-.message.error {
-  display:block;
-  background:#fff0f0;
-  color:#a33333;
-}
-
-.batch-summary {
-  margin-top:18px;
-  padding:16px;
-  background:var(--light);
-  border-radius:10px;
-  font-size:13px;
-}
-
-.batch-summary[hidden],
-.stat[hidden],
-#batchProgress[hidden],
-.progress-track[hidden] {
-  display:none !important;
-}
-
-.stats {
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:8px;
-  margin:12px 0;
-}
-
-.stat {
-  background:white;
-  border-radius:8px;
-  padding:12px 5px;
-  text-align:center;
-}
-
-.stat strong {
-  display:block;
-  font-size:23px;
-}
-
-.stat span {
-  font-size:11px;
-  color:var(--muted);
-}
-
-.progress-track {
-  width:100%;
-  height:9px;
-  background:#e6dcef;
-  border-radius:20px;
-  overflow:hidden;
-  margin-top:10px;
-}
-
-.progress-fill {
-  height:100%;
-  width:0;
-  background:var(--purple);
-  border-radius:20px;
-  transition:width .4s;
-}
-
-.batch-results {
-  margin-top:15px;
-}
-
-.batch-result {
-  padding:10px;
-  background:white;
-  border:1px solid var(--border);
-  border-radius:7px;
-  margin-top:7px;
-  overflow-wrap:anywhere;
-}
-
-.batch-result strong {
-  display:block;
-}
-
-.batch-result.duplicate {
-  background:#fff7e8;
-}
-
-.batch-result.failed {
-  background:#fff0f0;
-}
-
-.batch-result.accepted {
-  background:#eaf6ef;
-}
-
-.challenge-card {
-  text-align:center;
-  padding:30px 24px;
-}
-
-.challenge-heading {
-  font-size:12px;
-  letter-spacing:1.5px;
-  color:var(--purple);
-  font-weight:bold;
-  margin:0 0 12px;
-}
-
-.challenge-card h2 {
-  font-size:22px;
-  margin-bottom:10px;
-}
-
-.challenge-card .description {
-  max-width:500px;
-  margin:0 auto 24px;
-}
-
-.challenge-date {
-  font-size:12px;
-  color:var(--muted);
-  margin-bottom:22px;
-}
-
-.challenge-label {
-  font-size:12px;
-  letter-spacing:2px;
-  font-weight:bold;
-  color:var(--muted);
-}
-
-.challenge-percentage {
-  font-size:clamp(42px,10vw,65px);
-  font-weight:bold;
-  color:var(--purple);
-  line-height:1.3;
-  margin:8px 0 18px;
-}
-
-.challenge-progress {
-  height:15px;
-  background:#e6dcef;
-  border-radius:30px;
-  overflow:hidden;
-  margin:0 auto 22px;
-  max-width:600px;
-}
-
-.challenge-progress-fill {
-  height:100%;
-  width:0%;
-  background:linear-gradient(90deg,#9b7bc9,#7651a8);
-  border-radius:30px;
-  transition:width .6s ease;
-}
-
-.challenge-status {
-  font-size:14px;
-  font-weight:bold;
-  color:var(--purple);
-  margin:12px 0;
-}
-
-.challenge-reset {
-  font-size:12px;
-  color:var(--muted);
-  margin-top:20px;
-}
-
-.leaderboard-row {
-  padding:15px 0;
-  border-bottom:1px solid var(--border);
-}
-
-/* Distinct pastel-purple shades for the Top 10 in both ranking tabs. */
-.leaderboard-row.top-ten-purple {
-  background:var(--top-ten-bg);
-  border:1px solid rgba(118,81,168,.12);
-  border-radius:12px;
-  padding:14px 12px;
-  margin:5px 0;
-}
-
-.leaderboard-row.top-ten-purple .progress-track {
-  background:rgba(255,255,255,.65);
-}
-
-.rank-line {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:12px;
-  font-size:14px;
-  margin-bottom:8px;
-}
-
-.country-name {
-  font-weight:bold;
-}
-
-.rank-number {
-  color:var(--muted);
-  margin-right:8px;
-}
-
-.percentage {
-  color:var(--purple);
-  font-weight:bold;
-}
-
-.notice {
-  background:var(--light);
-  border-radius:10px;
-  padding:15px;
-  font-size:12px;
-  color:var(--deep);
-  margin-top:18px;
-}
-
-.empty {
-  color:var(--muted);
-  font-size:13px;
-  text-align:center;
-  padding:20px 0;
-}
-
-footer {
-  text-align:center;
-  color:var(--muted);
-  font-size:12px;
-  padding:20px;
-}
-
-.hp {
-  position:absolute;
-  left:-9999px;
-  opacity:0;
-}
-
-@media(max-width:600px) {
-  .card {
-    padding:19px;
-  }
-
-  .challenge-card {
-    padding:28px 19px;
-  }
-
-  .container {
-    margin-top:22px;
-  }
-}
-
-/* DAILY CHALLENGE TABS AND HISTORY */
-
-.challenge-tabs {
-  display:flex;
-  gap:9px;
-  margin:22px 0 24px;
-}
-
-.challenge-tab {
-  flex:1;
-  width:auto;
-  margin:0;
-  padding:12px 8px;
-  border:1px solid var(--border);
-  background:white;
-  color:var(--deep);
-}
-
-.challenge-tab.active {
-  background:var(--purple);
-  color:white;
-  border-color:var(--purple);
-}
-
-.challenge-tab:focus-visible {
-  outline:3px solid #d8c7eb;
-}
-
-.history-entry {
-  text-align:left;
-  border-top:1px solid var(--border);
-  padding:17px 0;
-}
-
-.history-entry-top {
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  flex-wrap:wrap;
-}
-
-.history-date {
-  font-size:14px;
-  font-weight:bold;
-}
-
-.history-percent {
-  font-size:23px;
-  color:var(--purple);
-  font-weight:bold;
-}
-
-.history-status {
-  font-size:12px;
-  color:var(--muted);
-  margin:4px 0 0;
-}
-
-.history-status.achieved {
-  color:#216b49;
-  font-weight:bold;
-}
-
-.history-intro {
-  font-size:13px;
-  color:var(--muted);
-  margin-bottom:15px;
-}
-
-/* DAILY AND OVERALL COUNTRY RANKINGS */
-
-.country-ranking-tabs {
-  display:flex;
-  gap:9px;
-  margin:18px 0 12px;
-}
-
-.country-ranking-tab {
-  flex:1;
-  width:auto;
-  margin:0;
-  padding:12px 8px;
-  border:1px solid var(--border);
-  background:white;
-  color:var(--deep);
-}
-
-.country-ranking-tab.active {
-  background:var(--purple);
-  color:white;
-  border-color:var(--purple);
-}
-
-.country-ranking-tab:focus-visible {
-  outline:3px solid #d8c7eb;
-}
-
-.country-ranking-period {
-  font-size:12px;
-  color:var(--muted);
-  margin:0 0 14px;
-}
-
-/* MINIMALIST RANK MOVEMENT */
-
-.rank-movement {
-  margin-left:10px;
-  color:#292333;
-  font-size:13px;
-  font-weight:600;
-  white-space:nowrap;
-}
-
-[hidden] {
-  display:none !important;
-}
-
-
-/* Lightweight confirmation dialog */
-.success-overlay { position:fixed; inset:0; background:rgba(31,20,49,.52); display:flex; align-items:center; justify-content:center; padding:20px; z-index:1000; }
-.success-dialog { width:min(100%,390px); background:#fff; border-radius:18px; padding:30px 24px; text-align:center; box-shadow:0 18px 60px #24173540; }
-.success-icon { display:grid; place-items:center; margin:0 auto 16px; width:66px; height:66px; border-radius:50%; background:#f0e6fb; color:#7651a8; }
-.success-dialog h2 { color:#392451; font-size:23px; margin:0 0 12px; }
-.success-dialog p { font-size:14px; margin:0; color:#5c5268; }
-.success-dialog button { margin-top:22px; }
-
+:root{--purple:#7651a8;--deep:#392451;--light:#f3eef9;--background:#faf9fc;--border:#e9e3ef;--muted:#81798c}
+*{box-sizing:border-box}
+body{margin:0;background:var(--background);color:#292333;font-family:Arial,Helvetica,sans-serif;line-height:1.6}
+header{background:var(--deep);color:white;padding:24px 20px;text-align:center}
+.brand{font-size:12px;letter-spacing:3px;opacity:.85;font-weight:bold}
+header h1{font-size:clamp(25px,5vw,39px);margin:12px 0 5px}
+header p{color:#e6d9f4;margin:0;font-size:14px}
+.container{width:min(100% - 32px,850px);margin:30px auto 60px}
+.intro{text-align:center;margin-bottom:26px}
+.intro h2{font-size:23px;margin-bottom:5px}
+.intro p,.description{color:var(--muted);font-size:14px}
+.card{background:white;border:1px solid var(--border);border-radius:15px;padding:24px;margin-bottom:20px;box-shadow:0 5px 20px #30204609}
+.card h2{font-size:19px;margin:0 0 5px}
+.description{font-size:13px;margin:0 0 20px}
+label{display:block;font-weight:bold;font-size:13px;margin:16px 0 7px}
+input{display:block;width:100%;padding:12px 13px;border:1px solid var(--border);border-radius:8px;background:white;color:#292333;font-size:16px}
+input:focus{outline:2px solid #d8c7eb}
+input[type=file]{font-size:13px}
+.hint{color:var(--muted);font-size:12px;margin-top:6px}
+button{width:100%;margin-top:20px;padding:13px;border:0;border-radius:8px;background:var(--purple);color:white;font-size:14px;font-weight:bold;cursor:pointer}
+button:disabled{opacity:.6;cursor:wait}
+.country-picker{position:relative}
+.country-list{display:none;position:absolute;z-index:20;left:0;right:0;top:100%;max-height:220px;overflow-y:auto;background:white;border:1px solid var(--border);border-radius:9px;box-shadow:0 8px 20px #39245122}
+.country-option{display:block;width:100%;margin:0;padding:12px;border:0;border-bottom:1px solid var(--border);border-radius:0;background:white;color:#292333;font-size:14px;font-weight:normal;text-align:left}
+.country-option:hover,.country-option:focus{background:var(--light)}
+.country-empty{padding:12px;color:var(--muted);font-size:13px}
+.message{display:none;margin-top:15px;padding:12px;border-radius:8px;font-size:13px;white-space:pre-wrap}
+.message.success{display:block;background:#eaf6ef;color:#216b49}
+.message.error{display:block;background:#fff0f0;color:#a33333}
+.batch-summary{margin-top:18px;padding:16px;background:var(--light);border-radius:10px;font-size:13px}
+.batch-summary[hidden],.stat[hidden],#batchProgress[hidden],.progress-track[hidden]{display:none!important}
+.stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:12px 0}
+.stat{background:white;border-radius:8px;padding:12px 5px;text-align:center}
+.stat strong{display:block;font-size:23px}
+.stat span{font-size:11px;color:var(--muted)}
+.progress-track{width:100%;height:9px;background:#e6dcef;border-radius:20px;overflow:hidden;margin-top:10px}
+.progress-fill{height:100%;width:0;background:var(--purple);border-radius:20px;transition:width .4s}
+.batch-results{margin-top:15px}
+.batch-result{padding:10px;background:white;border:1px solid var(--border);border-radius:7px;margin-top:7px;overflow-wrap:anywhere}
+.batch-result strong{display:block}
+.batch-result.duplicate{background:#fff7e8}
+.batch-result.failed{background:#fff0f0}
+.batch-result.accepted{background:#eaf6ef}
+.challenge-card{text-align:center;padding:30px 24px}
+.challenge-heading{font-size:12px;letter-spacing:1.5px;color:var(--purple);font-weight:bold;margin:0 0 12px}
+.challenge-card h2{font-size:22px;margin-bottom:10px}
+.challenge-card .description{max-width:500px;margin:0 auto 24px}
+.voting-day-countdown{margin:2px 0 16px;color:var(--purple);font-size:13px;font-weight:700;letter-spacing:.35px;line-height:1.5}
+.challenge-date{font-size:12px;color:var(--muted);margin-bottom:22px}
+.challenge-label{font-size:12px;letter-spacing:2px;font-weight:bold;color:var(--muted)}
+.challenge-percentage{font-size:clamp(42px,10vw,65px);font-weight:bold;color:var(--purple);line-height:1.3;margin:8px 0 18px}
+.challenge-progress{height:15px;background:#e6dcef;border-radius:30px;overflow:hidden;margin:0 auto 22px;max-width:600px}
+.challenge-progress-fill{height:100%;width:0%;background:linear-gradient(90deg,#9b7bc9,#7651a8);border-radius:30px;transition:width .6s ease}
+.challenge-status{font-size:14px;font-weight:bold;color:var(--purple);margin:12px 0}
+.challenge-reset{font-size:12px;color:var(--muted);margin-top:20px}
+.leaderboard-row{padding:15px 0;border-bottom:1px solid var(--border)}
+.leaderboard-row.top-ten-purple{background:var(--top-ten-bg);border:1px solid rgba(118,81,168,.12);border-radius:12px;padding:14px 12px;margin:5px 0}
+.leaderboard-row.top-ten-purple .progress-track{background:rgba(255,255,255,.65)}
+.rank-line{display:flex;justify-content:space-between;align-items:center;gap:12px;font-size:14px;margin-bottom:8px}
+.country-name{font-weight:bold}
+.rank-number{color:var(--muted);margin-right:8px}
+.percentage{color:var(--purple);font-weight:bold}
+.notice{background:var(--light);border-radius:10px;padding:15px;font-size:12px;color:var(--deep);margin-top:18px}
+.empty{color:var(--muted);font-size:13px;text-align:center;padding:20px 0}
+footer{text-align:center;color:var(--muted);font-size:12px;padding:20px}
+.hp{position:absolute;left:-9999px;opacity:0}
+@media(max-width:600px){
+.card{padding:19px}
+.challenge-card{padding:28px 19px}
+.container{margin-top:22px}
+}
+.challenge-tabs{display:flex;gap:9px;margin:22px 0 24px}
+.challenge-tab{flex:1;width:auto;margin:0;padding:12px 8px;border:1px solid var(--border);background:white;color:var(--deep)}
+.challenge-tab.active{background:var(--purple);color:white;border-color:var(--purple)}
+.challenge-tab:focus-visible{outline:3px solid #d8c7eb}
+.history-entry{text-align:left;border-top:1px solid var(--border);padding:17px 0}
+.history-entry-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+.history-date{font-size:14px;font-weight:bold}
+.history-percent{font-size:23px;color:var(--purple);font-weight:bold}
+.history-status{font-size:12px;color:var(--muted);margin:4px 0 0}
+.history-status.achieved{color:#216b49;font-weight:bold}
+.history-intro{font-size:13px;color:var(--muted);margin-bottom:15px}
+.country-ranking-tabs{display:flex;gap:9px;margin:18px 0 12px}
+.country-ranking-tab{flex:1;width:auto;margin:0;padding:12px 8px;border:1px solid var(--border);background:white;color:var(--deep)}
+.country-ranking-tab.active{background:var(--purple);color:white;border-color:var(--purple)}
+.country-ranking-tab:focus-visible{outline:3px solid #d8c7eb}
+.country-ranking-period{font-size:12px;color:var(--muted);margin:0 0 14px}
+.rank-movement{margin-left:10px;color:#292333;font-size:13px;font-weight:600;white-space:nowrap}
+[hidden]{display:none!important}
+.success-overlay{position:fixed;inset:0;background:rgba(31,20,49,.52);display:flex;align-items:center;justify-content:center;padding:20px;z-index:1000}
+.success-dialog{width:min(100%,390px);background:#fff;border-radius:18px;padding:30px 24px;text-align:center;box-shadow:0 18px 60px #24173540}
+.success-icon{display:grid;place-items:center;margin:0 auto 16px;width:66px;height:66px;border-radius:50%;background:#f0e6fb;color:#7651a8}
+.success-dialog h2{color:#392451;font-size:23px;margin:0 0 12px}
+.success-dialog p{font-size:14px;margin:0;color:#5c5268}
+.success-dialog button{margin-top:22px}
 </style>
 </head>
 
 <body>
-
 <header>
-  <div class="brand">BTS VOTE PROJECT</div>
-
-  <h1>
-    BTS — Fans’ Choice Award &amp;
-    Fans’ Choice of the Year with VISA
-  </h1>
-
-  <p>Teamwork makes the Dreamwork. 💜</p>
+<div class="brand">BTS VOTE PROJECT</div>
+<h1>BTS — Fans’ Choice Award &amp; Fans’ Choice of the Year with VISA</h1>
+<p>Teamwork makes the Dreamwork. 💜</p>
 </header>
 
 <main class="container">
-
 <section class="intro">
-  <h2>Every vote counts.</h2>
-
-  <p>
-    ARMY, let's see how your country stands in voting!
-    Submit your voting proof, represent your country,
-    and help bring it to the top of the leaderboard!
-  </p>
+<h2>Every vote counts.</h2>
+<p>ARMY, let's see how your country stands in voting! Submit your voting proof, represent your country, and help bring it to the top of the leaderboard!</p>
 </section>
 
-<!-- DAILY CHALLENGE -->
+<!-- GLOBAL ARMY DAILY CHALLENGE FIRST -->
+<section class="card challenge-card" id="dailyChallengeCard">
+<p class="challenge-heading">ARMY, LET'S DO THIS TOGETHER 💜</p>
+<h2>GLOBAL ARMY DAILY CHALLENGE</h2>
+<p class="voting-day-countdown" id="votingDayCountdown">Calculating voting day...</p>
 
-<section
-  class="card challenge-card"
-  id="dailyChallengeCard">
+<div class="challenge-tabs" role="tablist" aria-label="Daily challenge sections">
+<button type="button" class="challenge-tab active" id="todayTab" role="tab" aria-selected="true" aria-controls="todayChallengePanel">Today's Challenge</button>
+<button type="button" class="challenge-tab" id="historyTab" role="tab" aria-selected="false" aria-controls="historyChallengePanel">Challenge History</button>
+</div>
 
-  <p class="challenge-heading">
-    ARMY, LET'S DO THIS TOGETHER 💜
-  </p>
+<div id="todayChallengePanel" role="tabpanel" aria-labelledby="todayTab">
+<p class="description">Every eligible certificate brings us closer to today's goal.</p>
+<p class="challenge-date" id="challengeDate">Loading today's challenge...</p>
+<div class="challenge-label">DAILY PROGRESS</div>
+<div class="challenge-percentage" id="challengePercent">0.00%</div>
+<div class="challenge-progress">
+<div id="challengeProgressBar" class="challenge-progress-fill"></div>
+</div>
+<p class="challenge-status" id="challengeStatus" role="status" aria-live="polite">Loading challenge progress...</p>
+<p class="challenge-reset">Progress resets daily at 12:00 AM KST.</p>
+</div>
 
-  <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
-
-  <div
-    class="challenge-tabs"
-    role="tablist"
-    aria-label="Daily challenge sections">
-
-    <button
-      type="button"
-      class="challenge-tab active"
-      id="todayTab"
-      role="tab"
-      aria-selected="true"
-      aria-controls="todayChallengePanel">
-      Today's Challenge
-    </button>
-
-    <button
-      type="button"
-      class="challenge-tab"
-      id="historyTab"
-      role="tab"
-      aria-selected="false"
-      aria-controls="historyChallengePanel">
-      Challenge History
-    </button>
-
-  </div>
-
-  <div
-    id="todayChallengePanel"
-    role="tabpanel"
-    aria-labelledby="todayTab">
-
-    <p class="description">
-      Every eligible certificate brings us closer
-      to today's goal.
-    </p>
-
-    <p
-      class="challenge-date"
-      id="challengeDate">
-      Loading today's challenge...
-    </p>
-
-    <div class="challenge-label">
-      DAILY PROGRESS
-    </div>
-
-    <div
-      class="challenge-percentage"
-      id="challengePercent">
-      0.00%
-    </div>
-
-    <div class="challenge-progress">
-      <div
-        id="challengeProgressBar"
-        class="challenge-progress-fill">
-      </div>
-    </div>
-
-    <p
-      class="challenge-status"
-      id="challengeStatus"
-      role="status"
-      aria-live="polite">
-      Loading challenge progress...
-    </p>
-
-    <p class="challenge-reset">
-      Progress resets daily at 12:00 AM KST.
-    </p>
-
-  </div>
-
-  <div
-    id="historyChallengePanel"
-    role="tabpanel"
-    aria-labelledby="historyTab"
-    hidden>
-
-    <p class="history-intro">
-      Final daily progress for completed KST voting days,
-      starting November 2, 2026.
-    </p>
-
-    <div
-      id="challengeHistory"
-      aria-live="polite">
-
-      <div class="empty">
-        Loading challenge history...
-      </div>
-
-    </div>
-
-  </div>
-
+<div id="historyChallengePanel" role="tabpanel" aria-labelledby="historyTab" hidden>
+<p class="history-intro">Final daily progress for completed KST voting days, starting November 2, 2026.</p>
+<div id="challengeHistory" aria-live="polite">
+<div class="empty">Loading challenge history...</div>
+</div>
+</div>
 </section>
 
+<!-- SUBMISSION FORM SECOND -->
 <section class="card">
+<h2>Submit Your Voting Proof</h2>
+<p class="description">Upload multiple MAMA 2026 voting certificates. Each unique certificate reference number can be submitted once.</p>
 
-  <h2>Submit Your Voting Proof</h2>
+<div class="notice">
+<strong>Daily submission rule:</strong>
+To accommodate ARMY in different timezones, certificates dated yesterday, today, or tomorrow relative to Korea Standard Time (KST) may be submitted. Daily challenge progress is credited on the KST upload date, not the printed certificate date. The daily challenge resets at 12:00 AM KST.
+<div id="todayKST" style="margin-top:7px;font-weight:bold"></div>
+</div>
 
-  <p class="description">
-    Upload multiple MAMA 2026 voting certificates.
-    Each unique certificate reference number can be
-    submitted once.
-  </p>
+<form id="proofForm">
+<label for="username">X Username</label>
+<input id="username" type="text" placeholder="@yourusername" maxlength="16" required>
 
-  <div class="notice">
-    <strong>Daily submission rule:</strong>
+<label for="countrySearch">Country</label>
+<div class="country-picker">
+<input id="countrySearch" type="text" placeholder="Search your country..." autocomplete="off" aria-controls="countryList" aria-expanded="false" required>
+<div id="countryList" class="country-list"></div>
+</div>
+<p class="hint">Type your country and select it from the results.</p>
 
-    To accommodate ARMY in different timezones,
-    certificates dated yesterday, today, or tomorrow
-    relative to Korea Standard Time (KST) may be submitted.
+<label for="proof">Voting Certificate Screenshots</label>
+<input id="proof" type="file" accept="image/jpeg,image/png,image/webp" multiple required>
+<p class="hint">
+Select multiple screenshots. No fixed batch-count limit.
+Maximum 5 MB per original image.
+Screenshots are automatically compressed before upload when possible.
+Large batches may take longer.
+The participation date must be visible on each certificate.
+English, Japanese, Korean, Simplified Chinese, and Traditional Chinese participation-date labels are supported.
+</p>
 
-    The daily challenge resets at 12:00 AM KST.
+<div class="hp" aria-hidden="true">
+<label for="website">Leave this field empty</label>
+<input id="website" type="text" tabindex="-1" autocomplete="off">
+</div>
 
-    <div id="todayKST"
-      style="margin-top:7px;font-weight:bold;">
-    </div>
-  </div>
+<button id="submitButton" type="submit">SCAN &amp; SUBMIT CERTIFICATES</button>
+<div id="formMessage" class="message" role="status" aria-live="polite"></div>
 
-  <form id="proofForm">
+<div id="batchSummary" class="batch-summary" hidden>
+<strong>Submission Summary</strong>
+<div class="stats">
+<div class="stat">
+<strong id="acceptedCount">0</strong>
+<span>Successfully Submitted</span>
+</div>
+<div class="stat">
+<strong id="duplicateCount">0</strong>
+<span>Duplicates</span>
+</div>
+<div class="stat">
+<strong id="failedCount">0</strong>
+<span>Failed</span>
+</div>
+</div>
+<div id="batchProgress"></div>
+<div class="progress-track">
+<div id="batchBar" class="progress-fill"></div>
+</div>
+<div id="batchResults" class="batch-results"></div>
+</div>
+</form>
 
-    <label for="username">X Username</label>
-
-    <input
-      id="username"
-      type="text"
-      placeholder="@yourusername"
-      maxlength="16"
-      required
-    >
-
-    <label for="countrySearch">Country</label>
-
-    <div class="country-picker">
-
-      <input
-        id="countrySearch"
-        type="text"
-        placeholder="Search your country..."
-        autocomplete="off"
-        aria-controls="countryList"
-        aria-expanded="false"
-        required
-      >
-
-      <div
-        id="countryList"
-        class="country-list">
-      </div>
-
-    </div>
-
-    <p class="hint">
-      Type your country and select it from the results.
-    </p>
-
-    <label for="proof">
-      Voting Certificate Screenshots
-    </label>
-
-    <input
-      id="proof"
-      type="file"
-      accept="image/jpeg,image/png,image/webp"
-      multiple
-      required
-    >
-
-    <p class="hint">
-      You can select multiple MAMA voting certificates.
-
-      The participation date must be visible on each certificate.
-
-    </p>
-
-    <div class="hp" aria-hidden="true">
-      <label for="website">Leave this field empty</label>
-
-      <input
-        id="website"
-        type="text"
-        tabindex="-1"
-        autocomplete="off"
-      >
-    </div>
-
-    <button id="submitButton" type="submit">
-      SCAN &amp; SUBMIT CERTIFICATES
-    </button>
-
-    <div
-      id="formMessage"
-      class="message"
-      role="status"
-      aria-live="polite">
-    </div>
-
-    <div
-      id="batchSummary"
-      class="batch-summary"
-      hidden>
-
-      <strong>Submission Summary</strong>
-
-      <div class="stats">
-
-        <div class="stat">
-          <strong id="acceptedCount">0</strong>
-          <span>Successfully Submitted</span>
-        </div>
-
-        <div class="stat">
-          <strong id="duplicateCount">0</strong>
-          <span>Duplicates</span>
-        </div>
-
-        <div class="stat">
-          <strong id="failedCount">0</strong>
-          <span>Failed</span>
-        </div>
-
-      </div>
-
-      <div id="batchProgress"></div>
-
-      <div class="progress-track">
-        <div id="batchBar" class="progress-fill"></div>
-      </div>
-
-      <div
-        id="batchResults"
-        class="batch-results">
-      </div>
-
-    </div>
-
-  </form>
-
-  <div class="notice">
-    <strong>Privacy notice:</strong>
-
-    Your X username, country, and uploaded screenshots
-    are used to process submissions.
-
-  </div>
-
+<div class="notice">
+<strong>Privacy notice:</strong>
+Your X username, country, and uploaded screenshots are used to process submissions. Screenshots are stored privately and scheduled for automatic deletion after 25 hours. Submission records and country participation scores are retained. Please do not upload screenshots containing sensitive personal information.
+</div>
 </section>
 
-<!-- COUNTRY RANKING -->
-
+<!-- LEADERBOARD THIRD -->
 <section class="card">
+<h2>Global ARMY Participation</h2>
+<p class="description">See which countries are leading today and across the entire voting tracker.</p>
 
-  <h2>Global ARMY Participation</h2>
+<div class="country-ranking-tabs" role="tablist" aria-label="Country ranking period">
+<button type="button" id="dailyRankingTab" class="country-ranking-tab active" role="tab" aria-selected="true" aria-controls="leaderboard">Daily Ranking</button>
+<button type="button" id="overallRankingTab" class="country-ranking-tab" role="tab" aria-selected="false" aria-controls="leaderboard">Overall Ranking</button>
+</div>
 
-  <p class="description">
-    See which countries are leading today and
-    across the entire voting tracker.
-  </p>
+<p class="country-ranking-period" id="rankingPeriod">Today's country rankings (KST) — resets at midnight KST.</p>
+<div id="leaderboard" role="tabpanel" aria-live="polite">
+<div class="empty">Loading participation data...</div>
+</div>
 
-  <div
-    class="country-ranking-tabs"
-    role="tablist"
-    aria-label="Country ranking period">
-
-    <button
-      type="button"
-      id="dailyRankingTab"
-      class="country-ranking-tab active"
-      role="tab"
-      aria-selected="true"
-      aria-controls="leaderboard">
-      Daily Ranking
-    </button>
-
-    <button
-      type="button"
-      id="overallRankingTab"
-      class="country-ranking-tab"
-      role="tab"
-      aria-selected="false"
-      aria-controls="leaderboard">
-      Overall Ranking
-    </button>
-
-  </div>
-
-
-  <p
-    class="country-ranking-period"
-    id="rankingPeriod">
-    Today's country rankings (KST) — resets at midnight KST.
-  </p>
-
-  <div
-    id="leaderboard"
-    role="tabpanel"
-    aria-live="polite">
-
-    <div class="empty">
-      Loading participation data...
-    </div>
-
-  </div>
-
-  <div class="notice">
-    Ranking movement:
-    ↑ moved up,
-    ↓ moved down,
-    – unchanged,
-    NEW first appearance.
-
-    Arrows reflect each country's most recent rank change
-    and persist after refresh.
-
-    <br><br>
-
-    Daily Ranking counts unique eligible certificates
-    uploaded during the current KST date.
-
-    Overall Ranking accumulates eligible certificates
-    across all dates.
-
-    Percentages show each country's share of submissions
-    for the selected period.
-
-    Pending and verified submissions count.
-
-    These are community participation rankings,
-    not official MAMA results.
-  </div>
-
+<div class="notice">
+Ranking movement: ↑ moved up, ↓ moved down, – unchanged, NEW first appearance.
+Arrows reflect each country's most recent rank change and persist after refresh.
+<br><br>
+Daily Ranking counts unique eligible certificates uploaded during the current KST date.
+Overall Ranking accumulates eligible certificates across all dates.
+Percentages show each country's share of submissions for the selected period.
+Pending and verified submissions count.
+These are community participation rankings, not official MAMA results.
+</div>
 </section>
-
 </main>
 
-<footer>
-  Made by btsvotingorg
-</footer>
+<footer>Made by btsvotingorg</footer>
 
-
+<!-- SUCCESS POP-UP -->
 <div id="successOverlay" class="success-overlay" hidden>
-  <div class="success-dialog" role="dialog" aria-modal="true" aria-labelledby="successTitle" aria-describedby="successDescription">
-    <div class="success-icon" aria-hidden="true">
-      <svg width="37" height="37" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 21L17 29L32 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-    </div>
-    <h2 id="successTitle">Thank you for voting!</h2>
-    <p id="successDescription">Your voting certificates have been submitted successfully. Vote more to help BTS win the DAESANG! 💜</p>
-    <button type="button" id="closeSuccess">Continue Voting 💜</button>
-  </div>
+<div class="success-dialog" role="dialog" aria-modal="true" aria-labelledby="successTitle" aria-describedby="successDescription">
+<div class="success-icon" aria-hidden="true">
+<svg width="37" height="37" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+<path d="M9 21L17 29L32 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
+</div>
+<h2 id="successTitle">Thank you for voting!</h2>
+<p id="successDescription">Your voting certificates have been submitted successfully. Vote more to help BTS win the DAESANG! 💜</p>
+<button type="button" id="closeSuccess">Continue Voting 💜</button>
+</div>
 </div>
 
 <script>
-
-/* ==========================================
-   SUPABASE CONFIGURATION
-========================================== */
-
+/* SUPABASE CONFIGURATION */
 const SUPABASE_URL =
   "https://vnhvyhfkvvqnlghikgck.supabase.co";
 
@@ -998,114 +280,77 @@ const db = window.supabase.createClient(
   SUPABASE_PUBLISHABLE_KEY
 );
 
-
-/* ==========================================
-   ELEMENTS
-========================================== */
-
+/* ELEMENTS */
 const form = document.getElementById("proofForm");
-
-const submitButton =
-  document.getElementById("submitButton");
-
-const message =
-  document.getElementById("formMessage");
-
-const countrySearch =
-  document.getElementById("countrySearch");
-
-const countryList =
-  document.getElementById("countryList");
-
-const fileInput =
-  document.getElementById("proof");
-
-const batchSummary =
-  document.getElementById("batchSummary");
-
-const acceptedCount =
-  document.getElementById("acceptedCount");
-
-const duplicateCount =
-  document.getElementById("duplicateCount");
-
-const failedCount =
-  document.getElementById("failedCount");
-
-const batchProgress =
-  document.getElementById("batchProgress");
-
-const batchBar =
-  document.getElementById("batchBar");
-
-const batchResults =
-  document.getElementById("batchResults");
+const submitButton = document.getElementById("submitButton");
+const message = document.getElementById("formMessage");
+const countrySearch = document.getElementById("countrySearch");
+const countryList = document.getElementById("countryList");
+const fileInput = document.getElementById("proof");
+const batchSummary = document.getElementById("batchSummary");
+const acceptedCount = document.getElementById("acceptedCount");
+const duplicateCount = document.getElementById("duplicateCount");
+const failedCount = document.getElementById("failedCount");
+const batchProgress = document.getElementById("batchProgress");
+const batchBar = document.getElementById("batchBar");
+const batchResults = document.getElementById("batchResults");
 
 let selectedCountry = "";
 let processing = false;
 
-
-/* ==========================================
-   COUNTRY LIST
-========================================== */
-
+/* COUNTRY LIST */
 const countries = [
-  "Afghanistan","Albania","Algeria","Andorra","Angola",
-  "Antigua and Barbuda","Argentina","Armenia","Australia",
-  "Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh",
-  "Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
-  "Bolivia","Bosnia and Herzegovina","Botswana","Brazil",
-  "Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde",
-  "Cambodia","Cameroon","Canada","Central African Republic",
-  "Chad","Chile","China","Colombia","Comoros","Congo",
-  "Costa Rica","Côte d'Ivoire","Croatia","Cuba","Cyprus",
-  "Czechia","Democratic Republic of the Congo","Denmark",
-  "Djibouti","Dominica","Dominican Republic","Ecuador",
-  "Egypt","El Salvador","Equatorial Guinea","Eritrea",
-  "Estonia","Eswatini","Ethiopia","Fiji","Finland",
-  "France","Gabon","Gambia","Georgia","Germany","Ghana",
-  "Greece","Grenada","Guatemala","Guinea","Guinea-Bissau",
-  "Guyana","Haiti","Honduras","Hong Kong","Hungary",
-  "Iceland","India","Indonesia","Iran","Iraq","Ireland",
-  "Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan",
-  "Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos",
-  "Latvia","Lebanon","Lesotho","Liberia","Libya",
-  "Liechtenstein","Lithuania","Luxembourg","Madagascar",
-  "Malawi","Malaysia","Maldives","Mali","Malta",
-  "Marshall Islands","Mauritania","Mauritius","Mexico",
-  "Micronesia","Moldova","Monaco","Mongolia","Montenegro",
-  "Morocco","Mozambique","Myanmar","Namibia","Nauru",
-  "Nepal","Netherlands","New Zealand","Nicaragua",
-  "Niger","Nigeria","North Korea","North Macedonia",
-  "Norway","Oman","Pakistan","Palau","Palestine","Panama",
-  "Papua New Guinea","Paraguay","Peru","Philippines",
-  "Poland","Portugal","Qatar","Romania","Russia","Rwanda",
-  "Saint Kitts and Nevis","Saint Lucia",
-  "Saint Vincent and the Grenadines","Samoa","San Marino",
-  "São Tomé and Príncipe","Saudi Arabia","Senegal",
-  "Serbia","Seychelles","Sierra Leone","Singapore",
-  "Slovakia","Slovenia","Solomon Islands","Somalia",
-  "South Africa","South Korea","South Sudan","Spain",
-  "Sri Lanka","Sudan","Suriname","Sweden","Switzerland",
-  "Syria","Taiwan","Tajikistan","Tanzania","Thailand",
-  "Timor-Leste","Togo","Tonga","Trinidad and Tobago",
-  "Tunisia","Türkiye","Turkmenistan","Tuvalu","Uganda",
-  "Ukraine","United Arab Emirates","United Kingdom",
-  "United States","Uruguay","Uzbekistan","Vanuatu",
-  "Vatican City","Venezuela","Vietnam","Yemen",
-  "Zambia","Zimbabwe"
+"Afghanistan","Albania","Algeria","Andorra","Angola",
+"Antigua and Barbuda","Argentina","Armenia","Australia",
+"Austria","Azerbaijan","Bahamas","Bahrain","Bangladesh",
+"Barbados","Belarus","Belgium","Belize","Benin","Bhutan",
+"Bolivia","Bosnia and Herzegovina","Botswana","Brazil",
+"Brunei","Bulgaria","Burkina Faso","Burundi","Cabo Verde",
+"Cambodia","Cameroon","Canada","Central African Republic",
+"Chad","Chile","China","Colombia","Comoros","Congo",
+"Costa Rica","Côte d'Ivoire","Croatia","Cuba","Cyprus",
+"Czechia","Democratic Republic of the Congo","Denmark",
+"Djibouti","Dominica","Dominican Republic","Ecuador",
+"Egypt","El Salvador","Equatorial Guinea","Eritrea",
+"Estonia","Eswatini","Ethiopia","Fiji","Finland",
+"France","Gabon","Gambia","Georgia","Germany","Ghana",
+"Greece","Grenada","Guatemala","Guinea","Guinea-Bissau",
+"Guyana","Haiti","Honduras","Hong Kong","Hungary",
+"Iceland","India","Indonesia","Iran","Iraq","Ireland",
+"Israel","Italy","Jamaica","Japan","Jordan","Kazakhstan",
+"Kenya","Kiribati","Kuwait","Kyrgyzstan","Laos",
+"Latvia","Lebanon","Lesotho","Liberia","Libya",
+"Liechtenstein","Lithuania","Luxembourg","Madagascar",
+"Malawi","Malaysia","Maldives","Mali","Malta",
+"Marshall Islands","Mauritania","Mauritius","Mexico",
+"Micronesia","Moldova","Monaco","Mongolia","Montenegro",
+"Morocco","Mozambique","Myanmar","Namibia","Nauru",
+"Nepal","Netherlands","New Zealand","Nicaragua",
+"Niger","Nigeria","North Korea","North Macedonia",
+"Norway","Oman","Pakistan","Palau","Palestine","Panama",
+"Papua New Guinea","Paraguay","Peru","Philippines",
+"Poland","Portugal","Qatar","Romania","Russia","Rwanda",
+"Saint Kitts and Nevis","Saint Lucia",
+"Saint Vincent and the Grenadines","Samoa","San Marino",
+"São Tomé and Príncipe","Saudi Arabia","Senegal",
+"Serbia","Seychelles","Sierra Leone","Singapore",
+"Slovakia","Slovenia","Solomon Islands","Somalia",
+"South Africa","South Korea","South Sudan","Spain",
+"Sri Lanka","Sudan","Suriname","Sweden","Switzerland",
+"Syria","Taiwan","Tajikistan","Tanzania","Thailand",
+"Timor-Leste","Togo","Tonga","Trinidad and Tobago",
+"Tunisia","Türkiye","Turkmenistan","Tuvalu","Uganda",
+"Ukraine","United Arab Emirates","United Kingdom",
+"United States","Uruguay","Uzbekistan","Vanuatu",
+"Vatican City","Venezuela","Vietnam","Yemen",
+"Zambia","Zimbabwe"
 ];
 
 countries.sort((a,b) => a.localeCompare(b));
 
-
-/* ==========================================
-   KOREA STANDARD TIME
-========================================== */
-
+/* KOREA STANDARD TIME */
 function getKSTDate() {
-
-  const parts = new Intl.DateTimeFormat("en-US",{
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone:"Asia/Seoul",
     year:"numeric",
     month:"2-digit",
@@ -1120,35 +365,84 @@ function getKSTDate() {
     value("day");
 }
 
-function updateKSTDisplay() {
+/* AUTOMATIC VOTING DAY COUNTDOWN */
+/*
+ Voting period:
+ October 28, 2026 at 18:00 KST
+ through November 8, 2026 at 23:59 KST.
 
+ October 28 = Day 1
+ November 8 = Day 12
+*/
+
+const VOTING_START_UTC =
+  Date.parse("2026-10-28T09:00:00Z");
+
+const VOTING_END_EXCLUSIVE_UTC =
+  Date.parse("2026-11-08T15:00:00Z");
+
+const VOTING_START_KST_DAY =
+  Date.parse("2026-10-28T00:00:00Z");
+
+const VOTING_END_KST_DAY =
+  Date.parse("2026-11-08T00:00:00Z");
+
+function updateVotingDayCountdown() {
+  const label = document.getElementById(
+    "votingDayCountdown"
+  );
+
+  if (!label) return;
+
+  const now = Date.now();
+
+  if (now < VOTING_START_UTC) {
+    label.textContent =
+      "VOTING STARTS OCTOBER 28 AT 6:00 PM KST";
+    return;
+  }
+
+  if (now >= VOTING_END_EXCLUSIVE_UTC) {
+    label.textContent = "VOTING HAS ENDED";
+    return;
+  }
+
+  const todayKST = Date.parse(
+    getKSTDate() + "T00:00:00Z"
+  );
+
+  const dayNumber = Math.floor(
+    (todayKST - VOTING_START_KST_DAY) / 86400000
+  ) + 1;
+
+  const daysLeft = Math.round(
+    (VOTING_END_KST_DAY - todayKST) / 86400000
+  );
+
+  label.textContent = daysLeft === 0
+    ? "DAY " + dayNumber + " · FINAL DAY OF VOTING!"
+    : "DAY " + dayNumber + " · " + daysLeft +
+      (daysLeft === 1 ? " DAY" : " DAYS") +
+      " LEFT BEFORE VOTING ENDS";
+}
+
+function updateKSTDisplay() {
   document.getElementById("todayKST").textContent =
     "Current KST voting date: " + getKSTDate();
 
+  updateVotingDayCountdown();
 }
 
 updateKSTDisplay();
+setInterval(updateKSTDisplay, 15000);
 
-setInterval(updateKSTDisplay,15000);
-
-
-/* ==========================================
-   COUNTRY SEARCH
-========================================== */
-
+/* COUNTRY SEARCH */
 function closeCountries() {
-
   countryList.style.display = "none";
-
-  countrySearch.setAttribute(
-    "aria-expanded",
-    "false"
-  );
-
+  countrySearch.setAttribute("aria-expanded","false");
 }
 
 function showCountries(query = "") {
-
   countryList.replaceChildren();
 
   const search = query.trim().toLowerCase();
@@ -1158,156 +452,138 @@ function showCountries(query = "") {
   );
 
   if (!matches.length) {
-
     const empty = document.createElement("div");
-
     empty.className = "country-empty";
-
     empty.textContent = "No matching countries";
-
     countryList.appendChild(empty);
-
   }
 
   for (const country of matches) {
-
     const option = document.createElement("button");
 
     option.type = "button";
-
     option.className = "country-option";
-
     option.textContent = country;
 
-    option.addEventListener("click",() => {
-
+    option.addEventListener("click", () => {
       selectedCountry = country;
-
       countrySearch.value = country;
-
       closeCountries();
-
     });
 
     countryList.appendChild(option);
-
   }
 
   countryList.style.display = "block";
-
-  countrySearch.setAttribute(
-    "aria-expanded",
-    "true"
-  );
-
+  countrySearch.setAttribute("aria-expanded","true");
 }
 
-countrySearch.addEventListener("focus",() => {
-
+countrySearch.addEventListener("focus", () => {
   showCountries(
     selectedCountry ? "" : countrySearch.value
   );
-
 });
 
-countrySearch.addEventListener("input",() => {
-
+countrySearch.addEventListener("input", () => {
   selectedCountry = "";
-
   showCountries(countrySearch.value);
-
 });
 
-countrySearch.addEventListener("keydown",event => {
-
-  if (event.key === "Escape") {
-    closeCountries();
-  }
-
+countrySearch.addEventListener("keydown", event => {
+  if (event.key === "Escape") closeCountries();
 });
 
-document.addEventListener("click",event => {
-
+document.addEventListener("click", event => {
   if (!event.target.closest(".country-picker")) {
     closeCountries();
   }
-
 });
 
-
-/* ==========================================
-   SUBMISSION MESSAGES
-========================================== */
-
+/* SUBMISSION MESSAGES */
 function showMessage(text,type) {
-
   message.textContent = text;
-
   message.className = "message " + type;
-
 }
 
-const successOverlay = document.getElementById("successOverlay");
-const closeSuccess = document.getElementById("closeSuccess");
-const successDescription = document.getElementById("successDescription");
+/* SUCCESS POP-UP */
+const successOverlay =
+  document.getElementById("successOverlay");
+
+const closeSuccess =
+  document.getElementById("closeSuccess");
+
+const successDescription =
+  document.getElementById("successDescription");
+
 let successPreviousFocus = null;
+
 function showSuccessPopup(submittedCount) {
   const count = Number(submittedCount);
-  if (!Number.isSafeInteger(count) || count < 1) return;
-  successDescription.textContent = count + " voting certificate" +
+
+  if (!Number.isSafeInteger(count) || count < 1) {
+    return;
+  }
+
+  successDescription.textContent =
+    count + " voting certificate" +
     (count === 1 ? " has" : "s have") +
-    " been submitted successfully. Vote more to help BTS win the DAESANG! 💜";
+    " been submitted successfully. " +
+    "Vote more to help BTS win the DAESANG! 💜";
+
   successPreviousFocus = document.activeElement;
   successOverlay.hidden = false;
   closeSuccess.focus();
 }
+
 function hideSuccessPopup() {
   successOverlay.hidden = true;
-  if (successPreviousFocus?.focus) successPreviousFocus.focus();
+
+  if (successPreviousFocus?.focus) {
+    successPreviousFocus.focus();
+  }
 }
-closeSuccess.addEventListener("click", hideSuccessPopup);
+
+closeSuccess.addEventListener(
+  "click",
+  hideSuccessPopup
+);
+
 successOverlay.addEventListener("click", event => {
-  if (event.target === successOverlay) hideSuccessPopup();
+  if (event.target === successOverlay) {
+    hideSuccessPopup();
+  }
 });
+
 document.addEventListener("keydown", event => {
-  if (!successOverlay.hidden && event.key === "Escape") hideSuccessPopup();
+  if (!successOverlay.hidden && event.key === "Escape") {
+    hideSuccessPopup();
+  }
 });
 
+/* BATCH RESULTS */
 function addResult(filename,status,detail) {
-
-  // Successful files are represented by one confirmation message.
-  // Only actual duplicates and failures need individual details.
   if (status === "accepted") return;
 
   const row = document.createElement("div");
-
   row.className = "batch-result " + status;
 
   const title = document.createElement("strong");
-
   title.textContent = filename;
 
   const description = document.createElement("span");
-
   description.textContent = detail;
 
   row.append(title,description);
-
   batchResults.appendChild(row);
-
 }
 
 function updateProgress(
   done,total,pending,duplicates,failed
 ) {
-
   acceptedCount.textContent = pending;
-
   duplicateCount.textContent = duplicates;
-
   failedCount.textContent = failed;
 
-  // Never show counters that have no relevant result.
   acceptedCount.parentElement.hidden = true;
   duplicateCount.parentElement.hidden = duplicates === 0;
   failedCount.parentElement.hidden = failed === 0;
@@ -1318,16 +594,10 @@ function updateProgress(
 
   batchBar.style.width =
     (total ? Math.round(done / total * 100) : 0) + "%";
-
 }
 
-
-/* ==========================================
-   CERTIFICATE DATE VALIDATION
-========================================== */
-
+/* CERTIFICATE DATE VALIDATION */
 function formatCertificateDate(year,month,day) {
-
   const formatted =
     year + "-" +
     month.padStart(2,"0") + "-" +
@@ -1345,11 +615,9 @@ function formatCertificateDate(year,month,day) {
   }
 
   return formatted;
-
 }
 
 function isWithinTimezoneWindow(participationDate) {
-
   const certificateDate = new Date(
     participationDate + "T00:00:00Z"
   );
@@ -1367,19 +635,13 @@ function isWithinTimezoneWindow(participationDate) {
 
   const differenceInDays =
     (certificateDate.getTime() -
-      kstDate.getTime()) / 86400000;
+    kstDate.getTime()) / 86400000;
 
   return Math.abs(differenceInDays) <= 1;
-
 }
 
-
-/* ==========================================
-   MULTILINGUAL CERTIFICATE OCR
-========================================== */
-
+/* MULTILINGUAL CERTIFICATE OCR */
 function extractCertificateDetails(rawText) {
-
   const text = rawText
     .normalize("NFKC")
     .replace(/\r/g," ")
@@ -1404,7 +666,6 @@ function extractCertificateDetails(rawText) {
   let participationDate = null;
 
   for (const match of text.matchAll(participationLabel)) {
-
     const nearbyText = text.slice(
       match.index + match[0].length,
       match.index + match[0].length + 65
@@ -1429,136 +690,128 @@ function extractCertificateDetails(rawText) {
     );
 
     if (parsed) {
-
       participationDate = parsed;
-
       break;
-
     }
-
   }
 
   return {
     certificateNumber,
     participationDate
   };
-
 }
 
-// Create OCR workers only when needed and reuse them across batch files.
-// This avoids downloading and initializing the same OCR models repeatedly.
+/* REUSABLE OCR WORKERS */
 const ocrWorkerPromises = new Map();
+
 async function getOCRWorker(language) {
   if (!ocrWorkerPromises.has(language)) {
-    const promise = Tesseract.createWorker(language).catch(error => {
-      ocrWorkerPromises.delete(language);
-      throw error;
-    });
-    ocrWorkerPromises.set(language, promise);
+    const promise = Tesseract.createWorker(language)
+      .catch(error => {
+        ocrWorkerPromises.delete(language);
+        throw error;
+      });
+
+    ocrWorkerPromises.set(language,promise);
   }
+
   return ocrWorkerPromises.get(language);
 }
 
-async function recognizeCertificate(file, language) {
+async function recognizeCertificate(file,language) {
   const worker = await getOCRWorker(language);
   const result = await worker.recognize(file);
-  return extractCertificateDetails(result.data.text || "");
+
+  return extractCertificateDetails(
+    result.data.text || ""
+  );
 }
 
 async function scanCertificate(file) {
-  // Fast path: most certificates can be read with the smaller English model.
-  const english = await recognizeCertificate(file, "eng");
-  if (english.certificateNumber && english.participationDate) return english;
+  const english = await recognizeCertificate(
+    file,"eng"
+  );
+
+  if (
+    english.certificateNumber &&
+    english.participationDate
+  ) {
+    return english;
+  }
 
   let certificateNumber = english.certificateNumber;
   let participationDate = english.participationDate;
 
-  // Preserve the existing Japanese/Korean fallback.
-  const eastAsian = await recognizeCertificate(file, "jpn+kor+eng");
+  const eastAsian = await recognizeCertificate(
+    file,"jpn+kor+eng"
+  );
+
   certificateNumber ||= eastAsian.certificateNumber;
   participationDate ||= eastAsian.participationDate;
-  if (certificateNumber && participationDate) return { certificateNumber, participationDate };
 
-  // Only run Chinese OCR if the preceding scans did not find both fields.
-  // The models are cached for subsequent screenshots in the same session.
-  const chinese = await recognizeCertificate(file, "chi_sim+chi_tra+eng");
+  if (certificateNumber && participationDate) {
+    return {
+      certificateNumber,
+      participationDate
+    };
+  }
+
+  const chinese = await recognizeCertificate(
+    file,"chi_sim+chi_tra+eng"
+  );
+
   certificateNumber ||= chinese.certificateNumber;
   participationDate ||= chinese.participationDate;
-  return { certificateNumber, participationDate };
+
+  return {
+    certificateNumber,
+    participationDate
+  };
 }
 
-
-/* ==========================================
-   AUTOMATIC SCREENSHOT COMPRESSION
-========================================== */
-
+/* SCREENSHOT COMPRESSION */
 const COMPRESSION_TARGET_BYTES = 200 * 1024;
 
 function canvasToJpegBlob(canvas,quality) {
-
   return new Promise((resolve,reject) => {
-
     canvas.toBlob(
-
       blob => blob
         ? resolve(blob)
-        : reject(
-            new Error("Image compression failed.")
-          ),
-
+        : reject(new Error("Image compression failed.")),
       "image/jpeg",
-
       quality
-
     );
-
   });
-
 }
 
 async function loadImageForCompression(file) {
-
   const objectUrl = URL.createObjectURL(file);
 
   try {
-
     const img = new Image();
-
     img.decoding = "async";
-
     img.src = objectUrl;
 
     await new Promise((resolve,reject) => {
-
       if (img.complete && img.naturalWidth) {
-
         resolve();
-
         return;
-
       }
 
       img.onload = resolve;
-
       img.onerror = () =>
-        reject(
-          new Error("Could not decode the screenshot.")
-        );
-
+        reject(new Error(
+          "Could not decode the screenshot."
+        ));
     });
 
     return img;
-
   } finally {
-
     URL.revokeObjectURL(objectUrl);
-
   }
-
 }
 
 async function compressScreenshot(file) {
-
   if (file.size <= COMPRESSION_TARGET_BYTES) {
     return file;
   }
@@ -1566,35 +819,27 @@ async function compressScreenshot(file) {
   const image = await loadImageForCompression(file);
 
   if (!image.naturalWidth || !image.naturalHeight) {
-
     throw new Error(
       "Could not read the screenshot dimensions."
     );
-
   }
 
   const canvas = document.createElement("canvas");
-
   const context = canvas.getContext("2d");
 
   if (!context) {
-
     throw new Error(
       "Image compression is not supported in this browser."
     );
-
   }
 
   const widths = [1800,1600,1400];
-
   const qualities = [0.84,0.78,0.72];
 
   let smallestBlob = null;
 
   try {
-
     for (const maxWidth of widths) {
-
       const scale = Math.min(
         1,
         maxWidth / image.naturalWidth
@@ -1611,31 +856,20 @@ async function compressScreenshot(file) {
       );
 
       context.fillStyle = "#ffffff";
-
       context.fillRect(
-        0,
-        0,
-        canvas.width,
-        canvas.height
+        0,0,canvas.width,canvas.height
       );
 
       context.imageSmoothingEnabled = true;
-
       context.imageSmoothingQuality = "high";
 
       context.drawImage(
-        image,
-        0,
-        0,
-        canvas.width,
-        canvas.height
+        image,0,0,canvas.width,canvas.height
       );
 
       for (const quality of qualities) {
-
         const blob = await canvasToJpegBlob(
-          canvas,
-          quality
+          canvas,quality
         );
 
         if (
@@ -1646,73 +880,46 @@ async function compressScreenshot(file) {
         }
 
         if (blob.size <= COMPRESSION_TARGET_BYTES) {
-
           return new File(
-
             [blob],
-
             file.name.replace(/\.[^.]+$/,"") + ".jpg",
-
             {
               type:"image/jpeg",
               lastModified:file.lastModified
             }
-
           );
-
         }
-
       }
-
     }
-
   } finally {
-
     canvas.width = 0;
-
     canvas.height = 0;
-
   }
 
   if (
     smallestBlob &&
     smallestBlob.size < file.size
   ) {
-
     return new File(
-
       [smallestBlob],
-
       file.name.replace(/\.[^.]+$/,"") + ".jpg",
-
       {
         type:"image/jpeg",
         lastModified:file.lastModified
       }
-
     );
-
   }
 
   return file;
-
 }
 
 function readableFileSize(bytes) {
-
   return bytes >= 1024 * 1024
-
     ? (bytes / (1024 * 1024)).toFixed(2) + " MB"
-
     : Math.round(bytes / 1024) + " KB";
-
 }
 
-
-/* ==========================================
-   SEND CERTIFICATE TO SUPABASE
-========================================== */
-
+/* SUPABASE SUBMISSION */
 async function submitCertificate(
   file,
   certificate,
@@ -1720,35 +927,23 @@ async function submitCertificate(
   username,
   country
 ) {
-
   const body = new FormData();
 
   body.append("x_username",username);
-
   body.append("country",country);
-
   body.append("certificate_number",certificate);
-
   body.append("participation_date",participationDate);
-
   body.append("proof",file);
 
   const response = await fetch(
-
     SUPABASE_URL + "/functions/v1/submit-proof-test",
-
     {
-
       method:"POST",
-
       headers:{
         apikey:SUPABASE_PUBLISHABLE_KEY
       },
-
       body
-
     }
-
   );
 
   const raw = await response.text();
@@ -1756,15 +951,11 @@ async function submitCertificate(
   let data;
 
   try {
-
     data = JSON.parse(raw);
-
   } catch {
-
     data = {
       error:raw.slice(0,200)
     };
-
   }
 
   return {
@@ -1772,22 +963,15 @@ async function submitCertificate(
     ok:response.ok,
     data
   };
-
 }
 
-
-/* ==========================================
-   PROCESS MULTIPLE SCREENSHOTS
-========================================== */
-
+/* PROCESS MULTIPLE CERTIFICATES */
 form.addEventListener("submit",async event => {
-
   event.preventDefault();
 
   if (processing) return;
 
   message.className = "message";
-
   message.textContent = "";
 
   if (
@@ -1807,14 +991,11 @@ form.addEventListener("submit",async event => {
   );
 
   if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
-
     showMessage(
       "Please enter a valid X username.",
       "error"
     );
-
     return;
-
   }
 
   if (
@@ -1822,75 +1003,61 @@ form.addEventListener("submit",async event => {
     !countries.includes(selectedCountry) ||
     countrySearch.value !== selectedCountry
   ) {
-
     showMessage(
       "Please select a country from the search results.",
       "error"
     );
-
     return;
-
   }
 
   if (!files.length) {
-
     showMessage(
       "Please select at least one screenshot.",
       "error"
     );
-
     return;
-
   }
 
   if (typeof Tesseract === "undefined") {
-
     showMessage(
       "Scanner failed to load. Please refresh.",
       "error"
     );
-
     return;
-
   }
 
   processing = true;
-
   submitButton.disabled = true;
-
   submitButton.textContent =
     "PROCESSING CERTIFICATES...";
 
   batchSummary.hidden = false;
   batchProgress.hidden = false;
   batchBar.parentElement.hidden = false;
-  const summaryHeading = batchSummary.querySelector("strong");
-  if (summaryHeading) summaryHeading.textContent = "Processing certificates";
+
+  const summaryHeading =
+    batchSummary.querySelector("strong");
+
+  if (summaryHeading) {
+    summaryHeading.textContent =
+      "Processing certificates";
+  }
 
   batchResults.replaceChildren();
 
   let pending = 0;
-
   let duplicates = 0;
-
   let failed = 0;
-
   let done = 0;
 
   const seen = new Set();
 
   updateProgress(
-    0,
-    files.length,
-    0,
-    0,
-    0
+    0,files.length,0,0,0
   );
 
   try {
-
     for (const file of files) {
-
       batchProgress.textContent =
         "Scanning " + (done + 1) +
         " of " + files.length;
@@ -1898,7 +1065,6 @@ form.addEventListener("submit",async event => {
       let stop = false;
 
       try {
-
         const allowed = [
           "image/jpeg",
           "image/png",
@@ -1910,7 +1076,6 @@ form.addEventListener("submit",async event => {
           file.size === 0 ||
           file.size > 5 * 1024 * 1024
         ) {
-
           failed++;
 
           addResult(
@@ -1918,9 +1083,7 @@ form.addEventListener("submit",async event => {
             "failed",
             "Invalid image or over 5 MB."
           );
-
         } else {
-
           const scanned =
             await scanCertificate(file);
 
@@ -1931,7 +1094,6 @@ form.addEventListener("submit",async event => {
             scanned.participationDate;
 
           if (!certificate) {
-
             failed++;
 
             addResult(
@@ -1939,9 +1101,7 @@ form.addEventListener("submit",async event => {
               "failed",
               "Certificate reference number not detected."
             );
-
           } else if (!participationDate) {
-
             failed++;
 
             addResult(
@@ -1949,11 +1109,9 @@ form.addEventListener("submit",async event => {
               "failed",
               "Participation date could not be detected. Please upload a clear certificate showing the participation date."
             );
-
           } else if (
             !isWithinTimezoneWindow(participationDate)
           ) {
-
             failed++;
 
             addResult(
@@ -1963,9 +1121,7 @@ form.addEventListener("submit",async event => {
               " is outside the accepted timezone window " +
               "(yesterday, today, or tomorrow relative to KST)."
             );
-
           } else if (seen.has(certificate)) {
-
             duplicates++;
 
             addResult(
@@ -1973,9 +1129,7 @@ form.addEventListener("submit",async event => {
               "duplicate",
               "Repeated in this batch: " + certificate
             );
-
           } else {
-
             seen.add(certificate);
 
             batchProgress.textContent =
@@ -1987,24 +1141,17 @@ form.addEventListener("submit",async event => {
 
             const response =
               await submitCertificate(
-
                 uploadFile,
-
                 certificate,
-
                 participationDate,
-
                 username,
-
                 selectedCountry
-
               );
 
             if (
               response.status === 409 &&
               response.data.duplicate
             ) {
-
               duplicates++;
 
               addResult(
@@ -2012,14 +1159,11 @@ form.addEventListener("submit",async event => {
                 "duplicate",
                 "Already submitted: " + certificate
               );
-
             } else if (
               response.status === 401 ||
               response.status === 403
             ) {
-
               failed++;
-
               stop = true;
 
               addResult(
@@ -2027,9 +1171,7 @@ form.addEventListener("submit",async event => {
                 "failed",
                 "Server authorization blocked the submission."
               );
-
             } else if (!response.ok) {
-
               failed++;
 
               addResult(
@@ -2039,43 +1181,29 @@ form.addEventListener("submit",async event => {
                 response.data.message ||
                 "Submission failed."
               );
-
             } else {
-
               pending++;
 
               addResult(
                 file.name,
                 "accepted",
-
                 "Successfully submitted: " +
                 certificate +
-
                 " | Participation date: " +
                 participationDate +
-
                 " | Uploaded: " +
                 readableFileSize(uploadFile.size) +
-
                 (
                   uploadFile.size < file.size
-
                     ? " (original " +
                       readableFileSize(file.size) + ")"
-
                     : ""
                 )
-
               );
-
             }
-
           }
-
         }
-
       } catch (error) {
-
         console.error(
           "Processing error:",
           error
@@ -2088,9 +1216,7 @@ form.addEventListener("submit",async event => {
           "failed",
           "Could not process or upload this screenshot."
         );
-
       } finally {
-
         done++;
 
         updateProgress(
@@ -2100,20 +1226,23 @@ form.addEventListener("submit",async event => {
           duplicates,
           failed
         );
-
       }
 
       if (stop) break;
-
     }
 
-    // Show only the relevant outcome after processing finishes.
-    // No zero-value counters or successful-file detail list.
-    batchSummary.hidden = duplicates === 0 && failed === 0;
+    batchSummary.hidden =
+      duplicates === 0 && failed === 0;
 
     if (!batchSummary.hidden) {
-      const summaryHeading = batchSummary.querySelector("strong");
-      if (summaryHeading) summaryHeading.textContent = "Items needing attention";
+      const summaryHeading =
+        batchSummary.querySelector("strong");
+
+      if (summaryHeading) {
+        summaryHeading.textContent =
+          "Items needing attention";
+      }
+
       batchProgress.hidden = true;
       batchBar.parentElement.hidden = true;
     }
@@ -2123,50 +1252,48 @@ form.addEventListener("submit",async event => {
         "✓ " + pending + " voting certificate" +
         (pending === 1 ? "" : "s") +
         " submitted successfully!" +
-        (duplicates || failed ? " See the details below for other files." : ""),
+        (
+          duplicates || failed
+            ? " See the details below for other files."
+            : ""
+        ),
         "success"
       );
     } else if (duplicates > 0 || failed > 0) {
-      showMessage("No new certificates submitted. See the details below.", "error");
+      showMessage(
+        "No new certificates submitted. See the details below.",
+        "error"
+      );
     } else {
-      showMessage("No certificates were submitted.", "error");
+      showMessage(
+        "No certificates were submitted.",
+        "error"
+      );
     }
 
     if (pending) {
       showSuccessPopup(pending);
 
-      // Update rankings in the background; do not delay the confirmation popup.
       Promise.all([
-
         loadLeaderboard(),
-
         loadDailyChallenge()
-
-      ]).catch(error => console.warn("Background refresh failed:", error));
-
+      ]).catch(error =>
+        console.warn(
+          "Background refresh failed:",
+          error
+        )
+      );
     }
-
   } finally {
-
     processing = false;
-
     submitButton.disabled = false;
-
     submitButton.textContent =
       "SCAN & SUBMIT CERTIFICATES";
-
   }
-
 });
 
-
-/* ==========================================
-   COUNTRY LEADERBOARD
-   DAILY + OVERALL
-========================================== */
-
+/* DAILY AND OVERALL LEADERBOARD */
 let selectedRankingPeriod = "daily";
-
 let leaderboardRequestId = 0;
 
 const dailyRankingTab =
@@ -2178,35 +1305,28 @@ const overallRankingTab =
 const rankingPeriod =
   document.getElementById("rankingPeriod");
 
-
 function selectRankingPeriod(period) {
-
   selectedRankingPeriod = period;
 
   const daily = period === "daily";
 
   dailyRankingTab.classList.toggle(
-    "active",
-    daily
+    "active",daily
   );
 
   overallRankingTab.classList.toggle(
-    "active",
-    !daily
+    "active",!daily
   );
 
   dailyRankingTab.setAttribute(
-    "aria-selected",
-    String(daily)
+    "aria-selected",String(daily)
   );
 
   overallRankingTab.setAttribute(
-    "aria-selected",
-    String(!daily)
+    "aria-selected",String(!daily)
   );
 
   loadLeaderboard();
-
 }
 
 dailyRankingTab.addEventListener(
@@ -2219,35 +1339,46 @@ overallRankingTab.addEventListener(
   () => selectRankingPeriod("overall")
 );
 
-
-/* ==========================================
-   LIVE RANKING MOVEMENT
-========================================== */
-
+/* LOAD COUNTRY RANKINGS */
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
-  const container = document.getElementById("leaderboard");
-  const daily = selectedRankingPeriod === "daily";
+
+  const container =
+    document.getElementById("leaderboard");
+
+  const daily =
+    selectedRankingPeriod === "daily";
+
   const period = daily ? "daily" : "overall";
 
   rankingPeriod.textContent = daily
-    ? "KST voting date: " + getKSTDate() + " · Resets at midnight KST"
+    ? "KST voting date: " + getKSTDate() +
+      " · Resets at midnight KST"
     : "Accumulated ranking · All eligible submissions since tracking began";
 
-  // The live view is authoritative for positions, percentages and movement.
-  const { data, error } = await db
+  const {data,error} = await db
     .from("country_rank_live")
-    .select("country,country_rank,progress_percent,movement,moved_by")
-    .eq("period", period)
-    .order("country_rank", { ascending: true })
-    .order("country", { ascending: true })
+    .select(
+      "country,country_rank,progress_percent,movement,moved_by"
+    )
+    .eq("period",period)
+    .order("country_rank",{ascending:true})
+    .order("country",{ascending:true})
     .limit(250);
 
-  if (requestId !== leaderboardRequestId) return;
+  if (requestId !== leaderboardRequestId) {
+    return;
+  }
 
   if (error) {
-    console.error("Live ranking query failed:", error);
-    container.textContent = "Participation data is temporarily unavailable.";
+    console.error(
+      "Live ranking query failed:",
+      error
+    );
+
+    container.textContent =
+      "Participation data is temporarily unavailable.";
+
     return;
   }
 
@@ -2255,62 +1386,90 @@ async function loadLeaderboard() {
     container.textContent = daily
       ? "No eligible certificates uploaded today yet. Be the first!"
       : "No submissions yet. Be the first to participate!";
+
     return;
   }
 
-  // Certificate counts come from the cache, matched by country name.
-  // Do NOT require cached rank to equal live rank: those sources can
-  // refresh at different times. Fetch the full daily cache, including
-  // tied positions, rather than filtering by cached rank >= 31.
   const counts = new Map();
   let cacheError = null;
 
-  if (daily && data.some(row => Number(row.country_rank) >= 31)) {
+  if (
+    daily &&
+    data.some(row => Number(row.country_rank) >= 31)
+  ) {
     const result = await db
       .from("leaderboard_cache")
       .select("country,certificate_count")
-      .eq("period", "daily")
-      .order("country", { ascending: true })
+      .eq("period","daily")
+      .order("country",{ascending:true})
       .limit(1000);
 
-    if (requestId !== leaderboardRequestId) return;
+    if (requestId !== leaderboardRequestId) {
+      return;
+    }
 
     cacheError = result.error;
+
     if (cacheError) {
-      console.error("Daily certificate cache could not be read:", cacheError);
+      console.error(
+        "Daily certificate cache could not be read:",
+        cacheError
+      );
     } else {
       for (const entry of result.data || []) {
         const n = Number(entry.certificate_count);
+
         if (
           entry.country &&
           entry.certificate_count !== null &&
           entry.certificate_count !== undefined &&
-          Number.isSafeInteger(n) && n >= 0
+          Number.isSafeInteger(n) &&
+          n >= 0
         ) {
-          counts.set(entry.country.trim().normalize("NFKC"), n);
+          counts.set(
+            entry.country.trim().normalize("NFKC"),
+            n
+          );
         }
       }
     }
   }
 
   container.replaceChildren();
+
   const missingCountries = [];
 
-  // Pastel purple from strongest (#1) to lightest (#10).
-  // Tied countries share the shade associated with their rank.
   const topTenPurples = [
-    "#D5B8F0", "#DBC3F2", "#E0CBF4", "#E4D2F5", "#E8D9F7",
-    "#EBDFF8", "#EEE4F9", "#F0E8FA", "#F3EDFB", "#F6F1FC"
+    "#D5B8F0",
+    "#DBC3F2",
+    "#E0CBF4",
+    "#E4D2F5",
+    "#E8D9F7",
+    "#EBDFF8",
+    "#EEE4F9",
+    "#F0E8FA",
+    "#F3EDFB",
+    "#F6F1FC"
   ];
 
   for (const item of data) {
     const row = document.createElement("div");
     row.className = "leaderboard-row";
 
-    const displayedRank = Number(item.country_rank);
-    if (Number.isInteger(displayedRank) && displayedRank >= 1 && displayedRank <= 10) {
+    const displayedRank =
+      Number(item.country_rank);
+
+    if (
+      Number.isInteger(displayedRank) &&
+      displayedRank >= 1 &&
+      displayedRank <= 10
+    ) {
       row.classList.add("top-ten-purple");
-      row.style.setProperty("--top-ten-bg", topTenPurples[displayedRank - 1]);
+
+      row.style.setProperty(
+        "--top-ten-bg",
+        topTenPurples[displayedRank - 1]
+      );
     }
 
     const line = document.createElement("div");
@@ -2322,90 +1481,111 @@ async function loadLeaderboard() {
     const rank = document.createElement("span");
     rank.className = "rank-number";
     rank.textContent = "#" + item.country_rank;
-    name.append(rank, document.createTextNode(item.country));
 
-    const movement = document.createElement("span");
+    name.append(
+      rank,
+      document.createTextNode(item.country)
+    );
+
+    const movement =
+      document.createElement("span");
+
     movement.className = "rank-movement";
-    const places = Math.max(0, Number(item.moved_by) || 0);
+
+    const places = Math.max(
+      0,
+      Number(item.moved_by) || 0
+    );
+
     if (item.movement === "new") {
       movement.textContent = "NEW";
-    } else if (item.movement === "up" && places > 0) {
+    } else if (
+      item.movement === "up" &&
+      places > 0
+    ) {
       movement.textContent = "↑ " + places;
-    } else if (item.movement === "down" && places > 0) {
+    } else if (
+      item.movement === "down" &&
+      places > 0
+    ) {
       movement.textContent = "↓ " + places;
     } else {
       movement.textContent = "–";
     }
+
     name.appendChild(movement);
 
     const value = document.createElement("span");
     value.className = "percentage";
+
     const share = Number(item.progress_percent);
-    const safeShare = Number.isFinite(share) ? share : 0;
-    const rankNumber = Number(item.country_rank);
+    const safeShare =
+      Number.isFinite(share) ? share : 0;
+
+    const rankNumber =
+      Number(item.country_rank);
 
     if (daily && rankNumber >= 31) {
-      const key = String(item.country || "").trim().normalize("NFKC");
+      const key = String(item.country || "")
+        .trim()
+        .normalize("NFKC");
+
       if (counts.has(key)) {
         const count = counts.get(key);
-        value.textContent = count.toLocaleString("en-US") +
+
+        value.textContent =
+          count.toLocaleString("en-US") +
           (count === 1 ? " vote" : " votes");
       } else {
-        // Never display a percentage in Daily rank #31 onward.
         value.textContent = "Count unavailable";
-        value.title = "The certificate count could not be retrieved.";
+        value.title =
+          "The certificate count could not be retrieved.";
+
         missingCountries.push(item.country);
       }
     } else {
-      // Daily top 30 and every Overall ranking remain percentages.
-      value.textContent = safeShare.toFixed(2) + "%";
+      value.textContent =
+        safeShare.toFixed(2) + "%";
     }
 
-    line.append(name, value);
+    line.append(name,value);
 
     const track = document.createElement("div");
     track.className = "progress-track";
+
     const fill = document.createElement("div");
     fill.className = "progress-fill";
-    fill.style.width = Math.max(0, Math.min(100, safeShare)) + "%";
+
+    fill.style.width =
+      Math.max(0,Math.min(100,safeShare)) + "%";
+
     track.appendChild(fill);
-    row.append(line, track);
+    row.append(line,track);
     container.appendChild(row);
   }
 
   if (missingCountries.length) {
     console.warn(
-      "Missing daily certificate counts for:", missingCountries,
-      cacheError || "Check leaderboard_cache records and public SELECT access."
+      "Missing daily certificate counts for:",
+      missingCountries,
+      cacheError ||
+      "Check leaderboard_cache records and public SELECT access."
     );
   }
 }
 
-
-/* ==========================================
-   GLOBAL ARMY DAILY CHALLENGE
-========================================== */
-
+/* DAILY CHALLENGE */
 let challengeLoading = false;
-
 let displayedChallengeDate = getKSTDate();
 
-
 function setChallengeText(id,value) {
-
   document.getElementById(id).textContent = value;
-
 }
 
-
 function resetChallengeDisplay() {
-
   setChallengeText(
-
     "challengeDate",
-
     "KST Voting Date: " + getKSTDate()
-
   );
 
   setChallengeText(
@@ -2414,61 +1594,40 @@ function resetChallengeDisplay() {
   );
 
   setChallengeText(
-
     "challengeStatus",
-
     "Loading challenge progress..."
-
   );
 
   document.getElementById(
     "challengeProgressBar"
   ).style.width = "0%";
-
 }
 
-
 async function loadDailyChallenge() {
-
   if (challengeLoading) return;
 
   challengeLoading = true;
-
   const requestedDate = getKSTDate();
 
   try {
-
     const {data,error} = await db
-
       .from("daily_army_challenge")
-
       .select(
         "challenge_date,progress_percent,goal_completed"
       )
-
       .maybeSingle();
 
-
     if (requestedDate !== getKSTDate()) {
-
       resetChallengeDisplay();
-
       return;
-
     }
 
-
     setChallengeText(
-
       "challengeDate",
-
       "KST Voting Date: " + requestedDate
-
     );
 
-
     if (error) {
-
       console.error(
         "Daily challenge error:",
         error
@@ -2480,11 +1639,8 @@ async function loadDailyChallenge() {
       );
 
       setChallengeText(
-
         "challengeStatus",
-
         "Challenge progress is temporarily unavailable."
-
       );
 
       document.getElementById(
@@ -2492,26 +1648,20 @@ async function loadDailyChallenge() {
       ).style.width = "0%";
 
       return;
-
     }
-
 
     if (
       !data ||
       data.challenge_date !== requestedDate
     ) {
-
       setChallengeText(
         "challengePercent",
         "—"
       );
 
       setChallengeText(
-
         "challengeStatus",
-
         "Today's challenge is not available yet."
-
       );
 
       document.getElementById(
@@ -2519,60 +1669,38 @@ async function loadDailyChallenge() {
       ).style.width = "0%";
 
       return;
-
     }
-
 
     const rawProgress =
       Number(data.progress_percent);
 
     const progress =
       Number.isFinite(rawProgress)
-
         ? Math.max(0,rawProgress)
-
         : 0;
 
-
     setChallengeText(
-
       "challengePercent",
-
       progress.toFixed(2) + "%"
-
     );
-
 
     document.getElementById(
       "challengeProgressBar"
     ).style.width =
       Math.min(100,progress) + "%";
 
-
     if (data.goal_completed) {
-
       setChallengeText(
-
         "challengeStatus",
-
         "🎉 DAILY GOAL COMPLETED! THANK YOU, ARMY!"
-
       );
-
     } else {
-
       setChallengeText(
-
         "challengeStatus",
-
         "KEEP GOING, ARMY! 💜"
-
       );
-
     }
-
   } catch (error) {
-
     console.error(
       "Challenge loading error:",
       error
@@ -2584,26 +1712,15 @@ async function loadDailyChallenge() {
     );
 
     setChallengeText(
-
       "challengeStatus",
-
       "Unable to load today's challenge."
-
     );
-
   } finally {
-
     challengeLoading = false;
-
   }
-
 }
 
-
-/* ==========================================
-   DAILY CHALLENGE TABS AND HISTORY
-========================================== */
-
+/* DAILY CHALLENGE TABS */
 const todayTab =
   document.getElementById("todayTab");
 
@@ -2616,45 +1733,33 @@ const todayChallengePanel =
 const historyChallengePanel =
   document.getElementById("historyChallengePanel");
 
-
 function selectChallengeTab(tab) {
-
   const showHistory = tab === "history";
 
   todayTab.classList.toggle(
-    "active",
-    !showHistory
+    "active",!showHistory
   );
 
   historyTab.classList.toggle(
-    "active",
-    showHistory
+    "active",showHistory
   );
 
   todayTab.setAttribute(
-    "aria-selected",
-    String(!showHistory)
+    "aria-selected",String(!showHistory)
   );
 
   historyTab.setAttribute(
-    "aria-selected",
-    String(showHistory)
+    "aria-selected",String(showHistory)
   );
 
   todayChallengePanel.hidden = showHistory;
-
   historyChallengePanel.hidden = !showHistory;
 
   if (showHistory) {
-
     loadChallengeHistory();
-
   } else {
-
     loadDailyChallenge();
-
   }
-
 }
 
 todayTab.addEventListener(
@@ -2667,31 +1772,24 @@ historyTab.addEventListener(
   () => selectChallengeTab("history")
 );
 
-
+/* CHALLENGE HISTORY */
 function formatHistoryDate(value) {
-
   return new Date(
     value + "T12:00:00Z"
-  ).toLocaleDateString("en-US",{
-
-    timeZone:"UTC",
-
-    month:"long",
-
-    day:"numeric",
-
-    year:"numeric"
-
-  });
-
+  ).toLocaleDateString(
+    "en-US",
+    {
+      timeZone:"UTC",
+      month:"long",
+      day:"numeric",
+      year:"numeric"
+    }
+  );
 }
-
 
 let historyLoading = false;
 
-
 async function loadChallengeHistory() {
-
   if (historyLoading) return;
 
   historyLoading = true;
@@ -2700,116 +1798,71 @@ async function loadChallengeHistory() {
     document.getElementById("challengeHistory");
 
   try {
-
     const {data,error} = await db
-
       .from("daily_challenge_history")
-
       .select(
         "challenge_date,progress_percent,goal_completed"
       )
-
-      .order("challenge_date",{
-        ascending:false
-      })
-
+      .order(
+        "challenge_date",
+        {ascending:false}
+      )
       .limit(30);
-
 
     if (error) throw error;
 
     container.replaceChildren();
 
-
     if (!data || !data.length) {
-
-      const empty =
-        document.createElement("div");
-
+      const empty = document.createElement("div");
       empty.className = "empty";
 
       empty.textContent =
         "Completed challenges will appear here after midnight KST.";
 
       container.appendChild(empty);
-
       return;
-
     }
 
-
     for (const item of data) {
-
-      const entry =
-        document.createElement("div");
-
+      const entry = document.createElement("div");
       entry.className = "history-entry";
 
-
-      const top =
-        document.createElement("div");
-
+      const top = document.createElement("div");
       top.className = "history-entry-top";
 
-
-      const date =
-        document.createElement("span");
-
+      const date = document.createElement("span");
       date.className = "history-date";
 
       date.textContent =
         formatHistoryDate(item.challenge_date);
 
-
-      const percent =
-        document.createElement("span");
-
+      const percent = document.createElement("span");
       percent.className = "history-percent";
 
-      const value =
-        Number(item.progress_percent);
+      const value = Number(item.progress_percent);
 
       percent.textContent =
-
         (
-          Number.isFinite(value)
-            ? value
-            : 0
+          Number.isFinite(value) ? value : 0
         ).toFixed(2) + "%";
 
+      top.append(date,percent);
 
-      top.append(
-        date,
-        percent
-      );
-
-
-      const status =
-        document.createElement("p");
+      const status = document.createElement("p");
 
       status.className =
         "history-status" +
         (item.goal_completed ? " achieved" : "");
 
-      status.textContent =
-        item.goal_completed
+      status.textContent = item.goal_completed
+        ? "✓ Goal Achieved"
+        : "Goal Not Reached";
 
-          ? "✓ Goal Achieved"
-
-          : "Goal Not Reached";
-
-
-      entry.append(
-        top,
-        status
-      );
-
+      entry.append(top,status);
       container.appendChild(entry);
-
     }
-
   } catch (error) {
-
     console.error(
       "Challenge history error:",
       error
@@ -2817,103 +1870,56 @@ async function loadChallengeHistory() {
 
     container.textContent =
       "Challenge history is temporarily unavailable.";
-
   } finally {
-
     historyLoading = false;
-
   }
-
 }
 
-
-/* ==========================================
-   SUPABASE REALTIME RANKING UPDATES
-========================================== */
-
+/* REALTIME DATABASE UPDATES */
 let leaderboardRefreshTimer = null;
 
-
 function scheduleLeaderboardRefresh() {
-
   if (leaderboardRefreshTimer !== null) {
-
     clearTimeout(leaderboardRefreshTimer);
-
   }
 
   leaderboardRefreshTimer = setTimeout(() => {
-
     leaderboardRefreshTimer = null;
 
-    // Keep Today's Challenge live without refreshing rankings.
-    // Group rapid notifications into one request.
     if (!document.hidden) {
       loadDailyChallenge();
     }
-
   },2000);
-
 }
 
-
-/* SUBSCRIBE TO LIVE DATABASE CHANGES */
-
 const countryRankingChannel = db
-
   .channel("bts-country-ranking-movement")
-
   .on(
-
     "postgres_changes",
-
     {
-
       event:"UPDATE",
-
       schema:"public",
-
       table:"country_rank_ping"
-
     },
-
     scheduleLeaderboardRefresh
-
   )
-
   .subscribe(status => {
-
     if (
       status === "CHANNEL_ERROR" ||
       status === "TIMED_OUT"
     ) {
-
       console.warn(
         "Realtime temporarily unavailable; polling is still active."
       );
-
     }
-
   });
 
-
-/* ==========================================
-   INITIAL WEBSITE LOAD
-========================================== */
-
+/* INITIAL WEBSITE LOAD */
 resetChallengeDisplay();
-
 loadLeaderboard();
-
 loadDailyChallenge();
 
-
-/* ==========================================
-   RANKINGS: REFRESH EVERY 5 MINUTES
-   TODAY'S CHALLENGE: REALTIME + 60s FALLBACK
-========================================== */
-
-// Poll only the selected ranking tab, and only while visible.
+/* RANKING REFRESH EVERY 5 MINUTES */
 setInterval(() => {
   if (document.hidden) return;
 
@@ -2922,56 +1928,44 @@ setInterval(() => {
   if (!historyChallengePanel.hidden) {
     loadChallengeHistory();
   }
-}, 300000);
+},300000);
 
-// Realtime handles prompt updates; this is a safety fallback.
+/* DAILY CHALLENGE REFRESH EVERY 60 SECONDS */
 setInterval(() => {
   if (document.hidden) return;
   loadDailyChallenge();
-}, 60000);
+},60000);
 
-// Refresh current data when someone returns to the page.
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    loadDailyChallenge();
-    loadLeaderboard();
+/* REFRESH WHEN TAB BECOMES VISIBLE */
+document.addEventListener(
+  "visibilitychange",
+  () => {
+    if (!document.hidden) {
+      loadDailyChallenge();
+      loadLeaderboard();
+    }
   }
-});
+);
 
-
-/* ==========================================
-   CHECK FOR NEW KST DATE
-========================================== */
-
+/* DETECT NEW KST DATE */
 setInterval(() => {
-
   const today = getKSTDate();
 
   if (today !== displayedChallengeDate) {
-
     displayedChallengeDate = today;
 
     resetChallengeDisplay();
-
     loadLeaderboard();
 
     if (!challengeLoading) {
-
       loadDailyChallenge();
-
     }
 
     if (!historyChallengePanel.hidden) {
-
       loadChallengeHistory();
-
     }
-
   }
-
 },15000);
-
 </script>
-
 </body>
 </html>
