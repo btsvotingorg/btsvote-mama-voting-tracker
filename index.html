@@ -2156,223 +2156,147 @@ overallRankingTab.addEventListener(
 ========================================== */
 
 async function loadLeaderboard() {
-
   const requestId = ++leaderboardRequestId;
-
-  const container =
-    document.getElementById("leaderboard");
-
-  const daily =
-    selectedRankingPeriod === "daily";
-
-  const period =
-    daily ? "daily" : "overall";
+  const container = document.getElementById("leaderboard");
+  const daily = selectedRankingPeriod === "daily";
+  const period = daily ? "daily" : "overall";
 
   rankingPeriod.textContent = daily
-
-    ? "KST voting date: " +
-      getKSTDate() +
-      " · Resets at midnight KST"
-
+    ? "KST voting date: " + getKSTDate() + " · Resets at midnight KST"
     : "Accumulated ranking · All eligible submissions since tracking began";
 
-
-  const {data,error} = await db
-
+  // The live view is authoritative for positions, percentages and movement.
+  const { data, error } = await db
     .from("country_rank_live")
-
-    .select(
-      "country,country_rank,progress_percent,movement,moved_by"
-    )
-
-    .eq("period",period)
-
-    .order("country_rank",{
-      ascending:true
-    })
-
-    .order("country",{
-      ascending:true
-    })
-
+    .select("country,country_rank,progress_percent,movement,moved_by")
+    .eq("period", period)
+    .order("country_rank", { ascending: true })
+    .order("country", { ascending: true })
     .limit(250);
 
-
-  if (requestId !== leaderboardRequestId) {
-    return;
-  }
-
+  if (requestId !== leaderboardRequestId) return;
 
   if (error) {
-
-    console.error(
-      "Leaderboard error:",
-      error
-    );
-
-    container.textContent =
-      "Participation data is temporarily unavailable.";
-
+    console.error("Live ranking query failed:", error);
+    container.textContent = "Participation data is temporarily unavailable.";
     return;
-
   }
-
 
   if (!data || !data.length) {
-
     container.textContent = daily
-
       ? "No eligible certificates uploaded today yet. Be the first!"
-
       : "No submissions yet. Be the first to participate!";
-
     return;
-
   }
 
+  // Certificate counts come from the cache, matched by country name.
+  // Do NOT require cached rank to equal live rank: those sources can
+  // refresh at different times. Fetch the full daily cache, including
+  // tied positions, rather than filtering by cached rank >= 31.
+  const counts = new Map();
+  let cacheError = null;
+
+  if (daily && data.some(row => Number(row.country_rank) >= 31)) {
+    const result = await db
+      .from("leaderboard_cache")
+      .select("country,certificate_count")
+      .eq("period", "daily")
+      .order("country", { ascending: true })
+      .limit(1000);
+
+    if (requestId !== leaderboardRequestId) return;
+
+    cacheError = result.error;
+    if (cacheError) {
+      console.error("Daily certificate cache could not be read:", cacheError);
+    } else {
+      for (const entry of result.data || []) {
+        const n = Number(entry.certificate_count);
+        if (
+          entry.country &&
+          entry.certificate_count !== null &&
+          entry.certificate_count !== undefined &&
+          Number.isSafeInteger(n) && n >= 0
+        ) {
+          counts.set(entry.country.trim().normalize("NFKC"), n);
+        }
+      }
+    }
+  }
 
   container.replaceChildren();
-
+  const missingCountries = [];
 
   for (const item of data) {
-
-    const row =
-      document.createElement("div");
-
+    const row = document.createElement("div");
     row.className = "leaderboard-row";
 
-
-    const line =
-      document.createElement("div");
-
+    const line = document.createElement("div");
     line.className = "rank-line";
 
-
-    const name =
-      document.createElement("span");
-
+    const name = document.createElement("span");
     name.className = "country-name";
 
-
-    const rank =
-      document.createElement("span");
-
+    const rank = document.createElement("span");
     rank.className = "rank-number";
+    rank.textContent = "#" + item.country_rank;
+    name.append(rank, document.createTextNode(item.country));
 
-    rank.textContent =
-      "#" + item.country_rank;
-
-
-    name.append(
-      rank,
-      document.createTextNode(item.country)
-    );
-
-
-    /* RANK MOVEMENT INDICATOR */
-
-    const movement =
-      document.createElement("span");
-
+    const movement = document.createElement("span");
     movement.className = "rank-movement";
-
-    const places = Math.max(
-      0,
-      Number(item.moved_by) || 0
-    );
-
-
+    const places = Math.max(0, Number(item.moved_by) || 0);
     if (item.movement === "new") {
-
       movement.textContent = "NEW";
-
-    } else if (
-      item.movement === "up" &&
-      places > 0
-    ) {
-
-      movement.textContent =
-        "↑ " + places;
-
-    } else if (
-      item.movement === "down" &&
-      places > 0
-    ) {
-
-      movement.textContent =
-        "↓ " + places;
-
+    } else if (item.movement === "up" && places > 0) {
+      movement.textContent = "↑ " + places;
+    } else if (item.movement === "down" && places > 0) {
+      movement.textContent = "↓ " + places;
     } else {
-
       movement.textContent = "–";
-
     }
-
-
     name.appendChild(movement);
 
+    const value = document.createElement("span");
+    value.className = "percentage";
+    const share = Number(item.progress_percent);
+    const safeShare = Number.isFinite(share) ? share : 0;
+    const rankNumber = Number(item.country_rank);
 
-    /* COUNTRY PERCENTAGE */
+    if (daily && rankNumber >= 31) {
+      const key = String(item.country || "").trim().normalize("NFKC");
+      if (counts.has(key)) {
+        const count = counts.get(key);
+        value.textContent = count.toLocaleString("en-US") +
+          (count === 1 ? " vote" : " votes");
+      } else {
+        // Never display a percentage in Daily rank #31 onward.
+        value.textContent = "Count unavailable";
+        value.title = "The certificate count could not be retrieved.";
+        missingCountries.push(item.country);
+      }
+    } else {
+      // Daily top 30 and every Overall ranking remain percentages.
+      value.textContent = safeShare.toFixed(2) + "%";
+    }
 
-    const percentage =
-      document.createElement("span");
+    line.append(name, value);
 
-    percentage.className = "percentage";
-
-    const share =
-      Number(item.progress_percent);
-
-    percentage.textContent =
-
-      (
-        Number.isFinite(share)
-          ? share
-          : 0
-      ).toFixed(2) + "%";
-
-
-    line.append(
-      name,
-      percentage
-    );
-
-
-    /* COUNTRY PROGRESS BAR */
-
-    const track =
-      document.createElement("div");
-
+    const track = document.createElement("div");
     track.className = "progress-track";
-
-
-    const fill =
-      document.createElement("div");
-
+    const fill = document.createElement("div");
     fill.className = "progress-fill";
-
-    fill.style.width = Math.max(
-
-      0,
-
-      Math.min(
-        100,
-        share || 0
-      )
-
-    ) + "%";
-
-
+    fill.style.width = Math.max(0, Math.min(100, safeShare)) + "%";
     track.appendChild(fill);
-
-    row.append(
-      line,
-      track
-    );
-
+    row.append(line, track);
     container.appendChild(row);
-
   }
 
+  if (missingCountries.length) {
+    console.warn(
+      "Missing daily certificate counts for:", missingCountries,
+      cacheError || "Check leaderboard_cache records and public SELECT access."
+    );
+  }
 }
 
 
@@ -2840,11 +2764,13 @@ function scheduleLeaderboardRefresh() {
 
     leaderboardRefreshTimer = null;
 
-    loadLeaderboard();
+    // Keep Today's Challenge live without refreshing rankings.
+    // Group rapid notifications into one request.
+    if (!document.hidden) {
+      loadDailyChallenge();
+    }
 
-    loadDailyChallenge();
-
-  },500);
+  },2000);
 
 }
 
@@ -2901,22 +2827,34 @@ loadDailyChallenge();
 
 
 /* ==========================================
-   AUTO-REFRESH EVERY 15 SECONDS
+   RANKINGS: REFRESH EVERY 5 MINUTES
+   TODAY'S CHALLENGE: REALTIME + 60s FALLBACK
 ========================================== */
 
+// Poll only the selected ranking tab, and only while visible.
 setInterval(() => {
-
-  loadDailyChallenge();
+  if (document.hidden) return;
 
   loadLeaderboard();
 
   if (!historyChallengePanel.hidden) {
-
     loadChallengeHistory();
-
   }
+}, 300000);
 
-},15000);
+// Realtime handles prompt updates; this is a safety fallback.
+setInterval(() => {
+  if (document.hidden) return;
+  loadDailyChallenge();
+}, 60000);
+
+// Refresh current data when someone returns to the page.
+document.addEventListener("visibilitychange", () => {
+  if (!document.hidden) {
+    loadDailyChallenge();
+    loadLeaderboard();
+  }
+});
 
 
 /* ==========================================
