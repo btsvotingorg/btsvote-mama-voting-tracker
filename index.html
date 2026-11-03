@@ -377,6 +377,19 @@ button:disabled {
   border-bottom:1px solid var(--border);
 }
 
+/* Distinct pastel-purple shades for the Top 10 in both ranking tabs. */
+.leaderboard-row.top-ten-purple {
+  background:var(--top-ten-bg);
+  border:1px solid rgba(118,81,168,.12);
+  border-radius:12px;
+  padding:14px 12px;
+  margin:5px 0;
+}
+
+.leaderboard-row.top-ten-purple .progress-track {
+  background:rgba(255,255,255,.65);
+}
+
 .rank-line {
   display:flex;
   justify-content:space-between;
@@ -2227,9 +2240,22 @@ async function loadLeaderboard() {
   container.replaceChildren();
   const missingCountries = [];
 
+  // Pastel purple from strongest (#1) to lightest (#10).
+  // Tied countries share the shade associated with their rank.
+  const topTenPurples = [
+    "#D5B8F0", "#DBC3F2", "#E0CBF4", "#E4D2F5", "#E8D9F7",
+    "#EBDFF8", "#EEE4F9", "#F0E8FA", "#F3EDFB", "#F6F1FC"
+  ];
+
   for (const item of data) {
     const row = document.createElement("div");
     row.className = "leaderboard-row";
+
+    const displayedRank = Number(item.country_rank);
+    if (Number.isInteger(displayedRank) && displayedRank >= 1 && displayedRank <= 10) {
+      row.classList.add("top-ten-purple");
+      row.style.setProperty("--top-ten-bg", topTenPurples[displayedRank - 1]);
+    }
 
     const line = document.createElement("div");
     line.className = "rank-line";
