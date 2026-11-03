@@ -2634,5 +2634,537 @@ setInterval(() => {
 },15000);
 
 </script>
+  
+<!-- DAILY RANKING HISTORY ADD-ON -->
+<style>
+  .archive-panel {
+    padding: 8px 0 0;
+  }
+
+  .archive-panel label {
+    margin: 8px 0 7px;
+  }
+
+  .archive-select {
+    width: 100%;
+    padding: 11px;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: white;
+    font-size: 14px;
+    color: var(--deep);
+  }
+
+  .archive-count {
+    font-size: 13px;
+    color: var(--purple);
+    font-weight: 700;
+    margin: 14px 0;
+  }
+
+  .archive-actions {
+    display: flex;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  .archive-actions button {
+    width: auto;
+    min-width: 190px;
+    margin: 0;
+    padding: 11px 20px;
+    background: white;
+    color: var(--purple);
+    border: 1px solid #d9c6ee;
+  }
+
+  .archive-actions button:hover {
+    background: var(--light);
+  }
+
+  .archive-note {
+    font-size: 12px;
+    color: var(--muted);
+    margin-top: 12px;
+  }
+
+  @media (max-width: 500px) {
+    .country-ranking-tab {
+      font-size: 12px;
+      padding: 11px 4px;
+    }
+  }
+</style>
+
+<script>
+(() => {
+  // Existing Daily Ranking, Overall Ranking,
+  // hourly leader, and certificate submission
+  // remain unchanged.
+
+  const tabs = document.querySelector(
+    ".country-ranking-tabs"
+  );
+
+  const dailyTab = document.getElementById(
+    "dailyRankingTab"
+  );
+
+  const overallTab = document.getElementById(
+    "overallRankingTab"
+  );
+
+  const liveBoard = document.getElementById(
+    "leaderboard"
+  );
+
+  const livePeriod = document.getElementById(
+    "rankingPeriod"
+  );
+
+  if (
+    !tabs ||
+    !dailyTab ||
+    !overallTab ||
+    !liveBoard ||
+    !livePeriod
+  ) {
+    return;
+  }
+
+  // CREATE RANKING HISTORY TAB
+  const historyTab = document.createElement("button");
+
+  historyTab.type = "button";
+  historyTab.id = "archiveRankingTab";
+  historyTab.className = "country-ranking-tab";
+  historyTab.textContent = "Ranking History";
+
+  historyTab.setAttribute("role", "tab");
+  historyTab.setAttribute(
+    "aria-selected",
+    "false"
+  );
+  historyTab.setAttribute(
+    "aria-controls",
+    "archivePanel"
+  );
+
+  tabs.appendChild(historyTab);
+
+  // CREATE HISTORY PANEL
+  const panel = document.createElement("div");
+
+  panel.id = "archivePanel";
+  panel.className = "archive-panel";
+  panel.setAttribute("role", "tabpanel");
+  panel.setAttribute(
+    "aria-labelledby",
+    "archiveRankingTab"
+  );
+  panel.hidden = true;
+
+  panel.innerHTML = `
+    <label for="archiveDateSelect">
+      Select a completed KST voting date
+    </label>
+
+    <select
+      id="archiveDateSelect"
+      class="archive-select"
+    >
+      <option value="">
+        Loading saved dates...
+      </option>
+    </select>
+
+    <p
+      id="archiveCountryCount"
+      class="archive-count"
+      aria-live="polite"
+    ></p>
+
+    <div
+      id="archiveLeaderboard"
+      aria-live="polite"
+    ></div>
+
+    <div class="archive-actions">
+      <button
+        id="archiveShowAll"
+        type="button"
+        hidden
+      >
+        Show All Countries
+      </button>
+    </div>
+
+    <p class="archive-note">
+      All ranked countries are saved.
+      Top 20 appear first;
+      exact vote counts remain private.
+    </p>
+  `;
+
+  liveBoard.insertAdjacentElement(
+    "afterend",
+    panel
+  );
+
+  const dateSelect = document.getElementById(
+    "archiveDateSelect"
+  );
+
+  const countLabel = document.getElementById(
+    "archiveCountryCount"
+  );
+
+  const archiveBoard = document.getElementById(
+    "archiveLeaderboard"
+  );
+
+  const showAllButton = document.getElementById(
+    "archiveShowAll"
+  );
+
+  let selectedDate = "";
+  let rows = [];
+  let showAll = false;
+  let requestId = 0;
+
+  // FORMAT ARCHIVED DATE
+  function dateLabel(value) {
+    return new Date(
+      value + "T12:00:00Z"
+    ).toLocaleDateString(
+      "en-US",
+      {
+        timeZone: "UTC",
+        month: "long",
+        day: "numeric",
+        year: "numeric"
+      }
+    );
+  }
+
+  // DISPLAY TOP 20 OR ALL COUNTRIES
+  function render() {
+    archiveBoard.replaceChildren();
+
+    const total = rows.length;
+
+    countLabel.textContent =
+      total +
+      (total === 1 ? " country" : " countries") +
+      " participated · " +
+      dateLabel(selectedDate);
+
+    if (!total) {
+      archiveBoard.textContent =
+        "No saved rankings for this date.";
+
+      showAllButton.hidden = true;
+      return;
+    }
+
+    const colors = [
+      "#D5B8F0",
+      "#DBC3F2",
+      "#E0CBF4",
+      "#E4D2F5",
+      "#E8D9F7",
+      "#EBDFF8",
+      "#EEE4F9",
+      "#F0E8FA",
+      "#F3EDFB",
+      "#F6F1FC"
+    ];
+
+    const displayedRows = showAll
+      ? rows
+      : rows.slice(0, 20);
+
+    for (const item of displayedRows) {
+      const rank = Number(item.country_rank);
+
+      const pct = Number(
+        item.progress_percent
+      );
+
+      const share = Number.isFinite(pct)
+        ? Math.max(0, pct)
+        : 0;
+
+      const row = document.createElement("div");
+
+      row.className = "leaderboard-row";
+
+      // PRESERVE PASTEL PURPLE TOP 10 DESIGN
+      if (rank >= 1 && rank <= 10) {
+        row.classList.add("top-ten-purple");
+
+        row.style.setProperty(
+          "--top-ten-bg",
+          colors[rank - 1]
+        );
+      }
+
+      const line = document.createElement("div");
+
+      line.className = "rank-line";
+
+      const name = document.createElement("span");
+
+      name.className = "country-name";
+
+      const number = document.createElement("span");
+
+      number.className = "rank-number";
+      number.textContent = "#" + rank;
+
+      name.append(
+        number,
+        document.createTextNode(
+          String(item.country || "")
+        )
+      );
+
+      const value = document.createElement("span");
+
+      value.className = "percentage";
+
+      value.textContent =
+        share.toFixed(2) + "%";
+
+      line.append(name, value);
+
+      const track = document.createElement("div");
+
+      track.className = "progress-track";
+
+      const fill = document.createElement("div");
+
+      fill.className = "progress-fill";
+
+      fill.style.width =
+        Math.min(100, share) + "%";
+
+      track.appendChild(fill);
+
+      row.append(line, track);
+
+      archiveBoard.appendChild(row);
+    }
+
+    // ONLY SHOW BUTTON WHEN MORE THAN 20 COUNTRIES
+    showAllButton.hidden = total <= 20;
+
+    showAllButton.textContent = showAll
+      ? "Show Top 20"
+      : "Show All " + total + " Countries";
+  }
+
+  // LOAD SAVED RANKINGS FOR SELECTED DATE
+  async function loadDay() {
+    if (!selectedDate) return;
+
+    const thisRequest = ++requestId;
+
+    countLabel.textContent =
+      "Loading saved rankings...";
+
+    const { data, error } = await db.rpc(
+      "get_daily_rank_archive",
+      {
+        p_kst_date: selectedDate
+      }
+    );
+
+    if (thisRequest !== requestId) {
+      return;
+    }
+
+    if (error) {
+      console.error(
+        "Archive lookup failed:",
+        error
+      );
+
+      countLabel.textContent =
+        "Could not load saved rankings.";
+
+      archiveBoard.textContent =
+        "Please try again later.";
+
+      showAllButton.hidden = true;
+      return;
+    }
+
+    rows = data || [];
+
+    render();
+  }
+
+  // LOAD ALL AVAILABLE ARCHIVED DATES
+  async function loadDates() {
+    const { data, error } = await db.rpc(
+      "get_daily_rank_archive_dates"
+    );
+
+    if (panel.hidden) return;
+
+    if (error) {
+      console.error(
+        "Archive dates failed:",
+        error
+      );
+
+      countLabel.textContent =
+        "Archive temporarily unavailable.";
+
+      archiveBoard.textContent =
+        "Check the Supabase SQL setup.";
+
+      return;
+    }
+
+    dateSelect.replaceChildren();
+
+    if (!data || !data.length) {
+      const option = document.createElement("option");
+
+      option.value = "";
+
+      option.textContent =
+        "No completed days archived yet";
+
+      dateSelect.appendChild(option);
+
+      countLabel.textContent = "";
+
+      archiveBoard.textContent =
+        "Saved rankings appear after the next KST midnight.";
+
+      showAllButton.hidden = true;
+
+      return;
+    }
+
+    for (const day of data) {
+      const option = document.createElement("option");
+
+      option.value = String(day.kst_date);
+
+      option.textContent =
+        dateLabel(option.value) +
+        " (" +
+        Number(day.total_countries || 0) +
+        " countries)";
+
+      dateSelect.appendChild(option);
+    }
+
+    const available = data.map(
+      day => String(day.kst_date)
+    );
+
+    if (!available.includes(selectedDate)) {
+      selectedDate = available[0];
+      showAll = false;
+    }
+
+    dateSelect.value = selectedDate;
+
+    await loadDay();
+  }
+
+  // OPEN RANKING HISTORY
+  historyTab.addEventListener(
+    "click",
+    () => {
+      historyTab.classList.add("active");
+
+      historyTab.setAttribute(
+        "aria-selected",
+        "true"
+      );
+
+      for (const tab of [
+        dailyTab,
+        overallTab
+      ]) {
+        tab.classList.remove("active");
+
+        tab.setAttribute(
+          "aria-selected",
+          "false"
+        );
+      }
+
+      liveBoard.hidden = true;
+      livePeriod.hidden = true;
+      panel.hidden = false;
+
+      loadDates();
+    }
+  );
+
+  // RETURN TO DAILY / OVERALL RANKING
+  function restoreLive() {
+    historyTab.classList.remove("active");
+
+    historyTab.setAttribute(
+      "aria-selected",
+      "false"
+    );
+
+    panel.hidden = true;
+    liveBoard.hidden = false;
+    livePeriod.hidden = false;
+  }
+
+  dailyTab.addEventListener(
+    "click",
+    restoreLive
+  );
+
+  overallTab.addEventListener(
+    "click",
+    restoreLive
+  );
+
+  // CHANGE HISTORY DATE
+  dateSelect.addEventListener(
+    "change",
+    () => {
+      selectedDate = dateSelect.value;
+      showAll = false;
+
+      loadDay();
+    }
+  );
+
+  // SHOW ALL / SHOW TOP 20
+  showAllButton.addEventListener(
+    "click",
+    () => {
+      showAll = !showAll;
+
+      render();
+    }
+  );
+
+  // REFRESH AVAILABLE ARCHIVES
+  setInterval(() => {
+    if (
+      !document.hidden &&
+      !panel.hidden
+    ) {
+      loadDates();
+    }
+  }, 300000);
+
+})();
+</script>
 </body>
 </html>
