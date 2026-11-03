@@ -2155,12 +2155,7 @@ overallRankingTab.addEventListener(
    LIVE RANKING MOVEMENT
 ========================================== */
 
-
 async function loadLeaderboard() {
-
-  }
-
-}
 
   const requestId = ++leaderboardRequestId;
 
@@ -2845,13 +2840,11 @@ function scheduleLeaderboardRefresh() {
 
     leaderboardRefreshTimer = null;
 
-    // Keep Today's Challenge live without refreshing rankings.
-    // Group rapid notifications into one request.
-    if (!document.hidden) {
-      loadDailyChallenge();
-    }
+    loadLeaderboard();
 
-  },2000);
+    loadDailyChallenge();
+
+  },500);
 
 }
 
@@ -2908,34 +2901,22 @@ loadDailyChallenge();
 
 
 /* ==========================================
-   RANKINGS: REFRESH EVERY 5 MINUTES
-   TODAY'S CHALLENGE: REALTIME + 60s FALLBACK
+   AUTO-REFRESH EVERY 15 SECONDS
 ========================================== */
 
-// Poll only the selected ranking tab, and only while visible.
 setInterval(() => {
-  if (document.hidden) return;
+
+  loadDailyChallenge();
 
   loadLeaderboard();
 
   if (!historyChallengePanel.hidden) {
+
     loadChallengeHistory();
-  }
-}, 300000);
 
-// Realtime handles prompt updates; this is a safety fallback.
-setInterval(() => {
-  if (document.hidden) return;
-  loadDailyChallenge();
-}, 60000);
-
-// Refresh current data when someone returns to the page.
-document.addEventListener("visibilitychange", () => {
-  if (!document.hidden) {
-    loadDailyChallenge();
-    loadLeaderboard();
   }
-});
+
+},15000);
 
 
 /* ==========================================
