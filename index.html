@@ -420,11 +420,10 @@ function updateVotingDayCountdown() {
   );
 
   label.textContent = daysLeft === 0
-  ? "FINAL DAY OF VOTING!"
-  : daysLeft +
-    (daysLeft === 1
-      ? " DAY LEFT TO VOTE"
-      : " DAYS LEFT TO VOTE");
+    ? "DAY " + dayNumber + " · FINAL DAY OF VOTING!"
+    : "DAY " + dayNumber + " · " + daysLeft +
+      (daysLeft === 1 ? " DAY" : " DAYS") +
+      " LEFT BEFORE VOTING ENDS";
 }
 
 function updateKSTDisplay() {
