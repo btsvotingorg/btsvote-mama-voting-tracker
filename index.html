@@ -994,8 +994,8 @@ footer {
     <div class="success-icon" aria-hidden="true">
       <svg width="37" height="37" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M9 21L17 29L32 12" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/></svg>
     </div>
-    <h2 id="successTitle">Successfully Submitted!</h2>
-    <p id="successDescription">Keep voting and encourage more ARMY to join us. Let’s win this DAESANG together for BTS! 💜</p>
+    <h2 id="successTitle">Thank you for voting!</h2>
+    <p id="successDescription">Your voting certificates have been submitted successfully. Vote more to help BTS win the DAESANG! 💜</p>
     <button type="button" id="closeSuccess">Continue Voting 💜</button>
   </div>
 </div>
@@ -1268,8 +1268,14 @@ function showMessage(text,type) {
 
 const successOverlay = document.getElementById("successOverlay");
 const closeSuccess = document.getElementById("closeSuccess");
+const successDescription = document.getElementById("successDescription");
 let successPreviousFocus = null;
-function showSuccessPopup() {
+function showSuccessPopup(submittedCount) {
+  const count = Number(submittedCount);
+  if (!Number.isSafeInteger(count) || count < 1) return;
+  successDescription.textContent = count + " voting certificate" +
+    (count === 1 ? " has" : "s have") +
+    " been submitted successfully. Vote more to help BTS win the DAESANG! 💜";
   successPreviousFocus = document.activeElement;
   successOverlay.hidden = false;
   closeSuccess.focus();
@@ -2146,7 +2152,7 @@ form.addEventListener("submit",async event => {
     }
 
     if (pending) {
-      showSuccessPopup();
+      showSuccessPopup(pending);
 
       // Update rankings in the background; do not delay the confirmation popup.
       Promise.all([
