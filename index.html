@@ -493,7 +493,7 @@ footer {
       <div class="stats">
         <div class="stat">
           <strong id="acceptedCount">0</strong>
-          <span>Pending</span>
+          <span>Successfully Submitted</span>
         </div>
         <div class="stat">
           <strong id="duplicateCount">0</strong>
@@ -1162,7 +1162,7 @@ form.addEventListener("submit",async event => {
               pending++;
               addResult(
                 file.name,"accepted",
-                "Saved as pending: " +
+                "Successfully submitted: " +
                 certificate +
                 " | Participation date: " +
                 participationDate +
@@ -1196,7 +1196,7 @@ form.addEventListener("submit",async event => {
     showMessage(
       "Processed " + done +
       " of " + files.length + " screenshots.\n" +
-      pending + " saved as pending, " +
+      pending + " successfully submitted, " +
       duplicates + " duplicates, " +
       failed + " failed.",
       failed ? "error" : "success"
