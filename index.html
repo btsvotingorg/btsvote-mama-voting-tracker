@@ -224,16 +224,13 @@ button:disabled {
   font-size:13px;
 }
 
-.batch-summary[hidden],
-.stat[hidden],
-#batchProgress[hidden],
-.progress-track[hidden] {
-  display:none !important;
+.batch-summary[hidden] {
+  display:none;
 }
 
 .stats {
   display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
+  grid-template-columns:repeat(3,1fr);
   gap:8px;
   margin:12px 0;
 }
@@ -391,6 +388,67 @@ button:disabled {
 
 .leaderboard-row.top-ten-purple .progress-track {
   background:rgba(255,255,255,.65);
+}
+
+
+/* TOP THREE COUNTRY PODIUM — Daily and Overall */
+.top-three-podium {
+  display:grid;
+  grid-template-columns:minmax(0,1fr) minmax(0,1.12fr) minmax(0,1fr);
+  align-items:start;
+  gap:10px;
+  padding:12px 0 24px;
+  margin-bottom:14px;
+  border-bottom:1px solid var(--border);
+}
+.podium-card {
+  min-width:0;
+  min-height:174px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+  align-self:start;
+  align-items:center;
+  text-align:center;
+  gap:7px;
+  padding:18px 8px 14px;
+  border:0;
+  border-radius:13px;
+  background:#E9D9F7;
+  box-shadow:none;
+  color:#523577;
+}
+.podium-card.podium-first {
+  min-height:212px;
+  background:#DCC1F3;
+  padding-top:25px;
+  padding-bottom:22px;
+  box-shadow:none;
+}
+.podium-card.podium-third {min-height:156px;background:#F0E6FA;}
+.podium-number {font-size:25px;font-weight:800;line-height:1;}
+.podium-first .podium-number {font-size:33px;}
+.podium-flag {font-size:34px;line-height:1.25;}
+.podium-first .podium-flag {font-size:41px;}
+.podium-country {font-size:13px;font-weight:800;line-height:1.3;overflow-wrap:anywhere;}
+.podium-value {font-size:12px;font-weight:700;overflow-wrap:anywhere;}
+.podium-movement {font-size:11px;font-weight:700;min-height:14px;}
+.podium-progress {width:100%;height:6px;border-radius:99px;background:rgba(255,255,255,.7);overflow:hidden;margin-top:3px;}
+.podium-progress-fill {height:100%;border-radius:99px;background:#9063BB;}
+.leaderboard-list-heading {font-size:12px;font-weight:800;letter-spacing:.08em;color:var(--muted);margin:6px 0 10px;}
+.leaderboard-row .country-flag {font-size:17px;margin-right:7px;vertical-align:middle;}
+@media (max-width:480px) {
+  .top-three-podium {gap:6px;padding-top:15px;}
+  .podium-card {min-height:150px;gap:5px;padding:14px 4px 11px;border-radius:12px;}
+  .podium-card.podium-first {min-height:190px;padding-top:20px;padding-bottom:17px;}
+  .podium-card.podium-third {min-height:130px;}
+  .podium-number {font-size:21px;}
+  .podium-first .podium-number {font-size:27px;}
+  .podium-flag {font-size:27px;}
+  .podium-first .podium-flag {font-size:32px;}
+  .podium-country {font-size:11px;}
+  .podium-value {font-size:10px;}
+  .podium-movement {font-size:10px;}
 }
 
 .rank-line {
@@ -577,53 +635,6 @@ footer {
   display:none !important;
 }
 
-
-/* Successful submission thank-you popup */
-.vote-thanks-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 9999;
-  background: rgba(33, 22, 48, .52);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-.vote-thanks-card {
-  position: relative;
-  width: min(100%, 410px);
-  padding: 36px 26px 28px;
-  border-radius: 22px;
-  background: #fff;
-  box-shadow: 0 20px 60px rgba(36, 19, 57, .22);
-  text-align: center;
-  color: #352442;
-}
-.vote-thanks-heart { font-size: 38px; line-height: 1; margin-bottom: 16px; }
-.vote-thanks-card h2 { margin: 0 0 12px; font-size: 25px; color: #634187; }
-.vote-thanks-card p { margin: 0 0 22px; line-height: 1.55; font-size: 15px; }
-.vote-thanks-action {
-  border: 0;
-  border-radius: 999px;
-  background: #7752a2;
-  color: #fff;
-  padding: 12px 26px;
-  font: inherit;
-  font-weight: 700;
-  cursor: pointer;
-}
-.vote-thanks-action:hover { background: #604083; }
-.vote-thanks-close {
-  position: absolute;
-  right: 14px;
-  top: 12px;
-  border: 0;
-  background: transparent;
-  color: #6d6276;
-  font-size: 26px;
-  cursor: pointer;
-}
-
 </style>
 </head>
 
@@ -726,8 +737,10 @@ footer {
     >
 
     <p class="hint">
-      You can upload multiple MAMA voting certificate.
+      You can select multiple voting certificates.
+
       The participation date must be visible on each certificate.
+      
     </p>
 
     <div class="hp" aria-hidden="true">
@@ -798,8 +811,7 @@ footer {
 
     Your X username, country, and uploaded screenshots
     are used to process submissions.
-    Please do not upload screenshots containing
-    sensitive personal information.
+
   </div>
 
 </section>
@@ -1004,20 +1016,6 @@ footer {
 <footer>
   Made by btsvotingorg
 </footer>
-
-<!-- Shown only after at least one certificate is accepted by the server -->
-<div id="voteThanksOverlay" class="vote-thanks-overlay" hidden>
-  <section class="vote-thanks-card" role="dialog" aria-modal="true"
-           aria-labelledby="voteThanksTitle" aria-describedby="voteThanksText">
-    <button id="voteThanksClose" class="vote-thanks-close" type="button"
-            aria-label="Close thank-you message">&times;</button>
-    <div class="vote-thanks-heart" aria-hidden="true">💜</div>
-    <h2 id="voteThanksTitle">Thank you for voting!</h2>
-    <p id="voteThanksText">Your voting certificate has been submitted successfully.<br>
-      <strong>Vote more to help BTS win the DAESANG!</strong> 💜</p>
-    <button id="voteThanksAction" class="vote-thanks-action" type="button">Let's vote again!</button>
-  </section>
-</div>
 
 <script>
 
@@ -1287,10 +1285,6 @@ function showMessage(text,type) {
 
 function addResult(filename,status,detail) {
 
-  // Successful files are represented by one confirmation message.
-  // Only actual duplicates and failures need individual details.
-  if (status === "accepted") return;
-
   const row = document.createElement("div");
 
   row.className = "batch-result " + status;
@@ -1318,11 +1312,6 @@ function updateProgress(
   duplicateCount.textContent = duplicates;
 
   failedCount.textContent = failed;
-
-  // Never show counters that have no relevant result.
-  acceptedCount.parentElement.hidden = true;
-  duplicateCount.parentElement.hidden = duplicates === 0;
-  failedCount.parentElement.hidden = failed === 0;
 
   batchProgress.textContent =
     "Processed " + done + " of " +
@@ -1408,7 +1397,7 @@ function extractCertificateDetails(rawText) {
     : null;
 
   const participationLabel =
-    /(?:Participation\s*Date|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일))/gi;
+    /(?:Participation\s*Date|参\s*与\s*(?:日\s*期|时\s*间|日\s*时)|參\s*與\s*(?:日\s*期|時\s*間|日\s*時)|参加\s*(?:日時|日付|日)|投票\s*参加\s*(?:日時|日付|日)|(?:투표\s*)?참여\s*(?:일시|일자|날짜|일)|참가\s*(?:일시|일자|날짜|일))/gi;
 
   const datePattern =
     /(20\d{2})\s*(?:[.\/-]|年|년)\s*(\d{1,2})\s*(?:[.\/-]|月|월)\s*(\d{1,2})(?:\s*(?:日|일))?/;
@@ -1459,45 +1448,60 @@ function extractCertificateDetails(rawText) {
 
 async function scanCertificate(file) {
 
-  const englishResult = await Tesseract.recognize(
-    file,
-    "eng"
+  // Fast pass for the most common English-language certificates.
+  const englishResult = await Tesseract.recognize(file, "eng");
+  const englishDetails = extractCertificateDetails(
+    englishResult.data.text || ""
   );
 
-  const englishText = englishResult.data.text || "";
-
-  let details = extractCertificateDetails(englishText);
-
-  if (
-    details.certificateNumber &&
-    details.participationDate
-  ) {
-    return details;
+  if (englishDetails.certificateNumber && englishDetails.participationDate) {
+    return englishDetails;
   }
 
+  // Preserve the existing Japanese / Korean / English recognition.
   const multilingualResult = await Tesseract.recognize(
     file,
     "jpn+kor+eng"
   );
+  const localizedDetails = extractCertificateDetails(
+    multilingualResult.data.text || ""
+  );
 
-  const multilingualText =
-    multilingualResult.data.text || "";
-
-  const localizedDetails =
-    extractCertificateDetails(multilingualText);
-
-  return {
-
+  const combined = {
     certificateNumber:
-      details.certificateNumber ||
-      localizedDetails.certificateNumber,
-
+      englishDetails.certificateNumber || localizedDetails.certificateNumber,
     participationDate:
-      details.participationDate ||
-      localizedDetails.participationDate
-
+      englishDetails.participationDate || localizedDetails.participationDate
   };
 
+  if (combined.certificateNumber && combined.participationDate) {
+    return combined;
+  }
+
+  // Chinese-language certificates may use 参与日期 or 參與日期.
+  // Load Chinese models only when the earlier passes are incomplete.
+  // Keep Simplified and Traditional separate for better OCR accuracy.
+  for (const language of ["chi_sim+eng", "chi_tra+eng"]) {
+    try {
+      const chineseResult = await Tesseract.recognize(file, language);
+      const chineseDetails = extractCertificateDetails(
+        chineseResult.data.text || ""
+      );
+
+      combined.certificateNumber =
+        combined.certificateNumber || chineseDetails.certificateNumber;
+      combined.participationDate =
+        combined.participationDate || chineseDetails.participationDate;
+
+      if (combined.certificateNumber && combined.participationDate) {
+        break;
+      }
+    } catch (error) {
+      console.warn("Chinese OCR unavailable for", language, error);
+    }
+  }
+
+  return combined;
 }
 
 
@@ -1875,10 +1879,6 @@ form.addEventListener("submit",async event => {
     "PROCESSING CERTIFICATES...";
 
   batchSummary.hidden = false;
-  batchProgress.hidden = false;
-  batchBar.parentElement.hidden = false;
-  const summaryHeading = batchSummary.querySelector("strong");
-  if (summaryHeading) summaryHeading.textContent = "Processing certificates";
 
   batchResults.replaceChildren();
 
@@ -1960,7 +1960,7 @@ form.addEventListener("submit",async event => {
             addResult(
               file.name,
               "failed",
-              "Participation date could not be detected in English, Japanese, or Korean. Please upload a clear certificate showing the participation date."
+              "Participation date could not be detected in English, Japanese, Korean, Simplified Chinese, or Traditional Chinese. Please upload a clear certificate showing the participation date."
             );
 
           } else if (
@@ -2120,33 +2120,22 @@ form.addEventListener("submit",async event => {
 
     }
 
-    // Show only the relevant outcome after processing finishes.
-    // No zero-value counters or successful-file detail list.
-    batchSummary.hidden = duplicates === 0 && failed === 0;
+    showMessage(
 
-    if (!batchSummary.hidden) {
-      const summaryHeading = batchSummary.querySelector("strong");
-      if (summaryHeading) summaryHeading.textContent = "Items needing attention";
-      batchProgress.hidden = true;
-      batchBar.parentElement.hidden = true;
-    }
+      "Processed " + done +
+      " of " + files.length + " screenshots.\n" +
 
-    if (pending > 0) {
-      showMessage(
-        "✓ " + pending + " voting certificate" +
-        (pending === 1 ? "" : "s") +
-        " submitted successfully!" +
-        (duplicates || failed ? " See the details below for other files." : ""),
-        "success"
-      );
-    } else if (duplicates > 0 || failed > 0) {
-      showMessage("No new certificates submitted. See the details below.", "error");
-    } else {
-      showMessage("No certificates were submitted.", "error");
-    }
+      pending + " successfully submitted, " +
+
+      duplicates + " duplicates, " +
+
+      failed + " failed.",
+
+      failed ? "error" : "success"
+
+    );
 
     if (pending) {
-      showVoteThanks(pending);
 
       await Promise.all([
 
@@ -2171,61 +2160,6 @@ form.addEventListener("submit",async event => {
 
 });
 
-
-
-/* Show thank-you message only after a successful server submission. */
-const voteThanksOverlay = document.getElementById("voteThanksOverlay");
-const voteThanksClose = document.getElementById("voteThanksClose");
-const voteThanksAction = document.getElementById("voteThanksAction");
-const voteThanksText = document.getElementById("voteThanksText");
-let voteThanksPreviousFocus = null;
-
-function closeVoteThanks() {
-  voteThanksOverlay.hidden = true;
-  document.removeEventListener("keydown", handleVoteThanksKey);
-  if (voteThanksPreviousFocus && typeof voteThanksPreviousFocus.focus === "function") {
-    voteThanksPreviousFocus.focus();
-  }
-}
-
-function handleVoteThanksKey(event) {
-  if (event.key === "Escape") closeVoteThanks();
-  if (event.key === "Tab") {
-    const controls = [voteThanksClose, voteThanksAction];
-    const index = controls.indexOf(document.activeElement);
-    if (event.shiftKey && index <= 0) {
-      event.preventDefault();
-      voteThanksAction.focus();
-    } else if (!event.shiftKey && index === controls.length - 1) {
-      event.preventDefault();
-      voteThanksClose.focus();
-    }
-  }
-}
-
-function showVoteThanks(successCount) {
-  if (successCount < 1) return;
-  voteThanksPreviousFocus = document.activeElement;
-  voteThanksText.innerHTML = "";
-  const confirmation = document.createTextNode(
-    successCount + " voting certificate" + (successCount === 1 ? " has" : "s have") +
-    " been submitted successfully."
-  );
-  voteThanksText.appendChild(confirmation);
-  voteThanksText.appendChild(document.createElement("br"));
-  const encouragement = document.createElement("strong");
-  encouragement.textContent = "Vote more to help BTS win the DAESANG! 💜";
-  voteThanksText.appendChild(encouragement);
-  voteThanksOverlay.hidden = false;
-  voteThanksClose.focus();
-  document.addEventListener("keydown", handleVoteThanksKey);
-}
-
-voteThanksClose.addEventListener("click", closeVoteThanks);
-voteThanksAction.addEventListener("click", closeVoteThanks);
-voteThanksOverlay.addEventListener("click", event => {
-  if (event.target === voteThanksOverlay) closeVoteThanks();
-});
 
 /* ==========================================
    COUNTRY LEADERBOARD
@@ -2291,6 +2225,212 @@ overallRankingTab.addEventListener(
    LIVE RANKING MOVEMENT
 ========================================== */
 
+const COUNTRY_FLAG_CODES = {
+  "Afghanistan": "AF",
+  "Albania": "AL",
+  "Algeria": "DZ",
+  "Andorra": "AD",
+  "Angola": "AO",
+  "Antigua and Barbuda": "AG",
+  "Argentina": "AR",
+  "Armenia": "AM",
+  "Australia": "AU",
+  "Austria": "AT",
+  "Azerbaijan": "AZ",
+  "Bahamas": "BS",
+  "Bahrain": "BH",
+  "Bangladesh": "BD",
+  "Barbados": "BB",
+  "Belarus": "BY",
+  "Belgium": "BE",
+  "Belize": "BZ",
+  "Benin": "BJ",
+  "Bhutan": "BT",
+  "Bolivia": "BO",
+  "Bosnia and Herzegovina": "BA",
+  "Botswana": "BW",
+  "Brazil": "BR",
+  "Brunei": "BN",
+  "Bulgaria": "BG",
+  "Burkina Faso": "BF",
+  "Burundi": "BI",
+  "Cabo Verde": "CV",
+  "Cambodia": "KH",
+  "Cameroon": "CM",
+  "Canada": "CA",
+  "Central African Republic": "CF",
+  "Chad": "TD",
+  "Chile": "CL",
+  "China": "CN",
+  "Colombia": "CO",
+  "Comoros": "KM",
+  "Congo": "CG",
+  "Costa Rica": "CR",
+  "Côte d'Ivoire": "CI",
+  "Croatia": "HR",
+  "Cuba": "CU",
+  "Cyprus": "CY",
+  "Czechia": "CZ",
+  "Democratic Republic of the Congo": "CD",
+  "Denmark": "DK",
+  "Djibouti": "DJ",
+  "Dominica": "DM",
+  "Dominican Republic": "DO",
+  "Ecuador": "EC",
+  "Egypt": "EG",
+  "El Salvador": "SV",
+  "Equatorial Guinea": "GQ",
+  "Eritrea": "ER",
+  "Estonia": "EE",
+  "Eswatini": "SZ",
+  "Ethiopia": "ET",
+  "Fiji": "FJ",
+  "Finland": "FI",
+  "France": "FR",
+  "Gabon": "GA",
+  "Gambia": "GM",
+  "Georgia": "GE",
+  "Germany": "DE",
+  "Ghana": "GH",
+  "Greece": "GR",
+  "Grenada": "GD",
+  "Guatemala": "GT",
+  "Guinea": "GN",
+  "Guinea-Bissau": "GW",
+  "Guyana": "GY",
+  "Haiti": "HT",
+  "Honduras": "HN",
+  "Hong Kong": "HK",
+  "Hungary": "HU",
+  "Iceland": "IS",
+  "India": "IN",
+  "Indonesia": "ID",
+  "Iran": "IR",
+  "Iraq": "IQ",
+  "Ireland": "IE",
+  "Israel": "IL",
+  "Italy": "IT",
+  "Jamaica": "JM",
+  "Japan": "JP",
+  "Jordan": "JO",
+  "Kazakhstan": "KZ",
+  "Kenya": "KE",
+  "Kiribati": "KI",
+  "Kuwait": "KW",
+  "Kyrgyzstan": "KG",
+  "Laos": "LA",
+  "Latvia": "LV",
+  "Lebanon": "LB",
+  "Lesotho": "LS",
+  "Liberia": "LR",
+  "Libya": "LY",
+  "Liechtenstein": "LI",
+  "Lithuania": "LT",
+  "Luxembourg": "LU",
+  "Madagascar": "MG",
+  "Malawi": "MW",
+  "Malaysia": "MY",
+  "Maldives": "MV",
+  "Mali": "ML",
+  "Malta": "MT",
+  "Marshall Islands": "MH",
+  "Mauritania": "MR",
+  "Mauritius": "MU",
+  "Mexico": "MX",
+  "Micronesia": "FM",
+  "Moldova": "MD",
+  "Monaco": "MC",
+  "Mongolia": "MN",
+  "Montenegro": "ME",
+  "Morocco": "MA",
+  "Mozambique": "MZ",
+  "Myanmar": "MM",
+  "Namibia": "NA",
+  "Nauru": "NR",
+  "Nepal": "NP",
+  "Netherlands": "NL",
+  "New Zealand": "NZ",
+  "Nicaragua": "NI",
+  "Niger": "NE",
+  "Nigeria": "NG",
+  "North Korea": "KP",
+  "North Macedonia": "MK",
+  "Norway": "NO",
+  "Oman": "OM",
+  "Pakistan": "PK",
+  "Palau": "PW",
+  "Palestine": "PS",
+  "Panama": "PA",
+  "Papua New Guinea": "PG",
+  "Paraguay": "PY",
+  "Peru": "PE",
+  "Philippines": "PH",
+  "Poland": "PL",
+  "Portugal": "PT",
+  "Qatar": "QA",
+  "Romania": "RO",
+  "Russia": "RU",
+  "Rwanda": "RW",
+  "Saint Kitts and Nevis": "KN",
+  "Saint Lucia": "LC",
+  "Saint Vincent and the Grenadines": "VC",
+  "Samoa": "WS",
+  "San Marino": "SM",
+  "São Tomé and Príncipe": "ST",
+  "Saudi Arabia": "SA",
+  "Senegal": "SN",
+  "Serbia": "RS",
+  "Seychelles": "SC",
+  "Sierra Leone": "SL",
+  "Singapore": "SG",
+  "Slovakia": "SK",
+  "Slovenia": "SI",
+  "Solomon Islands": "SB",
+  "Somalia": "SO",
+  "South Africa": "ZA",
+  "South Korea": "KR",
+  "South Sudan": "SS",
+  "Spain": "ES",
+  "Sri Lanka": "LK",
+  "Sudan": "SD",
+  "Suriname": "SR",
+  "Sweden": "SE",
+  "Switzerland": "CH",
+  "Syria": "SY",
+  "Taiwan": "TW",
+  "Tajikistan": "TJ",
+  "Tanzania": "TZ",
+  "Thailand": "TH",
+  "Timor-Leste": "TL",
+  "Togo": "TG",
+  "Tonga": "TO",
+  "Trinidad and Tobago": "TT",
+  "Tunisia": "TN",
+  "Türkiye": "TR",
+  "Turkmenistan": "TM",
+  "Tuvalu": "TV",
+  "Uganda": "UG",
+  "Ukraine": "UA",
+  "United Arab Emirates": "AE",
+  "United Kingdom": "GB",
+  "United States": "US",
+  "Uruguay": "UY",
+  "Uzbekistan": "UZ",
+  "Vanuatu": "VU",
+  "Vatican City": "VA",
+  "Venezuela": "VE",
+  "Vietnam": "VN",
+  "Yemen": "YE",
+  "Zambia": "ZM",
+  "Zimbabwe": "ZW"
+};
+
+function countryFlag(country) {
+  const code = COUNTRY_FLAG_CODES[String(country || "").trim()];
+  if (!code || !/^[A-Z]{2}$/.test(code)) return "🌍";
+  return String.fromCodePoint(...[...code].map(letter => 127397 + letter.charCodeAt(0)));
+}
+
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
   const container = document.getElementById("leaderboard");
@@ -2301,7 +2441,7 @@ async function loadLeaderboard() {
     ? "KST voting date: " + getKSTDate() + " · Resets at midnight KST"
     : "Accumulated ranking · All eligible submissions since tracking began";
 
-  // The live view is authoritative for positions, percentages and movement.
+  // Live ranking remains authoritative for positions, progress and movement.
   const { data, error } = await db
     .from("country_rank_live")
     .select("country,country_rank,progress_percent,movement,moved_by")
@@ -2311,13 +2451,11 @@ async function loadLeaderboard() {
     .limit(250);
 
   if (requestId !== leaderboardRequestId) return;
-
   if (error) {
     console.error("Live ranking query failed:", error);
     container.textContent = "Participation data is temporarily unavailable.";
     return;
   }
-
   if (!data || !data.length) {
     container.textContent = daily
       ? "No eligible certificates uploaded today yet. Be the first!"
@@ -2325,35 +2463,26 @@ async function loadLeaderboard() {
     return;
   }
 
-  // Certificate counts come from the cache, matched by country name.
-  // Do NOT require cached rank to equal live rank: those sources can
-  // refresh at different times. Fetch the full daily cache, including
-  // tied positions, rather than filtering by cached rank >= 31.
+  // Daily #31 onward uses cached certificate counts matched by country.
+  // This intentionally does not require the cached rank to match the live rank.
   const counts = new Map();
   let cacheError = null;
-
-  if (daily && data.some(row => Number(row.country_rank) >= 31)) {
+  if (daily && data.some(item => Number(item.country_rank) >= 31)) {
     const result = await db
       .from("leaderboard_cache")
       .select("country,certificate_count")
       .eq("period", "daily")
       .order("country", { ascending: true })
       .limit(1000);
-
     if (requestId !== leaderboardRequestId) return;
-
     cacheError = result.error;
     if (cacheError) {
       console.error("Daily certificate cache could not be read:", cacheError);
     } else {
       for (const entry of result.data || []) {
         const n = Number(entry.certificate_count);
-        if (
-          entry.country &&
-          entry.certificate_count !== null &&
-          entry.certificate_count !== undefined &&
-          Number.isSafeInteger(n) && n >= 0
-        ) {
+        if (entry.country && entry.certificate_count != null &&
+            Number.isSafeInteger(n) && n >= 0) {
           counts.set(entry.country.trim().normalize("NFKC"), n);
         }
       }
@@ -2362,18 +2491,108 @@ async function loadLeaderboard() {
 
   container.replaceChildren();
   const missingCountries = [];
-
-  // Pastel purple from strongest (#1) to lightest (#10).
-  // Tied countries share the shade associated with their rank.
   const topTenPurples = [
     "#D5B8F0", "#DBC3F2", "#E0CBF4", "#E4D2F5", "#E8D9F7",
     "#EBDFF8", "#EEE4F9", "#F0E8FA", "#F3EDFB", "#F6F1FC"
   ];
 
-  for (const item of data) {
+  function safeProgress(item) {
+    const share = Number(item.progress_percent);
+    return Number.isFinite(share) ? Math.max(0, share) : 0;
+  }
+
+  function movementLabel(item) {
+    const places = Math.max(0, Number(item.moved_by) || 0);
+    if (item.movement === "new") return "NEW";
+    if (item.movement === "up" && places > 0) return "↑ " + places;
+    if (item.movement === "down" && places > 0) return "↓ " + places;
+    return "–";
+  }
+
+  function rankingValue(item) {
+    const rank = Number(item.country_rank);
+    if (daily && rank >= 31) {
+      const key = String(item.country || "").trim().normalize("NFKC");
+      if (counts.has(key)) {
+        const count = counts.get(key);
+        return count.toLocaleString("en-US") + (count === 1 ? " vote" : " votes");
+      }
+      missingCountries.push(item.country);
+      return "Count unavailable";
+    }
+    return safeProgress(item).toFixed(2) + "%";
+  }
+
+  function makeProgress(item, trackClass, fillClass) {
+    const track = document.createElement("div");
+    track.className = trackClass;
+    const fill = document.createElement("div");
+    fill.className = fillClass;
+    fill.style.width = Math.min(100, safeProgress(item)) + "%";
+    track.appendChild(fill);
+    return track;
+  }
+
+  function makePodiumCard(item, placement) {
+    const card = document.createElement("div");
+    card.className = "podium-card podium-" +
+      (placement === 1 ? "first" : placement === 2 ? "second" : "third");
+
+    const number = document.createElement("div");
+    number.className = "podium-number";
+    // Ranking number only: no '1st Place', '2nd Place', etc.
+    number.textContent = String(item.country_rank);
+
+    const flag = document.createElement("div");
+    flag.className = "podium-flag";
+    flag.textContent = countryFlag(item.country);
+    flag.setAttribute("aria-label", "Flag of " + item.country);
+
+    const country = document.createElement("div");
+    country.className = "podium-country";
+    country.textContent = item.country;
+
+    const value = document.createElement("div");
+    value.className = "podium-value";
+    value.textContent = rankingValue(item);
+
+    const movement = document.createElement("div");
+    movement.className = "podium-movement";
+    movement.textContent = movementLabel(item);
+
+    card.append(number, flag, country, value, movement,
+      makeProgress(item, "podium-progress", "podium-progress-fill"));
+    return card;
+  }
+
+  // The three highest-listed countries appear as #2, #1, #3
+  // from left to right. Actual rank numbers remain accurate for ties.
+  const leaders = data.slice(0, 3);
+  if (leaders.length) {
+    const podium = document.createElement("div");
+    podium.className = "top-three-podium";
+    podium.setAttribute("aria-label", "Top three countries");
+    if (leaders[1]) podium.appendChild(makePodiumCard(leaders[1], 2));
+    podium.appendChild(makePodiumCard(leaders[0], 1));
+    if (leaders[2]) podium.appendChild(makePodiumCard(leaders[2], 3));
+    // For one or two entries, use an appropriate number of columns.
+    if (leaders.length < 3) {
+      podium.style.gridTemplateColumns = "repeat(" + leaders.length + ", minmax(0,1fr))";
+    }
+    container.appendChild(podium);
+  }
+
+  if (data.length > 3) {
+    const heading = document.createElement("div");
+    heading.className = "leaderboard-list-heading";
+    heading.textContent = "COUNTRY RANKINGS";
+    container.appendChild(heading);
+  }
+
+  // Remaining countries keep pastel Top 10 styling and movement arrows.
+  for (const item of data.slice(3)) {
     const row = document.createElement("div");
     row.className = "leaderboard-row";
-
     const displayedRank = Number(item.country_rank);
     if (Number.isInteger(displayedRank) && displayedRank >= 1 && displayedRank <= 10) {
       row.classList.add("top-ten-purple");
@@ -2382,69 +2601,34 @@ async function loadLeaderboard() {
 
     const line = document.createElement("div");
     line.className = "rank-line";
-
     const name = document.createElement("span");
     name.className = "country-name";
 
     const rank = document.createElement("span");
     rank.className = "rank-number";
     rank.textContent = "#" + item.country_rank;
-    name.append(rank, document.createTextNode(item.country));
+
+    const flag = document.createElement("span");
+    flag.className = "country-flag";
+    flag.textContent = countryFlag(item.country);
 
     const movement = document.createElement("span");
     movement.className = "rank-movement";
-    const places = Math.max(0, Number(item.moved_by) || 0);
-    if (item.movement === "new") {
-      movement.textContent = "NEW";
-    } else if (item.movement === "up" && places > 0) {
-      movement.textContent = "↑ " + places;
-    } else if (item.movement === "down" && places > 0) {
-      movement.textContent = "↓ " + places;
-    } else {
-      movement.textContent = "–";
-    }
-    name.appendChild(movement);
+    movement.textContent = movementLabel(item);
+    name.append(rank, flag, document.createTextNode(item.country + " "), movement);
 
     const value = document.createElement("span");
     value.className = "percentage";
-    const share = Number(item.progress_percent);
-    const safeShare = Number.isFinite(share) ? share : 0;
-    const rankNumber = Number(item.country_rank);
-
-    if (daily && rankNumber >= 31) {
-      const key = String(item.country || "").trim().normalize("NFKC");
-      if (counts.has(key)) {
-        const count = counts.get(key);
-        value.textContent = count.toLocaleString("en-US") +
-          (count === 1 ? " vote" : " votes");
-      } else {
-        // Never display a percentage in Daily rank #31 onward.
-        value.textContent = "Count unavailable";
-        value.title = "The certificate count could not be retrieved.";
-        missingCountries.push(item.country);
-      }
-    } else {
-      // Daily top 30 and every Overall ranking remain percentages.
-      value.textContent = safeShare.toFixed(2) + "%";
-    }
+    value.textContent = rankingValue(item);
 
     line.append(name, value);
-
-    const track = document.createElement("div");
-    track.className = "progress-track";
-    const fill = document.createElement("div");
-    fill.className = "progress-fill";
-    fill.style.width = Math.max(0, Math.min(100, safeShare)) + "%";
-    track.appendChild(fill);
-    row.append(line, track);
+    row.append(line, makeProgress(item, "progress-track", "progress-fill"));
     container.appendChild(row);
   }
 
   if (missingCountries.length) {
-    console.warn(
-      "Missing daily certificate counts for:", missingCountries,
-      cacheError || "Check leaderboard_cache records and public SELECT access."
-    );
+    console.warn("Missing daily certificate counts for:", missingCountries,
+      cacheError || "Check leaderboard_cache and public SELECT access.");
   }
 }
 
@@ -3039,9 +3223,6 @@ setInterval(() => {
 },15000);
 
 </script>
-
-
-
 
 </body>
 </html>
