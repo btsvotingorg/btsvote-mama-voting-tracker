@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -159,7 +158,6 @@ button:disabled {
   display:none;
   position:absolute;
   z-index:20;
-
   left:0;
   right:0;
   top:100%;
@@ -581,8 +579,6 @@ footer {
 
 <main class="container">
 
-<!-- INTRODUCTION -->
-
 <section class="intro">
   <h2>Every vote counts.</h2>
 
@@ -592,8 +588,6 @@ footer {
     and help bring it to the top of the leaderboard!
   </p>
 </section>
-
-<!-- VOTING CERTIFICATE SUBMISSION -->
 
 <section class="card">
 
@@ -617,8 +611,7 @@ footer {
 
     The daily challenge resets at 12:00 AM KST.
 
-    <div
-      id="todayKST"
+    <div id="todayKST"
       style="margin-top:7px;font-weight:bold;">
     </div>
   </div>
@@ -687,13 +680,8 @@ footer {
       are supported.
     </p>
 
-    <!-- ANTI-SPAM HONEYPOT -->
-
     <div class="hp" aria-hidden="true">
-
-      <label for="website">
-        Leave this field empty
-      </label>
+      <label for="website">Leave this field empty</label>
 
       <input
         id="website"
@@ -701,7 +689,6 @@ footer {
         tabindex="-1"
         autocomplete="off"
       >
-
     </div>
 
     <button id="submitButton" type="submit">
@@ -714,8 +701,6 @@ footer {
       role="status"
       aria-live="polite">
     </div>
-
-    <!-- SUBMISSION SUMMARY -->
 
     <div
       id="batchSummary"
@@ -746,10 +731,7 @@ footer {
       <div id="batchProgress"></div>
 
       <div class="progress-track">
-        <div
-          id="batchBar"
-          class="progress-fill">
-        </div>
+        <div id="batchBar" class="progress-fill"></div>
       </div>
 
       <div
@@ -761,10 +743,7 @@ footer {
 
   </form>
 
-  <!-- PRIVACY NOTICE -->
-
   <div class="notice">
-
     <strong>Privacy notice:</strong>
 
     Your X username, country, and uploaded screenshots
@@ -778,14 +757,11 @@ footer {
 
     Please do not upload screenshots containing
     sensitive personal information.
-
   </div>
 
 </section>
 
-<!-- ==========================================
-     GLOBAL ARMY DAILY CHALLENGE
-========================================== -->
+<!-- DAILY CHALLENGE -->
 
 <section
   class="card challenge-card"
@@ -796,8 +772,6 @@ footer {
   </p>
 
   <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
-
-  <!-- CHALLENGE TABS -->
 
   <div
     class="challenge-tabs"
@@ -826,8 +800,6 @@ footer {
 
   </div>
 
-  <!-- TODAY'S CHALLENGE -->
-
   <div
     id="todayChallengePanel"
     role="tabpanel"
@@ -855,12 +827,10 @@ footer {
     </div>
 
     <div class="challenge-progress">
-
       <div
         id="challengeProgressBar"
         class="challenge-progress-fill">
       </div>
-
     </div>
 
     <p
@@ -876,8 +846,6 @@ footer {
     </p>
 
   </div>
-
-  <!-- CHALLENGE HISTORY -->
 
   <div
     id="historyChallengePanel"
@@ -904,9 +872,7 @@ footer {
 
 </section>
 
-<!-- ==========================================
-     COUNTRY RANKING
-========================================== -->
+<!-- COUNTRY RANKING -->
 
 <section class="card">
 
@@ -916,8 +882,6 @@ footer {
     See which countries are leading today and
     across the entire voting tracker.
   </p>
-
-  <!-- DAILY / OVERALL RANKING TABS -->
 
   <div
     class="country-ranking-tabs"
@@ -952,8 +916,6 @@ footer {
     Today's country rankings (KST) — resets at midnight KST.
   </p>
 
-  <!-- LEADERBOARD RESULTS -->
-
   <div
     id="leaderboard"
     role="tabpanel"
@@ -965,12 +927,8 @@ footer {
 
   </div>
 
-  <!-- UPDATED RANKING EXPLANATION -->
-
   <div class="notice">
-
-    <strong>Ranking movement:</strong>
-
+    Ranking movement:
     ↑ moved up,
     ↓ moved down,
     – unchanged,
@@ -981,33 +939,19 @@ footer {
 
     <br><br>
 
-    <strong>Daily Ranking:</strong>
+    Daily Ranking counts unique eligible certificates
+    uploaded during the current KST date.
 
-    Countries ranked #1–30 display their percentage
-    share of eligible submissions.
+    Overall Ranking accumulates eligible certificates
+    across all dates.
 
-    Countries ranked #31 and below display their
-    actual number of eligible voting certificates
-    when the count is available.
-
-    <br><br>
-
-    <strong>Overall Ranking:</strong>
-
-    All countries display their percentage share
-    of eligible submissions accumulated across
-    all tracking dates.
-
-    <br><br>
-
-    Rankings and certificate counts may refresh
-    at different times.
+    Percentages show each country's share of submissions
+    for the selected period.
 
     Pending and verified submissions count.
 
     These are community participation rankings,
     not official MAMA results.
-
   </div>
 
 </section>
@@ -1017,10 +961,6 @@ footer {
 <footer>
   Made by btsvotingorg
 </footer>
-
-<!-- ==========================================
-     JAVASCRIPT STARTS HERE
-========================================== -->
 
 <script>
 
@@ -1161,7 +1101,6 @@ function getKSTDate() {
     value("day");
 }
 
-
 function updateKSTDisplay() {
 
   document.getElementById("todayKST").textContent =
@@ -1188,7 +1127,6 @@ function closeCountries() {
   );
 
 }
-
 
 function showCountries(query = "") {
 
@@ -1245,7 +1183,6 @@ function showCountries(query = "") {
 
 }
 
-
 countrySearch.addEventListener("focus",() => {
 
   showCountries(
@@ -1253,7 +1190,6 @@ countrySearch.addEventListener("focus",() => {
   );
 
 });
-
 
 countrySearch.addEventListener("input",() => {
 
@@ -1263,7 +1199,6 @@ countrySearch.addEventListener("input",() => {
 
 });
 
-
 countrySearch.addEventListener("keydown",event => {
 
   if (event.key === "Escape") {
@@ -1272,7 +1207,6 @@ countrySearch.addEventListener("keydown",event => {
 
 });
 
-
 document.addEventListener("click",event => {
 
   if (!event.target.closest(".country-picker")) {
@@ -1280,6 +1214,7 @@ document.addEventListener("click",event => {
   }
 
 });
+
 
 /* ==========================================
    SUBMISSION MESSAGES
@@ -1358,7 +1293,6 @@ function formatCertificateDate(year,month,day) {
   return formatted;
 
 }
-
 
 function isWithinTimezoneWindow(participationDate) {
 
@@ -1457,11 +1391,7 @@ function extractCertificateDetails(rawText) {
 
 }
 
-
 async function scanCertificate(file) {
-
-  // First attempt: English OCR.
-  // This is generally faster for English certificates.
 
   const englishResult = await Tesseract.recognize(
     file,
@@ -1470,7 +1400,7 @@ async function scanCertificate(file) {
 
   const englishText = englishResult.data.text || "";
 
-  const details = extractCertificateDetails(englishText);
+  let details = extractCertificateDetails(englishText);
 
   if (
     details.certificateNumber &&
@@ -1478,9 +1408,6 @@ async function scanCertificate(file) {
   ) {
     return details;
   }
-
-  // Second attempt: Japanese, Korean and English.
-  // Used only if the first scan is incomplete.
 
   const multilingualResult = await Tesseract.recognize(
     file,
@@ -1514,7 +1441,6 @@ async function scanCertificate(file) {
 
 const COMPRESSION_TARGET_BYTES = 200 * 1024;
 
-
 function canvasToJpegBlob(canvas,quality) {
 
   return new Promise((resolve,reject) => {
@@ -1536,7 +1462,6 @@ function canvasToJpegBlob(canvas,quality) {
   });
 
 }
-
 
 async function loadImageForCompression(file) {
 
@@ -1579,7 +1504,6 @@ async function loadImageForCompression(file) {
 
 }
 
-
 async function compressScreenshot(file) {
 
   if (file.size <= COMPRESSION_TARGET_BYTES) {
@@ -1607,9 +1531,6 @@ async function compressScreenshot(file) {
     );
 
   }
-
-  // Preserve readable certificate text.
-  // Avoid excessive downscaling or poor JPEG quality.
 
   const widths = [1800,1600,1400];
 
@@ -1700,10 +1621,6 @@ async function compressScreenshot(file) {
 
   }
 
-  // If a readable-quality version is still above
-  // 200 KB, use the smallest version rather than
-  // damaging the certificate.
-
   if (
     smallestBlob &&
     smallestBlob.size < file.size
@@ -1728,7 +1645,6 @@ async function compressScreenshot(file) {
 
 }
 
-
 function readableFileSize(bytes) {
 
   return bytes >= 1024 * 1024
@@ -1738,6 +1654,7 @@ function readableFileSize(bytes) {
     : Math.round(bytes / 1024) + " KB";
 
 }
+
 
 /* ==========================================
    SEND CERTIFICATE TO SUPABASE
@@ -1820,7 +1737,6 @@ form.addEventListener("submit",async event => {
 
   message.textContent = "";
 
-  // Anti-spam honeypot.
   if (
     document.getElementById("website")
       .value.trim()
@@ -1837,7 +1753,6 @@ form.addEventListener("submit",async event => {
     fileInput.files || []
   );
 
-  // Validate X username.
   if (!/^[A-Za-z0-9_]{1,15}$/.test(username)) {
 
     showMessage(
@@ -1849,7 +1764,6 @@ form.addEventListener("submit",async event => {
 
   }
 
-  // Validate selected country.
   if (
     !selectedCountry ||
     !countries.includes(selectedCountry) ||
@@ -1934,7 +1848,6 @@ form.addEventListener("submit",async event => {
           "image/webp"
         ];
 
-        // Validate file type and size.
         if (
           !allowed.includes(file.type) ||
           file.size === 0 ||
@@ -1951,7 +1864,6 @@ form.addEventListener("submit",async event => {
 
         } else {
 
-          // Scan certificate.
           const scanned =
             await scanCertificate(file);
 
@@ -2013,11 +1925,9 @@ form.addEventListener("submit",async event => {
               "Optimizing " + (done + 1) +
               " of " + files.length;
 
-            // Compress screenshot before upload.
             const uploadFile =
               await compressScreenshot(file);
 
-            // Submit to Supabase.
             const response =
               await submitCertificate(
 
@@ -2033,7 +1943,6 @@ form.addEventListener("submit",async event => {
 
               );
 
-            // Duplicate certificate.
             if (
               response.status === 409 &&
               response.data.duplicate
@@ -2047,10 +1956,7 @@ form.addEventListener("submit",async event => {
                 "Already submitted: " + certificate
               );
 
-            }
-
-            // Authorization error.
-            else if (
+            } else if (
               response.status === 401 ||
               response.status === 403
             ) {
@@ -2065,10 +1971,7 @@ form.addEventListener("submit",async event => {
                 "Server authorization blocked the submission."
               );
 
-            }
-
-            // Other submission error.
-            else if (!response.ok) {
+            } else if (!response.ok) {
 
               failed++;
 
@@ -2080,10 +1983,7 @@ form.addEventListener("submit",async event => {
                 "Submission failed."
               );
 
-            }
-
-            // Successful submission.
-            else {
+            } else {
 
               pending++;
 
@@ -2150,7 +2050,6 @@ form.addEventListener("submit",async event => {
 
     }
 
-    // Display final submission summary.
     showMessage(
 
       "Processed " + done +
@@ -2166,8 +2065,6 @@ form.addEventListener("submit",async event => {
 
     );
 
-    // Refresh rankings and daily challenge
-    // after successful submissions.
     if (pending) {
 
       await Promise.all([
@@ -2256,23 +2153,6 @@ overallRankingTab.addEventListener(
 
 /* ==========================================
    LIVE RANKING MOVEMENT
-   AND CERTIFICATE COUNTS
-
-   CONTINUES IN PART 7
-========================================== */
-
-/* ==========================================
-   LIVE COUNTRY LEADERBOARD
-
-   DAILY RANKING:
-   #1–30  = PERCENTAGES
-   #31+   = CERTIFICATE COUNTS
-
-   OVERALL RANKING:
-   ALL COUNTRIES = PERCENTAGES
-
-   RANK MOVEMENT:
-   UP / DOWN / NEW / UNCHANGED
 ========================================== */
 
 async function loadLeaderboard() {
@@ -2289,15 +2169,13 @@ async function loadLeaderboard() {
     daily ? "daily" : "overall";
 
   rankingPeriod.textContent = daily
+
     ? "KST voting date: " +
       getKSTDate() +
       " · Resets at midnight KST"
+
     : "Accumulated ranking · All eligible submissions since tracking began";
 
-
-  /* ==========================================
-     FETCH ORIGINAL LIVE RANKINGS
-  ========================================== */
 
   const {data,error} = await db
 
@@ -2319,9 +2197,6 @@ async function loadLeaderboard() {
 
     .limit(250);
 
-
-  // Prevent outdated requests from replacing
-  // a newer ranking tab's results.
 
   if (requestId !== leaderboardRequestId) {
     return;
@@ -2346,100 +2221,15 @@ async function loadLeaderboard() {
   if (!data || !data.length) {
 
     container.textContent = daily
+
       ? "No eligible certificates uploaded today yet. Be the first!"
+
       : "No submissions yet. Be the first to participate!";
 
     return;
 
   }
 
-
-  /* ==========================================
-     FETCH CERTIFICATE COUNTS
-
-     ONLY FOR DAILY RANK #31 ONWARD
-  ========================================== */
-
-  const certificateCounts = new Map();
-
-  const hasCountriesBelowTop30 =
-    daily &&
-    data.some(item =>
-      Number(item.country_rank) >= 31
-    );
-
-
-  if (hasCountriesBelowTop30) {
-
-    const {
-      data:cachedRows,
-      error:cacheError
-    } = await db
-
-      .from("leaderboard_cache")
-
-      .select(
-        "country,country_rank,certificate_count"
-      )
-
-      .eq("period","daily")
-
-      .gte("country_rank",31)
-
-      .order("country_rank",{
-        ascending:true
-      })
-
-      .limit(250);
-
-
-    if (requestId !== leaderboardRequestId) {
-      return;
-    }
-
-
-    if (cacheError) {
-
-      console.warn(
-        "Certificate count cache unavailable:",
-        cacheError
-      );
-
-    } else if (cachedRows) {
-
-      for (const cached of cachedRows) {
-
-        const count =
-          Number(cached.certificate_count);
-
-        if (
-          cached.country &&
-          cached.certificate_count !== null &&
-          cached.certificate_count !== undefined &&
-          Number.isFinite(count) &&
-          count >= 0
-        ) {
-
-          certificateCounts.set(
-            cached.country,
-            {
-              rank:Number(cached.country_rank),
-              count:count
-            }
-          );
-
-        }
-
-      }
-
-    }
-
-  }
-
-
-  /* ==========================================
-     RENDER LEADERBOARD
-  ========================================== */
 
   container.replaceChildren();
 
@@ -2464,8 +2254,6 @@ async function loadLeaderboard() {
     name.className = "country-name";
 
 
-    /* COUNTRY RANK */
-
     const rank =
       document.createElement("span");
 
@@ -2481,15 +2269,12 @@ async function loadLeaderboard() {
     );
 
 
-    /* ==========================================
-       RANK MOVEMENT INDICATOR
-    ========================================== */
+    /* RANK MOVEMENT INDICATOR */
 
     const movement =
       document.createElement("span");
 
     movement.className = "rank-movement";
-
 
     const places = Math.max(
       0,
@@ -2527,75 +2312,32 @@ async function loadLeaderboard() {
     name.appendChild(movement);
 
 
-    /* ==========================================
-       PERCENTAGE OR CERTIFICATE COUNT
-    ========================================== */
+    /* COUNTRY PERCENTAGE */
 
-    const value =
+    const percentage =
       document.createElement("span");
 
-    value.className = "percentage";
-
+    percentage.className = "percentage";
 
     const share =
       Number(item.progress_percent);
 
-    const safeShare =
-      Number.isFinite(share)
-        ? share
-        : 0;
+    percentage.textContent =
+
+      (
+        Number.isFinite(share)
+          ? share
+          : 0
+      ).toFixed(2) + "%";
 
 
-    const currentRank =
-      Number(item.country_rank);
+    line.append(
+      name,
+      percentage
+    );
 
 
-    const showCertificateCount =
-      daily && currentRank >= 31;
-
-
-    const cached =
-      certificateCounts.get(item.country);
-
-
-    // Display actual certificate count only
-    // when the cache agrees with the live rank.
-    //
-    // This avoids showing a stale count for
-    // a country that just crossed the Top 30.
-
-    if (
-      showCertificateCount &&
-      cached &&
-      cached.rank === currentRank
-    ) {
-
-      const count = cached.count;
-
-      value.textContent =
-        count.toLocaleString("en-US") +
-        (count === 1
-          ? " vote"
-          : " votes");
-
-    } else {
-
-      // Top 30: percentage.
-      // Overall: percentage.
-      // Cache unavailable or stale: percentage.
-
-      value.textContent =
-        safeShare.toFixed(2) + "%";
-
-    }
-
-
-    line.append(name,value);
-
-
-    /* ==========================================
-       PROGRESS BAR
-    ========================================== */
+    /* COUNTRY PROGRESS BAR */
 
     const track =
       document.createElement("div");
@@ -2608,25 +2350,608 @@ async function loadLeaderboard() {
 
     fill.className = "progress-fill";
 
+    fill.style.width = Math.max(
 
-    fill.style.width =
-      Math.max(
-        0,
-        Math.min(100,safeShare)
-      ) + "%";
+      0,
+
+      Math.min(
+        100,
+        share || 0
+      )
+
+    ) + "%";
 
 
     track.appendChild(fill);
-
 
     row.append(
       line,
       track
     );
 
-
     container.appendChild(row);
 
   }
 
 }
+
+
+/* ==========================================
+   GLOBAL ARMY DAILY CHALLENGE
+========================================== */
+
+let challengeLoading = false;
+
+let displayedChallengeDate = getKSTDate();
+
+
+function setChallengeText(id,value) {
+
+  document.getElementById(id).textContent = value;
+
+}
+
+
+function resetChallengeDisplay() {
+
+  setChallengeText(
+
+    "challengeDate",
+
+    "KST Voting Date: " + getKSTDate()
+
+  );
+
+  setChallengeText(
+    "challengePercent",
+    "0.00%"
+  );
+
+  setChallengeText(
+
+    "challengeStatus",
+
+    "Loading challenge progress..."
+
+  );
+
+  document.getElementById(
+    "challengeProgressBar"
+  ).style.width = "0%";
+
+}
+
+
+async function loadDailyChallenge() {
+
+  if (challengeLoading) return;
+
+  challengeLoading = true;
+
+  const requestedDate = getKSTDate();
+
+  try {
+
+    const {data,error} = await db
+
+      .from("daily_army_challenge")
+
+      .select(
+        "challenge_date,progress_percent,goal_completed"
+      )
+
+      .maybeSingle();
+
+
+    if (requestedDate !== getKSTDate()) {
+
+      resetChallengeDisplay();
+
+      return;
+
+    }
+
+
+    setChallengeText(
+
+      "challengeDate",
+
+      "KST Voting Date: " + requestedDate
+
+    );
+
+
+    if (error) {
+
+      console.error(
+        "Daily challenge error:",
+        error
+      );
+
+      setChallengeText(
+        "challengePercent",
+        "—"
+      );
+
+      setChallengeText(
+
+        "challengeStatus",
+
+        "Challenge progress is temporarily unavailable."
+
+      );
+
+      document.getElementById(
+        "challengeProgressBar"
+      ).style.width = "0%";
+
+      return;
+
+    }
+
+
+    if (
+      !data ||
+      data.challenge_date !== requestedDate
+    ) {
+
+      setChallengeText(
+        "challengePercent",
+        "—"
+      );
+
+      setChallengeText(
+
+        "challengeStatus",
+
+        "Today's challenge is not available yet."
+
+      );
+
+      document.getElementById(
+        "challengeProgressBar"
+      ).style.width = "0%";
+
+      return;
+
+    }
+
+
+    const rawProgress =
+      Number(data.progress_percent);
+
+    const progress =
+      Number.isFinite(rawProgress)
+
+        ? Math.max(0,rawProgress)
+
+        : 0;
+
+
+    setChallengeText(
+
+      "challengePercent",
+
+      progress.toFixed(2) + "%"
+
+    );
+
+
+    document.getElementById(
+      "challengeProgressBar"
+    ).style.width =
+      Math.min(100,progress) + "%";
+
+
+    if (data.goal_completed) {
+
+      setChallengeText(
+
+        "challengeStatus",
+
+        "🎉 DAILY GOAL COMPLETED! THANK YOU, ARMY!"
+
+      );
+
+    } else {
+
+      setChallengeText(
+
+        "challengeStatus",
+
+        "KEEP GOING, ARMY! 💜"
+
+      );
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Challenge loading error:",
+      error
+    );
+
+    setChallengeText(
+      "challengePercent",
+      "—"
+    );
+
+    setChallengeText(
+
+      "challengeStatus",
+
+      "Unable to load today's challenge."
+
+    );
+
+  } finally {
+
+    challengeLoading = false;
+
+  }
+
+}
+
+
+/* ==========================================
+   DAILY CHALLENGE TABS AND HISTORY
+========================================== */
+
+const todayTab =
+  document.getElementById("todayTab");
+
+const historyTab =
+  document.getElementById("historyTab");
+
+const todayChallengePanel =
+  document.getElementById("todayChallengePanel");
+
+const historyChallengePanel =
+  document.getElementById("historyChallengePanel");
+
+
+function selectChallengeTab(tab) {
+
+  const showHistory = tab === "history";
+
+  todayTab.classList.toggle(
+    "active",
+    !showHistory
+  );
+
+  historyTab.classList.toggle(
+    "active",
+    showHistory
+  );
+
+  todayTab.setAttribute(
+    "aria-selected",
+    String(!showHistory)
+  );
+
+  historyTab.setAttribute(
+    "aria-selected",
+    String(showHistory)
+  );
+
+  todayChallengePanel.hidden = showHistory;
+
+  historyChallengePanel.hidden = !showHistory;
+
+  if (showHistory) {
+
+    loadChallengeHistory();
+
+  } else {
+
+    loadDailyChallenge();
+
+  }
+
+}
+
+todayTab.addEventListener(
+  "click",
+  () => selectChallengeTab("today")
+);
+
+historyTab.addEventListener(
+  "click",
+  () => selectChallengeTab("history")
+);
+
+
+function formatHistoryDate(value) {
+
+  return new Date(
+    value + "T12:00:00Z"
+  ).toLocaleDateString("en-US",{
+
+    timeZone:"UTC",
+
+    month:"long",
+
+    day:"numeric",
+
+    year:"numeric"
+
+  });
+
+}
+
+
+let historyLoading = false;
+
+
+async function loadChallengeHistory() {
+
+  if (historyLoading) return;
+
+  historyLoading = true;
+
+  const container =
+    document.getElementById("challengeHistory");
+
+  try {
+
+    const {data,error} = await db
+
+      .from("daily_challenge_history")
+
+      .select(
+        "challenge_date,progress_percent,goal_completed"
+      )
+
+      .order("challenge_date",{
+        ascending:false
+      })
+
+      .limit(30);
+
+
+    if (error) throw error;
+
+    container.replaceChildren();
+
+
+    if (!data || !data.length) {
+
+      const empty =
+        document.createElement("div");
+
+      empty.className = "empty";
+
+      empty.textContent =
+        "Completed challenges will appear here after midnight KST.";
+
+      container.appendChild(empty);
+
+      return;
+
+    }
+
+
+    for (const item of data) {
+
+      const entry =
+        document.createElement("div");
+
+      entry.className = "history-entry";
+
+
+      const top =
+        document.createElement("div");
+
+      top.className = "history-entry-top";
+
+
+      const date =
+        document.createElement("span");
+
+      date.className = "history-date";
+
+      date.textContent =
+        formatHistoryDate(item.challenge_date);
+
+
+      const percent =
+        document.createElement("span");
+
+      percent.className = "history-percent";
+
+      const value =
+        Number(item.progress_percent);
+
+      percent.textContent =
+
+        (
+          Number.isFinite(value)
+            ? value
+            : 0
+        ).toFixed(2) + "%";
+
+
+      top.append(
+        date,
+        percent
+      );
+
+
+      const status =
+        document.createElement("p");
+
+      status.className =
+        "history-status" +
+        (item.goal_completed ? " achieved" : "");
+
+      status.textContent =
+        item.goal_completed
+
+          ? "✓ Goal Achieved"
+
+          : "Goal Not Reached";
+
+
+      entry.append(
+        top,
+        status
+      );
+
+      container.appendChild(entry);
+
+    }
+
+  } catch (error) {
+
+    console.error(
+      "Challenge history error:",
+      error
+    );
+
+    container.textContent =
+      "Challenge history is temporarily unavailable.";
+
+  } finally {
+
+    historyLoading = false;
+
+  }
+
+}
+
+
+/* ==========================================
+   SUPABASE REALTIME RANKING UPDATES
+========================================== */
+
+let leaderboardRefreshTimer = null;
+
+
+function scheduleLeaderboardRefresh() {
+
+  if (leaderboardRefreshTimer !== null) {
+
+    clearTimeout(leaderboardRefreshTimer);
+
+  }
+
+  leaderboardRefreshTimer = setTimeout(() => {
+
+    leaderboardRefreshTimer = null;
+
+    loadLeaderboard();
+
+    loadDailyChallenge();
+
+  },500);
+
+}
+
+
+/* SUBSCRIBE TO LIVE DATABASE CHANGES */
+
+const countryRankingChannel = db
+
+  .channel("bts-country-ranking-movement")
+
+  .on(
+
+    "postgres_changes",
+
+    {
+
+      event:"UPDATE",
+
+      schema:"public",
+
+      table:"country_rank_ping"
+
+    },
+
+    scheduleLeaderboardRefresh
+
+  )
+
+  .subscribe(status => {
+
+    if (
+      status === "CHANNEL_ERROR" ||
+      status === "TIMED_OUT"
+    ) {
+
+      console.warn(
+        "Realtime temporarily unavailable; polling is still active."
+      );
+
+    }
+
+  });
+
+
+/* ==========================================
+   INITIAL WEBSITE LOAD
+========================================== */
+
+resetChallengeDisplay();
+
+loadLeaderboard();
+
+loadDailyChallenge();
+
+
+/* ==========================================
+   AUTO-REFRESH EVERY 15 SECONDS
+========================================== */
+
+setInterval(() => {
+
+  loadDailyChallenge();
+
+  loadLeaderboard();
+
+  if (!historyChallengePanel.hidden) {
+
+    loadChallengeHistory();
+
+  }
+
+},15000);
+
+
+/* ==========================================
+   CHECK FOR NEW KST DATE
+========================================== */
+
+setInterval(() => {
+
+  const today = getKSTDate();
+
+  if (today !== displayedChallengeDate) {
+
+    displayedChallengeDate = today;
+
+    resetChallengeDisplay();
+
+    loadLeaderboard();
+
+    if (!challengeLoading) {
+
+      loadDailyChallenge();
+
+    }
+
+    if (!historyChallengePanel.hidden) {
+
+      loadChallengeHistory();
+
+    }
+
+  }
+
+},15000);
+
+</script>
+
+</body>
+</html>
