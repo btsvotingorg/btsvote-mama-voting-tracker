@@ -2260,8 +2260,7 @@ async function loadLeaderboard() {
         .trim().normalize("NFKC");
       if (counts.has(key)) {
         const count = counts.get(key);
-        value.textContent = count.toLocaleString("en-US") +
-          (count === 1 ? " certificate" : " certificates");
+        value.textContent = count.toLocaleString("en-US");
       } else {
         value.textContent = "Count unavailable";
         missingCountries.push(item.country);
