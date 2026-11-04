@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -599,7 +598,7 @@ footer {
     <div class="hourly-leader" aria-live="polite"
       aria-atomic="true">
       <div class="hourly-kicker">
-        🏆 TOP COUNTRY CONTRIBUTOR
+        🏆 LAST HOUR'S TOP COUNTRY CONTRIBUTOR
       </div>
 
       <div id="hourlyLeaderCountry" class="hourly-country">
@@ -607,11 +606,11 @@ footer {
       </div>
 
       <div id="hourlyLeaderPeriod" class="hourly-period">
-        Current hour · KST
+        Last completed hour · KST
       </div>
 
       <div id="hourlyLeaderNote" class="hourly-note">
-        Based on unique accepted certificates uploaded this hour
+        Based on unique accepted certificates uploaded during the last completed KST hour
       </div>
     </div>
 
@@ -641,13 +640,8 @@ footer {
       multiple required>
 
     <p class="hint">
-      Select multiple screenshots. No fixed batch-count limit.
-      Maximum 5 MB per original image.
-      Screenshots are automatically compressed before upload
-      when possible. Large batches may take longer.
+      Select multiple screenshots.
       The participation date must be visible on each certificate.
-      English, Japanese, Korean, Simplified Chinese, and
-      Traditional Chinese participation-date labels are supported.
     </p>
 
     <div class="hp" aria-hidden="true">
@@ -693,12 +687,6 @@ footer {
     <strong>Privacy notice:</strong>
     Your X username, country, and uploaded screenshots
     are used to process submissions.
-    Screenshots are stored privately and scheduled
-    for automatic deletion after 25 hours.
-    Submission records and country participation scores
-    are retained.
-    Please do not upload screenshots containing
-    sensitive personal information.
   </div>
 </section>
 
@@ -707,7 +695,7 @@ footer {
   <h2>Global ARMY Participation</h2>
   <p class="description">
     See which countries are leading today and across
-    the entire voting tracker.
+    the entire MAMA voting.
   </p>
 
   <div class="country-ranking-tabs" role="tablist">
@@ -953,7 +941,7 @@ updateKSTDisplay();
 setInterval(updateKSTDisplay,15000);
 
 /* ==========================================
-   LIVE HOURLY ARMY TOP CONTRIBUTOR
+   LAST COMPLETED HOUR ARMY TOP CONTRIBUTOR
 ========================================== */
 
 const hourlyCountryElement =
@@ -1003,57 +991,81 @@ const flagByCountry = {
 };
 
 function kstHourInfo() {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone:"Asia/Seoul",
-    year:"numeric",
-    month:"2-digit",
-    day:"2-digit",
-    hour:"2-digit",
-    hourCycle:"h23"
-  }).formatToParts(new Date());
+  // All hour boundaries are calculated in Korea Standard Time.
+  // At 2:30 AM KST, this refers to 1:00–2:00 AM KST.
+  // The date is included for the hour that crosses midnight.
+  const kstParts = date => {
+    const parts = new Intl.DateTimeFormat("en-US", {
+      timeZone:"Asia/Seoul",
+      year:"numeric",
+      month:"2-digit",
+      day:"2-digit",
+      hour:"2-digit",
+      hourCycle:"h23"
+    }).formatToParts(date);
 
-  const get = key =>
-    parts.find(part => part.type === key)?.value || "";
+    const get = type =>
+      parts.find(part => part.type === type)?.value || "";
 
-  const hour = Number(get("hour"));
-
-  const clock = h => {
-    const h12 = h % 12 || 12;
-    return h12 + ":00 " + (h < 12 ? "AM" : "PM");
+    return {
+      date:get("year") + "-" + get("month") + "-" + get("day"),
+      hour:Number(get("hour"))
+    };
   };
 
+  const current = kstParts(new Date());
+  const previous = kstParts(new Date(Date.now() - 3600000));
+
+  const clock = hour => {
+    const h12 = hour % 12 || 12;
+    return h12 + ":00 " + (hour < 12 ? "AM" : "PM");
+  };
+
+  const crossedMidnight = previous.date !== current.date;
+  const period = crossedMidnight
+    ? previous.date + " " + clock(previous.hour) +
+      " – " + current.date + " " + clock(current.hour)
+    : clock(previous.hour) + " – " + clock(current.hour);
+
   return {
-    key:get("year") + "-" +
-      get("month") + "-" +
-      get("day") + "T" +
-      get("hour"),
-    label:clock(hour) + " – " +
-      clock((hour + 1) % 24) + " KST"
+    key:current.date + "T" + String(current.hour).padStart(2,"0"),
+    label:period + " KST"
   };
 }
 
+// Lock the displayed winner for the rest of the current KST hour.
+// If there are no submissions or the RPC is temporarily unavailable,
+// keep retrying until the result becomes available.
+let lockedHourlyKey = "";
+
 async function loadHourlyLeader() {
   const info = kstHourInfo();
-  const request = ++hourlyRequestNumber;
 
-  hourlyPeriodElement.textContent = info.label;
+  // A confirmed previous-hour winner does not change mid-hour.
+  if (lockedHourlyKey === info.key) return;
+
+  const request = ++hourlyRequestNumber;
+  hourlyPeriodElement.textContent =
+    "Voting period: " + info.label;
 
   if (info.key !== lastHourlyKey) {
     lastHourlyKey = info.key;
     hourlyCountryElement.textContent =
-      "Waiting for this hour's votes...";
+      "Loading last hour's top country...";
+    hourlyNoteElement.textContent =
+      "Checking completed hourly submissions 💜";
   }
 
   try {
+    // The SQL function returns winners for the LAST COMPLETED
+    // KST hour, not the current ongoing hour.
     const {data,error} =
-      await db.rpc("get_hourly_army_leaders");
+      await db.rpc("get_last_completed_hour_army_leaders");
 
     if (
       request !== hourlyRequestNumber ||
       info.key !== kstHourInfo().key
-    ) {
-      return;
-    }
+    ) return;
 
     if (error) throw error;
 
@@ -1067,46 +1079,44 @@ async function loadHourlyLeader() {
 
     if (!names.length) {
       hourlyCountryElement.textContent =
-        "No submissions yet this hour";
-
+        "No submissions during the previous hour";
       hourlyNoteElement.textContent =
-        "Be the first to represent your country! 💜";
+        "Keep voting and submitting your certificates, ARMY! 💜";
+      return;
+    }
 
-    } else if (names.length === 1) {
+    if (names.length === 1) {
       const country = names[0];
-
       hourlyCountryElement.textContent =
         (flagByCountry[country] || "🌍") +
         " " + country.toUpperCase();
-
       hourlyNoteElement.textContent =
-        "Leading this hour's accepted certificate submissions 💜";
-
+        "Top country contributor of the last completed KST hour 💜";
     } else {
       const preview = names.slice(0,3)
         .map(country =>
           (flagByCountry[country] || "🌍") +
           " " + country
-        )
-        .join(" · ");
+        ).join(" · ");
 
       hourlyCountryElement.textContent =
         "TIED: " + preview +
         (names.length > 3
           ? " +" + (names.length - 3) + " more"
           : "");
-
       hourlyNoteElement.textContent =
-        "These countries are tied for the lead 💜";
+        "These countries tied for the previous hour's top spot 💜";
     }
 
+    // Hold the result until the next KST hour starts.
+    lockedHourlyKey = info.key;
+
   } catch (error) {
-    console.warn("Hourly leader unavailable:",error);
+    console.warn("Last completed hour leader unavailable:",error);
 
     if (request === hourlyRequestNumber) {
       hourlyCountryElement.textContent =
         "Hourly leader temporarily unavailable";
-
       hourlyNoteElement.textContent =
         "Other tracker features are unaffected";
     }
