@@ -2196,7 +2196,11 @@ async function loadLeaderboard() {
     "#D5B8F0","#DBC3F2","#E0CBF4",
     "#E4D2F5","#E8D9F7","#EBDFF8",
     "#EEE4F9","#F0E8FA","#F3EDFB",
-    "#F6F1FC"
+    "#F6F1FC",
+    "#F7F3FC","#F8F4FD","#F8F5FD",
+    "#F9F6FD","#FAF7FE","#FAF8FE",
+    "#FBF9FE","#FCFAFF","#FDFBFF",
+    "#FEFCFF"
   ];
 
   for (const item of data) {
@@ -2208,7 +2212,7 @@ async function loadLeaderboard() {
     if (
       Number.isInteger(displayedRank) &&
       displayedRank >= 1 &&
-      displayedRank <= 10
+      displayedRank <= 20
     ) {
       row.classList.add("top-ten-purple");
 
@@ -2966,7 +2970,11 @@ setInterval(() => {
       "#EEE4F9",
       "#F0E8FA",
       "#F3EDFB",
-      "#F6F1FC"
+      "#F6F1FC",
+      "#F7F3FC","#F8F4FD","#F8F5FD",
+      "#F9F6FD","#FAF7FE","#FAF8FE",
+      "#FBF9FE","#FCFAFF","#FDFBFF",
+      "#FEFCFF"
     ];
 
     const displayedRows = showAll
@@ -2993,7 +3001,7 @@ setInterval(() => {
       row.className = "leaderboard-row";
 
       // PRESERVE PASTEL PURPLE TOP 10 DESIGN
-      if (rank >= 1 && rank <= 10) {
+      if (rank >= 1 && rank <= 20) {
         row.classList.add("top-ten-purple");
 
         row.style.setProperty(
