@@ -485,20 +485,11 @@ footer {
 .top20-columns {
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:12px;
+  gap:10px;
   align-items:start;
   margin:16px 0 22px;
 }
 .top20-column { min-width:0; }
-.top20-heading {
-  background:var(--purple);
-  color:white;
-  border-radius:10px 10px 0 0;
-  padding:10px 12px;
-  font-size:13px;
-  font-weight:800;
-  text-align:center;
-}
 .top20-column .leaderboard-row {
   margin:5px 0;
   padding:10px 8px;
@@ -531,7 +522,6 @@ footer {
 }
 @media(max-width:600px) {
   .top20-columns { gap:7px; }
-  .top20-heading { font-size:11px; padding:9px 3px; }
   .top20-column .leaderboard-row { padding:8px 5px; }
   .top20-column .rank-line { display:block; font-size:11px; }
   .top20-column .country-name { display:block; }
@@ -2096,13 +2086,9 @@ function createTop20Columns(parent) {
   const grid = document.createElement("div");
   grid.className = "top20-columns";
   const columns = [];
-  for (const [start,end] of [[1,10],[11,20]]) {
+  for (let index = 0; index < 2; index++) {
     const column = document.createElement("div");
     column.className = "top20-column";
-    const heading = document.createElement("div");
-    heading.className = "top20-heading";
-    heading.textContent = "🏆 TOP " + start + "–" + end;
-    column.appendChild(heading);
     grid.appendChild(column);
     columns.push(column);
   }
