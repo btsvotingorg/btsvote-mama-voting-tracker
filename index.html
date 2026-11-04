@@ -480,6 +480,65 @@ footer {
   .challenge-card { padding:28px 19px; }
   .container { margin-top:22px; }
 }
+
+/* TOP 20: TWO COLUMNS ON DESKTOP AND MOBILE */
+.top20-columns {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:12px;
+  align-items:start;
+  margin:16px 0 22px;
+}
+.top20-column { min-width:0; }
+.top20-heading {
+  background:var(--purple);
+  color:white;
+  border-radius:10px 10px 0 0;
+  padding:10px 12px;
+  font-size:13px;
+  font-weight:800;
+  text-align:center;
+}
+.top20-column .leaderboard-row {
+  margin:5px 0;
+  padding:10px 8px;
+}
+.top20-column .rank-line {
+  display:flex;
+  align-items:flex-start;
+  gap:4px;
+  font-size:12px;
+  margin-bottom:6px;
+}
+.top20-column .country-name {
+  flex:1;
+  min-width:0;
+  overflow-wrap:anywhere;
+  line-height:1.3;
+}
+.top20-column .percentage {
+  flex-shrink:0;
+  font-size:11px;
+  white-space:nowrap;
+}
+.top20-column .rank-number { margin-right:4px; }
+.top20-column .rank-movement { margin-left:4px; font-size:11px; }
+.top20-column .progress-track { height:7px; margin-top:7px; }
+.other-countries-heading {
+  margin:20px 0 10px;
+  font-size:14px;
+  color:var(--deep);
+}
+@media(max-width:600px) {
+  .top20-columns { gap:7px; }
+  .top20-heading { font-size:11px; padding:9px 3px; }
+  .top20-column .leaderboard-row { padding:8px 5px; }
+  .top20-column .rank-line { display:block; font-size:11px; }
+  .top20-column .country-name { display:block; }
+  .top20-column .percentage { display:block; margin-top:3px; font-size:10px; }
+  .top20-column .rank-movement { font-size:10px; }
+}
+
 </style>
 </head>
 
@@ -598,7 +657,7 @@ footer {
     <div class="hourly-leader" aria-live="polite"
       aria-atomic="true">
       <div class="hourly-kicker">
-        LAST HOUR'S TOP COUNTRY CONTRIBUTOR
+        🏆 LAST HOUR'S TOP COUNTRY CONTRIBUTOR
       </div>
 
       <div id="hourlyLeaderCountry" class="hourly-country">
@@ -2033,6 +2092,24 @@ overallRankingTab.addEventListener(
   "click",() => selectRankingPeriod("overall")
 );
 
+function createTop20Columns(parent) {
+  const grid = document.createElement("div");
+  grid.className = "top20-columns";
+  const columns = [];
+  for (const [start,end] of [[1,10],[11,20]]) {
+    const column = document.createElement("div");
+    column.className = "top20-column";
+    const heading = document.createElement("div");
+    heading.className = "top20-heading";
+    heading.textContent = "🏆 TOP " + start + "–" + end;
+    column.appendChild(heading);
+    grid.appendChild(column);
+    columns.push(column);
+  }
+  parent.appendChild(grid);
+  return columns;
+}
+
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
 
@@ -2123,6 +2200,9 @@ async function loadLeaderboard() {
   }
 
   container.replaceChildren();
+  const top20Columns = createTop20Columns(container);
+  const remainingCountries = document.createElement("div");
+  remainingCountries.className = "remaining-countries";
 
   const missingCountries = [];
 
@@ -2244,7 +2324,20 @@ async function loadLeaderboard() {
 
     track.appendChild(fill);
     row.append(line,track);
-    container.appendChild(row);
+    if (displayedRank >= 1 && displayedRank <= 10) {
+      top20Columns[0].appendChild(row);
+    } else if (displayedRank >= 11 && displayedRank <= 20) {
+      top20Columns[1].appendChild(row);
+    } else {
+      remainingCountries.appendChild(row);
+    }
+  }
+
+  if (remainingCountries.childElementCount) {
+    const heading = document.createElement("h3");
+    heading.className = "other-countries-heading";
+    heading.textContent = "Other participating countries";
+    container.append(heading,remainingCountries);
   }
 
   if (missingCountries.length) {
@@ -2894,6 +2987,10 @@ setInterval(() => {
       ? rows
       : rows.slice(0, 20);
 
+    const archiveColumns = createTop20Columns(archiveBoard);
+    const archiveRemaining = document.createElement("div");
+    archiveRemaining.className = "remaining-countries";
+
     for (const item of displayedRows) {
       const rank = Number(item.country_rank);
 
@@ -2963,7 +3060,20 @@ setInterval(() => {
 
       row.append(line, track);
 
-      archiveBoard.appendChild(row);
+      if (rank >= 1 && rank <= 10) {
+        archiveColumns[0].appendChild(row);
+      } else if (rank >= 11 && rank <= 20) {
+        archiveColumns[1].appendChild(row);
+      } else {
+        archiveRemaining.appendChild(row);
+      }
+    }
+
+    if (archiveRemaining.childElementCount) {
+      const heading = document.createElement("h3");
+      heading.className = "other-countries-heading";
+      heading.textContent = "Other participating countries";
+      archiveBoard.append(heading,archiveRemaining);
     }
 
     // ONLY SHOW BUTTON WHEN MORE THAN 20 COUNTRIES
