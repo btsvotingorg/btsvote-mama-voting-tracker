@@ -778,8 +778,8 @@ footer {
       uploaded during the current KST date.
       Overall Ranking accumulates eligible certificates
       across all dates.
-      Percentages show each country's share of submissions
-      for the selected period.
+      Daily Ranking displays unique submitted certificate counts.
+      Overall Ranking percentages show each country's share of submissions.
       Pending and verified submissions count.
       These are community participation rankings,
       not official MAMA results.
@@ -2137,47 +2137,29 @@ async function loadLeaderboard() {
     return;
   }
 
+  // Daily counts come directly from the KST-aware daily view.
+  // Overall rankings continue to use percentages from country_rank_live.
   const counts = new Map();
-  let cacheError = null;
-
-  if (
-    daily &&
-    data.some(row => Number(row.country_rank) >= 31)
-  ) {
+  if (daily) {
     const result = await db
-      .from("leaderboard_cache")
-      .select("country,certificate_count")
-      .eq("period","daily")
-      .order("country",{ascending:true})
-      .limit(1000);
+      .from("country_daily_participation")
+      .select("country,total_certificates")
+      .limit(250);
 
-    if (requestId !== leaderboardRequestId) {
+    if (requestId !== leaderboardRequestId) return;
+
+    if (result.error) {
+      console.error("Daily certificate counts unavailable:",result.error);
+      container.textContent =
+        "Daily certificate counts are temporarily unavailable.";
       return;
     }
 
-    cacheError = result.error;
-
-    if (cacheError) {
-      console.error(
-        "Daily certificate cache could not be read:",
-        cacheError
-      );
-    } else {
-      for (const entry of result.data || []) {
-        const n = Number(entry.certificate_count);
-
-        if (
-          entry.country &&
-          entry.certificate_count !== null &&
-          entry.certificate_count !== undefined &&
-          Number.isSafeInteger(n) &&
-          n >= 0
-        ) {
-          counts.set(
-            entry.country.trim().normalize("NFKC"),
-            n
-          );
-        }
+    for (const entry of result.data || []) {
+      const n = Number(entry.total_certificates);
+      if (entry.country && entry.total_certificates != null &&
+          Number.isSafeInteger(n) && n >= 0) {
+        counts.set(String(entry.country).trim().normalize("NFKC"),n);
       }
     }
   }
@@ -2273,29 +2255,19 @@ async function loadLeaderboard() {
 
     const rankNumber = Number(item.country_rank);
 
-    if (daily && rankNumber >= 31) {
+    if (daily) {
       const key = String(item.country || "")
-        .trim()
-        .normalize("NFKC");
-
+        .trim().normalize("NFKC");
       if (counts.has(key)) {
         const count = counts.get(key);
-
-        value.textContent =
-          count.toLocaleString("en-US") +
-          (count === 1 ? " vote" : " votes");
-
+        value.textContent = count.toLocaleString("en-US") +
+          (count === 1 ? " certificate" : " certificates");
       } else {
         value.textContent = "Count unavailable";
-        value.title =
-          "The certificate count could not be retrieved.";
-
         missingCountries.push(item.country);
       }
-
     } else {
-      value.textContent =
-        safeShare.toFixed(2) + "%";
+      value.textContent = safeShare.toFixed(2) + "%";
     }
 
     line.append(name,value);
@@ -2330,9 +2302,7 @@ async function loadLeaderboard() {
   if (missingCountries.length) {
     console.warn(
       "Missing daily certificate counts for:",
-      missingCountries,
-      cacheError ||
-      "Check leaderboard_cache records and public SELECT access."
+      missingCountries
     );
   }
 }
