@@ -312,38 +312,36 @@ button:disabled { opacity:.6; cursor:wait; }
   margin-bottom:15px;
 }
 
-/* TOP COUNTRY CONTRIBUTOR */
+/* COMPACT LAST-HOUR COUNTRY CONTRIBUTOR */
 .hourly-leader {
-  margin:18px 0 24px;
-  padding:22px 16px;
-  border:1px solid #e4d5f2;
-  border-radius:14px;
-  background:linear-gradient(135deg,#f8f2ff,#f2eafa);
+  margin:12px 0 17px;
+  padding:12px 14px;
+  border:1px solid var(--border);
+  border-radius:10px;
+  background:#faf7fd;
   text-align:center;
 }
 .hourly-kicker {
-  font-size:11px;
-  font-weight:800;
-  letter-spacing:1.4px;
+  font-size:10px;
+  font-weight:700;
+  letter-spacing:.65px;
   color:var(--purple);
 }
 .hourly-country {
-  margin:7px 0 4px;
-  font-size:clamp(21px,4.5vw,28px);
-  font-weight:800;
+  margin:3px 0 1px;
+  font-size:clamp(15px,3.5vw,19px);
+  font-weight:750;
+  line-height:1.35;
   color:var(--deep);
   overflow-wrap:anywhere;
 }
 .hourly-period {
-  font-size:12px;
-  color:#6f6080;
-  font-weight:600;
+  font-size:10px;
+  line-height:1.4;
+  color:var(--muted);
+  font-weight:400;
 }
-.hourly-note {
-  margin-top:7px;
-  font-size:11px;
-  color:#81748d;
-}
+.hourly-note { display:none; }
 
 /* COUNTRY LEADERBOARD */
 .leaderboard-row {
@@ -619,7 +617,7 @@ footer {
 <!-- FIRST: GLOBAL ARMY DAILY CHALLENGE -->
 <section class="card challenge-card" id="dailyChallengeCard">
   <p class="challenge-heading">
-    
+    ARMY, LET'S DO THIS TOGETHER 💜
   </p>
 
   <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
@@ -702,7 +700,7 @@ footer {
     <div class="hourly-leader" aria-live="polite"
       aria-atomic="true">
       <div class="hourly-kicker">
-        🏆 LAST HOUR'S TOP COUNTRY CONTRIBUTOR
+        🏆 LAST HOUR’S TOP COUNTRY
       </div>
 
       <div id="hourlyLeaderCountry" class="hourly-country">
@@ -2774,7 +2772,7 @@ function updateChallengeResetCountdown() {
   const pad = number => String(number).padStart(2,"0");
 
   label.textContent = "⏳ " + pad(hours) + ":" + pad(minutes) + ":" +
-    pad(seconds) + " left before the daily challenge resets!";
+    pad(seconds) + " left before the daily challenge resets (12:00 AM KST)!";
 }
 
 updateChallengeResetCountdown();
