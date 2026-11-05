@@ -600,6 +600,44 @@ footer {
   #dailyChallengeCard .challenge-tab { padding:8px 5px; font-size:11px; }
 }
 
+
+/* Daily Challenge History: privacy-friendly vertical purple bars */
+.purple-history-chart {
+  display: flex;
+  align-items: stretch;
+  gap: 12px;
+  overflow-x: auto;
+  padding: 12px 2px 4px;
+  scrollbar-width: thin;
+}
+.purple-history-column {
+  flex: 1 0 48px;
+  min-width: 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+.purple-history-track {
+  width: 100%;
+  height: 190px;
+  display: flex;
+  align-items: flex-end;
+  border-bottom: 1px solid rgba(139,92,246,.22);
+}
+.purple-history-bar {
+  width: 100%;
+  min-height: 3px;
+  border-radius: 8px 8px 0 0;
+  transition: height .35s ease;
+}
+.purple-history-date {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--purple);
+  white-space: nowrap;
+}
+
 </style>
 </head>
 
@@ -684,8 +722,8 @@ footer {
 
   <div id="historyChallengePanel" role="tabpanel" hidden>
     <p class="history-intro">
-      Final daily progress for completed KST voting days,
-      starting November 2, 2026.
+      Daily participation trends for completed KST voting days.
+      Bar heights are relative; exact totals are kept private.
     </p>
     <div id="challengeHistory">
       <div class="empty">Loading challenge history...</div>
@@ -2875,83 +2913,50 @@ let historyLoading = false;
 
 async function loadChallengeHistory() {
   if (historyLoading) return;
-
   historyLoading = true;
-
-  const container =
-    document.getElementById("challengeHistory");
-
+  const container = document.getElementById("challengeHistory");
   try {
-    const {data,error} = await db
-      .from("daily_challenge_history")
-      .select(
-        "challenge_date,progress_percent,goal_completed"
-      )
-      .order(
-        "challenge_date",
-        {ascending:false}
-      )
-      .limit(30);
-
+    // Server returns ONLY normalized bar heights; raw counts stay private.
+    const { data, error } = await db.rpc("get_daily_challenge_bar_history");
     if (error) throw error;
-
     container.replaceChildren();
-
-    if (!data || !data.length) {
+    if (!Array.isArray(data) || !data.length) {
       const empty = document.createElement("div");
       empty.className = "empty";
-
-      empty.textContent =
-        "Completed challenges will appear here after midnight KST.";
-
+      empty.textContent = "Completed KST voting days will appear here.";
       container.appendChild(empty);
       return;
     }
-
-    for (const item of data) {
-      const entry = document.createElement("div");
-      entry.className = "history-entry";
-
-      const top = document.createElement("div");
-      top.className = "history-entry-top";
-
-      const date = document.createElement("span");
-      date.className = "history-date";
-
-      date.textContent =
-        formatHistoryDate(item.challenge_date);
-
-      const percent = document.createElement("span");
-      percent.className = "history-percent";
-
-      const value = Number(item.progress_percent);
-
-      percent.textContent =
-        (Number.isFinite(value) ? value : 0)
-          .toFixed(2) + "%";
-
-      top.append(date,percent);
-
-      const status = document.createElement("p");
-
-      status.className =
-        "history-status" +
-        (item.goal_completed ? " achieved" : "");
-
-      status.textContent = item.goal_completed
-        ? "✓ Goal Achieved"
-        : "Goal Not Reached";
-
-      entry.append(top,status);
-      container.appendChild(entry);
+    const chart = document.createElement("div");
+    chart.className = "purple-history-chart";
+    chart.setAttribute("role", "img");
+    chart.setAttribute("aria-label", "Relative daily certificate submission activity by KST date; exact totals are hidden");
+    const palette = ["#c4b5fd", "#a78bfa", "#8b5cf6", "#7c3aed", "#6d28d9", "#9333ea", "#a855f7"];
+    for (const [index, item] of data.entries()) {
+      const height = Math.max(0, Math.min(100, Number(item.bar_height) || 0));
+      const column = document.createElement("div");
+      column.className = "purple-history-column";
+      const track = document.createElement("div");
+      track.className = "purple-history-track";
+      const bar = document.createElement("div");
+      bar.className = "purple-history-bar";
+      bar.style.height = height + "%";
+      bar.style.backgroundColor = palette[index % palette.length];
+      bar.setAttribute("aria-hidden", "true");
+      track.appendChild(bar);
+      const label = document.createElement("span");
+      label.className = "purple-history-date";
+      const date = new Date(item.kst_date + "T12:00:00Z");
+      label.textContent = date.toLocaleDateString("en-US", {
+        timeZone: "UTC", month: "short", day: "numeric"
+      });
+      column.append(track, label);
+      chart.appendChild(column);
     }
-
+    container.appendChild(chart);
   } catch (error) {
-    console.error("Challenge history error:",error);
-
-    container.textContent =
-      "Challenge history is temporarily unavailable.";
-
+    console.error("Challenge history bars unavailable:", error);
+    container.textContent = "Challenge history is temporarily unavailable.";
   } finally {
     historyLoading = false;
   }
