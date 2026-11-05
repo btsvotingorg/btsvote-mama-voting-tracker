@@ -3289,7 +3289,7 @@ setInterval(() => {
       "Loading saved rankings...";
 
     const { data, error } = await db.rpc(
-      "get_daily_rank_archive",
+      "get_daily_rank_archive_with_counts",
       {
         p_kst_date: selectedDate
       }
