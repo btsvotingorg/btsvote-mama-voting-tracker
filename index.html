@@ -399,6 +399,14 @@ button:disabled { opacity:.6; cursor:wait; }
   color:var(--muted);
   margin:0 0 14px;
 }
+.leader-streak {
+  color:var(--purple);
+  font-weight:700;
+  font-size:11px;
+  white-space:nowrap;
+}
+.rank-line:has(.leader-streak) { flex-wrap:wrap; justify-content:flex-start; gap:5px 9px; }
+.rank-line:has(.leader-streak) .percentage { margin-left:auto; }
 .rank-movement {
   margin-left:10px;
   color:#292333;
@@ -818,11 +826,10 @@ footer {
   </div>
 
   <div class="notice">
-    Ranking movement: ↑ moved up, ↓ moved down,
-    – unchanged, NEW first appearance.
-
-    Arrows appear for 60 seconds after a rank change is detected
-    by your browser. – means no recently detected movement.
+    Ranking movement: ↑ moved up, ↓ moved down, – unchanged.
+    Ranking arrows compare each country’s position with the previous
+    successful 5-minute ranking update in your browser.
+    Counts, positions, and the shared #1 streak refresh every 5 minutes.
 
     <p>
       Daily Ranking counts unique eligible certificates
@@ -2296,6 +2303,19 @@ async function loadLeaderboard() {
     }
   }
 
+  // Read the globally tracked streak only during the daily 5-minute refresh.
+  // If the SQL setup is not yet installed, the rest of the ranking still works.
+  let leaderStreak = null;
+  if (daily) {
+    const streakResult = await db.rpc("get_daily_number_one_streak");
+    if (requestId !== leaderboardRequestId) return;
+    if (!streakResult.error && streakResult.data?.length) {
+      leaderStreak = streakResult.data[0];
+    } else if (streakResult.error) {
+      console.warn("Global #1 streak not available:",streakResult.error);
+    }
+  }
+
   // A new KST day starts a new daily ranking, not a rank movement.
   if (dailyRankSnapshotDate !== getKSTDate()) {
     rankSnapshots.daily.clear();
@@ -2410,6 +2430,25 @@ async function loadLeaderboard() {
     }
 
     line.append(name,value);
+
+    // Shared daily #1 streak is maintained by a scheduled Supabase job.
+    // Display it only for the current daily leader, after the count.
+    if (daily && displayedRank === 1 && leaderStreak &&
+        leaderStreak.country === countryKey &&
+        leaderStreak.kst_date === getKSTDate()) {
+      const elapsedMinutes = Math.max(0, Math.floor(
+        (Date.parse(leaderStreak.last_checked_at) -
+         Date.parse(leaderStreak.started_at)) / 60000
+      ));
+      if (Number.isFinite(elapsedMinutes)) {
+        const badge = document.createElement("span");
+        badge.className = "leader-streak";
+        badge.textContent = "🏆 #1 for " +
+          Math.floor(elapsedMinutes / 60) + "h " +
+          (elapsedMinutes % 60) + "m";
+        line.appendChild(badge);
+      }
+    }
 
     const track = document.createElement("div");
     track.className = "progress-track";
