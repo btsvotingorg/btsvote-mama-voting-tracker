@@ -2307,7 +2307,7 @@ async function loadLeaderboard() {
   // If the SQL setup is not yet installed, the rest of the ranking still works.
   let leaderStreak = null;
   if (daily) {
-    const streakResult = await db.rpc("get_daily_number_one_streak");
+    const streakResult = await db.rpc("get_daily_rank_one_streak");
     if (requestId !== leaderboardRequestId) return;
     if (!streakResult.error && streakResult.data?.length) {
       leaderStreak = streakResult.data[0];
@@ -2435,12 +2435,9 @@ async function loadLeaderboard() {
     // Display it only for the current daily leader, after the count.
     if (daily && displayedRank === 1 && leaderStreak &&
         leaderStreak.country === countryKey &&
-        leaderStreak.kst_date === getKSTDate()) {
-      const elapsedMinutes = Math.max(0, Math.floor(
-        (Date.parse(leaderStreak.last_checked_at) -
-         Date.parse(leaderStreak.started_at)) / 60000
-      ));
-      if (Number.isFinite(elapsedMinutes)) {
+        leaderStreak.voting_date === getKSTDate()) {
+      const elapsedMinutes = Math.floor(Number(leaderStreak.streak_minutes));
+      if (Number.isFinite(elapsedMinutes) && elapsedMinutes >= 0) {
         const badge = document.createElement("span");
         badge.className = "leader-streak";
         badge.textContent = "🏆 #1 for " +
