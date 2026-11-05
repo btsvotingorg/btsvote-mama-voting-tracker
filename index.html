@@ -195,6 +195,7 @@ button:disabled { opacity:.6; cursor:wait; }
 .batch-result.accepted { background:#eaf6ef; }
 
 /* GLOBAL ARMY DAILY CHALLENGE */
+[hidden] { display:none !important; }
 .challenge-card { text-align:center; padding:30px 24px; }
 .challenge-heading {
   font-size:12px;
@@ -627,6 +628,10 @@ footer {
     Calculating days left to vote...
   </p>
 
+  <p class="challenge-reset" id="challengeResetCountdown" role="timer" style="margin:0 0 12px; color:var(--purple); font-weight:600;">
+    Progress resets daily at 12:00 AM KST.
+  </p>
+
   <div class="challenge-tabs" role="tablist">
     <button type="button" class="challenge-tab active"
       id="todayTab" role="tab" aria-selected="true">
@@ -639,13 +644,8 @@ footer {
   </div>
 
   <div id="todayChallengePanel" role="tabpanel">
-    <p class="description">
-      Every eligible certificate brings us closer to today's goal.
-    </p>
-
-    <p class="challenge-date" id="challengeDate">
-      Loading today's challenge...
-    </p>
+    <!-- Kept for existing JavaScript, hidden for a cleaner interface. -->
+    <p class="challenge-date" id="challengeDate" hidden></p>
 
     <div class="challenge-label">DAILY PROGRESS</div>
 
@@ -663,9 +663,7 @@ footer {
       Loading challenge progress...
     </p>
 
-    <p class="challenge-reset">
-      Progress resets daily at 12:00 AM KST.
-    </p>
+
   </div>
 
   <div id="historyChallengePanel" role="tabpanel" hidden>
@@ -695,8 +693,7 @@ footer {
 
     The daily challenge resets at 12:00 AM KST.
 
-    <div id="todayKST"
-      style="margin-top:7px;font-weight:bold"></div>
+    <div id="todayKST" hidden></div>
   </div>
 
   <form id="proofForm">
@@ -2421,6 +2418,29 @@ async function loadLeaderboard() {
    GLOBAL ARMY DAILY CHALLENGE
 ========================================== */
 
+// Automatically select a new message at every 10% milestone.
+function getChallengeMotivation(progress, completed = false) {
+  if (completed || progress >= 100) {
+    return "🎉 DAILY GOAL ACHIEVED! TEAMWORK MAKES THE DREAM WORK! 💜";
+  }
+
+  const messages = [
+    "💜 Every vote counts. Let's get started, ARMY!",
+    "💜 We're off to a great start! Keep voting!",
+    "💜 20% achieved! Let's keep the momentum going!",
+    "💜 We're making progress! Keep it up, ARMY!",
+    "💜 Almost halfway there! Every vote matters!",
+    "💜 Halfway to our goal! Let's keep pushing!",
+    "💜 60% achieved! Our teamwork is paying off!",
+    "💜 We're getting closer! Don't stop now!",
+    "💜 80% achieved! The finish line is in sight!",
+    "💜 Almost there, ARMY! Let's reach 100!"
+  ];
+
+  const milestone = Math.min(9, Math.max(0, Math.floor(progress / 10)));
+  return messages[milestone];
+}
+
 let challengeLoading = false;
 let displayedChallengeDate = getKSTDate();
 
@@ -2522,17 +2542,10 @@ async function loadDailyChallenge() {
     ).style.width =
       Math.min(100,progress) + "%";
 
-    if (data.goal_completed) {
-      setChallengeText(
-        "challengeStatus",
-        "🎉 DAILY GOAL COMPLETED! THANK YOU, ARMY!"
-      );
-    } else {
-      setChallengeText(
-        "challengeStatus",
-        "KEEP GOING, ARMY! 💜"
-      );
-    }
+    setChallengeText(
+      "challengeStatus",
+      getChallengeMotivation(progress, data.goal_completed === true)
+    );
 
   } catch (error) {
     console.error("Challenge loading error:",error);
@@ -2735,6 +2748,37 @@ db.channel("bts-country-ranking-movement")
       );
     }
   });
+
+/* ==========================================
+   DAILY CHALLENGE RESET COUNTDOWN (KST)
+   Displays a live countdown during the final 12 hours.
+========================================== */
+function updateChallengeResetCountdown() {
+  const label = document.getElementById("challengeResetCountdown");
+  if (!label) return;
+
+  // Korea Standard Time is UTC+09:00, with no daylight saving.
+  const kstNowMs = Date.now() + 9 * 60 * 60 * 1000;
+  const msIntoKSTDay = ((kstNowMs % 86400000) + 86400000) % 86400000;
+  const remainingMs = 86400000 - msIntoKSTDay;
+
+  if (remainingMs > 12 * 60 * 60 * 1000) {
+    label.textContent = "Progress resets daily at 12:00 AM KST.";
+    return;
+  }
+
+  const totalSeconds = Math.ceil(remainingMs / 1000);
+  const hours = Math.floor(totalSeconds / 3600);
+  const minutes = Math.floor((totalSeconds % 3600) / 60);
+  const seconds = totalSeconds % 60;
+  const pad = number => String(number).padStart(2,"0");
+
+  label.textContent = "⏳ " + pad(hours) + ":" + pad(minutes) + ":" +
+    pad(seconds) + " left before the daily challenge resets (12:00 AM KST)!";
+}
+
+updateChallengeResetCountdown();
+setInterval(updateChallengeResetCountdown,1000);
 
 /* ==========================================
    INITIAL WEBSITE LOAD
