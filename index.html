@@ -2127,7 +2127,6 @@ form.addEventListener("submit",async event => {
       showSuccessPopup(pending);
 
       Promise.all([
-        loadLeaderboard(),
         loadDailyChallenge(),
         loadHourlyLeader()
       ]).catch(error =>
@@ -2203,6 +2202,18 @@ function createTop20Columns(parent) {
 // Daily and overall snapshots are independent; no extra Supabase calls.
 const rankSnapshots = { daily: new Map(), overall: new Map() };
 let dailyRankSnapshotDate = getKSTDate();
+// All visitors use the same five-minute clock boundaries (KST/UTC).
+// Cached displays avoid refetching on tab switches or after submissions.
+const rankingCache = { daily: null, overall: null };
+const rankingInFlight = { daily: false, overall: false };
+function rankingBucket() { return Math.floor(Date.now() / 300000); }
+function showCachedRanking(period) {
+  const cached = rankingCache[period];
+  if (!cached) return false;
+  document.getElementById("leaderboard").innerHTML = cached.html;
+  return true;
+}
+
 
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
@@ -2217,9 +2228,22 @@ async function loadLeaderboard() {
 
   rankingPeriod.textContent = daily
     ? "KST voting date: " + getKSTDate() +
-      " · Resets at midnight KST"
+      " · Resets at midnight KST · Rankings refresh every 5 minutes"
     : "Accumulated ranking · All eligible submissions since tracking began";
 
+  const bucket = rankingBucket();
+  const cached = rankingCache[period];
+  if (cached && cached.bucket === bucket &&
+      (!daily || cached.kstDate === getKSTDate())) {
+    showCachedRanking(period);
+    return;
+  }
+  if (rankingInFlight[period]) {
+    showCachedRanking(period);
+    return;
+  }
+  rankingInFlight[period] = true;
+  try {
   const {data,error} = await db
     .from("country_rank_live")
     .select(
@@ -2236,8 +2260,9 @@ async function loadLeaderboard() {
 
   if (error) {
     console.error("Live ranking query failed:",error);
-    container.textContent =
-      "Participation data is temporarily unavailable.";
+    if (!showCachedRanking(period)) {
+      container.textContent = "Participation data is temporarily unavailable.";
+    }
     return;
   }
 
@@ -2261,8 +2286,9 @@ async function loadLeaderboard() {
 
     if (result.error) {
       console.error("Daily certificate counts unavailable:",result.error);
-      container.textContent =
-        "Daily certificate counts are temporarily unavailable.";
+      if (!showCachedRanking(period)) {
+        container.textContent = "Daily certificate counts are temporarily unavailable.";
+      }
       return;
     }
 
@@ -2418,10 +2444,18 @@ async function loadLeaderboard() {
   }
 
   if (missingCountries.length) {
-    console.warn(
-      "Missing daily certificate counts for:",
-      missingCountries
-    );
+    console.warn("Missing daily certificate counts for:", missingCountries);
+  }
+  rankingCache[period] = {
+    bucket, kstDate: getKSTDate(), html: container.innerHTML
+  };
+  } catch (error) {
+    console.error("Ranking refresh failed:", error);
+    if (!showCachedRanking(period)) {
+      container.textContent = "Participation data is temporarily unavailable.";
+    }
+  } finally {
+    rankingInFlight[period] = false;
   }
 }
 
@@ -2811,16 +2845,12 @@ setInterval(() => {
   }
 },20000);
 
-// Country rankings: refresh every 5 minutes.
+// Refresh on shared 5-minute clock boundaries, not 5 minutes after opening.
 setInterval(() => {
   if (document.hidden) return;
-
-  loadLeaderboard();
-
-  if (!historyChallengePanel.hidden) {
-    loadChallengeHistory();
-  }
-},300000);
+  const cached = rankingCache[selectedRankingPeriod];
+  if (!cached || cached.bucket !== rankingBucket()) loadLeaderboard();
+},5000);
 
 // Daily Challenge: refresh every minute.
 setInterval(() => {
