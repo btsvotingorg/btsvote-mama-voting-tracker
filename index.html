@@ -2257,11 +2257,115 @@ function showCachedRanking(period, delayed = false) {
   }
   return true;
 }
+// Shared Supabase snapshot fallback for first-time visitors.
+// Read-only; never writes snapshots or certificate records.
+const sharedRankingInFlight = { daily: false, overall: false };
+async function showSharedRankingFallback(period) {
+  if (sharedRankingInFlight[period]) return;
+  if (selectedRankingPeriod !== period) return;
+  // Prefer the last successful browser snapshot, including its movement arrows.
+  if (showCachedRanking(period, true)) return;
+  sharedRankingInFlight[period] = true;
+  const expectedDate = getKSTDate();
+  try {
+    const {data, error} = await rankingQuery(db
+      .from("ranking_snapshots")
+      .select("kst_date,ranking_data,updated_at")
+      .eq("period", period)
+      .eq("kst_date", expectedDate)
+      .maybeSingle());
+    if (error) throw error;
+    if (selectedRankingPeriod !== period ||
+        (period === "daily" && getKSTDate() !== expectedDate)) return;
+    const countries = data?.ranking_data?.countries;
+    if (!Array.isArray(countries) || !countries.length) {
+      console.warn("Shared ranking snapshot empty for", period, expectedDate);
+      return;
+    }
+    // Do not overwrite a successful fresh ranking that arrived meanwhile.
+    const liveCache = rankingCache[period];
+    if (liveCache && liveCache.bucket === rankingBucket() &&
+        (period !== "daily" || liveCache.kstDate === expectedDate)) return;
+    const container = document.getElementById("leaderboard");
+    container.replaceChildren();
+    const notice = document.createElement("p");
+    notice.className = "ranking-delay-notice";
+    const updated = Date.parse(data.updated_at);
+    const updatedText = Number.isFinite(updated)
+      ? new Intl.DateTimeFormat("en-GB", {
+          timeZone:"Asia/Seoul", month:"short", day:"numeric",
+          hour:"2-digit", minute:"2-digit"
+        }).format(new Date(updated)) + " KST"
+      : "the last successful update";
+    notice.textContent = "💜 Live ranking delayed. Showing shared ranking saved " +
+      updatedText + ". Retrying automatically.";
+    container.appendChild(notice);
+    const columns = createTop20Columns(container);
+    const rest = document.createElement("div");
+    rest.className = "remaining-countries";
+    for (const item of countries) {
+      const rank = Number(item.country_rank);
+      const country = String(item.country || "");
+      if (!country || !Number.isInteger(rank) || rank < 1) continue;
+      const row = document.createElement("div");
+      row.className = "leaderboard-row";
+      if (rank <= 20) {
+        row.classList.add("top-ten-purple");
+        row.style.setProperty("--top-ten-bg", "#f3eef9");
+      }
+      const line = document.createElement("div");
+      line.className = "rank-line";
+      const name = document.createElement("span");
+      name.className = "country-name";
+      name.textContent = "#" + rank + " " + country;
+      const movement = document.createElement("span");
+      movement.className = "rank-movement";
+      // Movement from the server view may use a different baseline.
+      // Do not claim it is the previous browser 5-minute comparison.
+      movement.textContent = "–";
+      name.appendChild(movement);
+      const value = document.createElement("span");
+      value.className = "percentage";
+      if (period === "daily") {
+        const count = Number(item.total_certificates);
+        value.textContent = Number.isSafeInteger(count) && count >= 0
+          ? count.toLocaleString("en-US") : "—";
+      } else {
+        const pct = Number(item.progress_percent);
+        value.textContent = Number.isFinite(pct) ? pct.toFixed(2) + "%" : "—";
+      }
+      line.append(name,value);
+      const track = document.createElement("div");
+      track.className = "progress-track";
+      const fill = document.createElement("div");
+      fill.className = "progress-fill";
+      const pct = Number(item.progress_percent);
+      fill.style.width = (Number.isFinite(pct)
+        ? Math.max(0,Math.min(100,pct)) : 0) + "%";
+      track.appendChild(fill);
+      row.append(line,track);
+      if (rank <= 10) columns[0].appendChild(row);
+      else if (rank <= 20) columns[1].appendChild(row);
+      else rest.appendChild(row);
+    }
+    if (rest.childElementCount) {
+      const heading = document.createElement("h3");
+      heading.className = "other-countries-heading";
+      heading.textContent = "More Countries Represented";
+      container.append(heading,rest);
+    }
+  } catch (error) {
+    console.warn("Shared ranking fallback unavailable:", error);
+  } finally {
+    sharedRankingInFlight[period] = false;
+  }
+}
 function showRankingDelay(period) {
   if (selectedRankingPeriod !== period) return;
   if (!showCachedRanking(period, true)) {
     document.getElementById("leaderboard").textContent =
       "💜 Rankings are temporarily delayed. We'll try again automatically.";
+    void showSharedRankingFallback(period);
   }
 }
 async function rankingQuery(query) {
@@ -2274,7 +2378,11 @@ async function rankingQuery(query) {
 restoreRankingCache("daily");
 restoreRankingCache("overall");
 showCachedRanking("daily");
-
+// Proactively display the shared snapshot for first-time visitors.
+// Do not wait for a live ranking query to time out.
+if (!rankingCache.daily) {
+  void showSharedRankingFallback("daily");
+}
 
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
@@ -2300,7 +2408,9 @@ async function loadLeaderboard() {
     return;
   }
   if (rankingInFlight[period]) {
-    showCachedRanking(period, Boolean(cached && cached.bucket !== bucket));
+    if (!showCachedRanking(period, Boolean(cached && cached.bucket !== bucket))) {
+      void showSharedRankingFallback(period);
+    }
     return;
   }
   if (Date.now() < rankingRetryAfter[period]) {
