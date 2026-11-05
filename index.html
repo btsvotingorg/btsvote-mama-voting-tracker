@@ -529,6 +529,36 @@ footer {
   .top20-column .rank-movement { font-size:10px; }
 }
 
+
+/* PUBLIC LIVE ARMY COUNTER */
+.army-online-widget {
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  gap:9px;
+  margin:0 auto 22px;
+  padding:11px 18px;
+  width:fit-content;
+  max-width:100%;
+  background:#f3eef9;
+  border:1px solid #e9e3ef;
+  border-radius:999px;
+  color:#392451;
+  font-size:13px;
+  font-weight:700;
+  text-align:center;
+}
+.army-online-dot {
+  width:8px;
+  height:8px;
+  flex:none;
+  border-radius:50%;
+  background:#2fa66b;
+}
+.army-online-widget[data-status="offline"] .army-online-dot {
+  background:#aaa;
+}
+
 </style>
 </head>
 
@@ -553,6 +583,13 @@ footer {
     and help bring it to the top of the leaderboard!
   </p>
 </section>
+
+<!-- PUBLIC REAL-TIME ARMY ONLINE COUNTER -->
+<div class="army-online-widget" id="armyOnlineWidget" data-status="connecting"
+     role="status" aria-live="polite" aria-atomic="true">
+  <span class="army-online-dot" aria-hidden="true"></span>
+  <span>ARMY Online: <strong id="armyOnlineCount">Connecting...</strong></span>
+</div>
 
 <!-- FIRST: GLOBAL ARMY DAILY CHALLENGE -->
 <section class="card challenge-card" id="dailyChallengeCard">
@@ -835,6 +872,56 @@ const db = window.supabase.createClient(
   SUPABASE_URL,
   SUPABASE_PUBLISHABLE_KEY
 );
+
+/* ==========================================
+   PUBLIC REAL-TIME ARMY ONLINE COUNTER
+   Counts Supabase Presence sessions, not unique people.
+   Does not access or modify certificate data.
+========================================== */
+(function startArmyOnlineCounter() {
+  const counter = document.getElementById("armyOnlineCount");
+  const widget = document.getElementById("armyOnlineWidget");
+  if (!counter || !widget) return;
+
+  // A fresh ID per browser tab prevents multiple visitors overwriting
+  // each other's Presence records.
+  const sessionId = (globalThis.crypto && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
+
+  const channel = db.channel("bts-public-army-online-v1", {
+    config: { presence: { key: sessionId } }
+  });
+
+  function updateCount() {
+    const state = channel.presenceState();
+    const count = Object.values(state).reduce(
+      (sum, presences) => sum + presences.length, 0
+    );
+    counter.textContent = count.toLocaleString("en-US");
+    widget.dataset.status = "online";
+  }
+
+  channel
+    .on("presence", { event: "sync" }, updateCount)
+    .on("presence", { event: "join" }, updateCount)
+    .on("presence", { event: "leave" }, updateCount)
+    .subscribe(async status => {
+      if (status === "SUBSCRIBED") {
+        try {
+          await channel.track({ joined_at: new Date().toISOString() });
+          updateCount();
+        } catch (error) {
+          console.warn("ARMY online tracking unavailable:", error);
+          counter.textContent = "Unavailable";
+          widget.dataset.status = "offline";
+        }
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+        counter.textContent = "Unavailable";
+        widget.dataset.status = "offline";
+      }
+    });
+})();
 
 /* ==========================================
    ELEMENTS
