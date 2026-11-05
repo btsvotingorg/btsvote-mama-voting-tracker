@@ -826,8 +826,8 @@ footer {
     Ranking movement: ↑ moved up, ↓ moved down,
     – unchanged, NEW first appearance.
 
-    Arrows reflect each country's most recent rank change
-    and persist after refresh.
+    Arrows appear for 60 seconds after a rank change is detected
+    by your browser. – means no recently detected movement.
 
     <p>
       Daily Ranking counts unique eligible certificates
@@ -2199,6 +2199,11 @@ function createTop20Columns(parent) {
   return columns;
 }
 
+// Compare ranking positions between successful leaderboard refreshes.
+// Daily and overall snapshots are independent; no extra Supabase calls.
+const rankSnapshots = { daily: new Map(), overall: new Map() };
+let dailyRankSnapshotDate = getKSTDate();
+
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
 
@@ -2270,6 +2275,33 @@ async function loadLeaderboard() {
     }
   }
 
+  // A new KST day starts a new daily ranking, not a rank movement.
+  if (dailyRankSnapshotDate !== getKSTDate()) {
+    rankSnapshots.daily.clear();
+    dailyRankSnapshotDate = getKSTDate();
+  }
+
+  // Movement is relative to the PREVIOUS successful fetch of this period.
+  // If a country stays at the same rank, show a dash on this refresh.
+  const previousRanks = rankSnapshots[period];
+  const nextRanks = new Map();
+  const movements = new Map();
+  for (const item of data) {
+    const country = String(item.country || "").trim().normalize("NFKC");
+    const rank = Number(item.country_rank);
+    if (!country || !Number.isInteger(rank) || rank < 1) continue;
+    const previousRank = previousRanks.get(country);
+    if (previousRank !== undefined && previousRank !== rank) {
+      movements.set(country, previousRank > rank
+        ? "↑ " + (previousRank - rank)
+        : "↓ " + (rank - previousRank));
+    } else {
+      movements.set(country, "–");
+    }
+    nextRanks.set(country, rank);
+  }
+  rankSnapshots[period] = nextRanks;
+
   container.replaceChildren();
   const top20Columns = createTop20Columns(container);
   const remainingCountries = document.createElement("div");
@@ -2325,29 +2357,10 @@ async function loadLeaderboard() {
     const movement = document.createElement("span");
     movement.className = "rank-movement";
 
-    const places = Math.max(
-      0,
-      Number(item.moved_by) || 0
-    );
-
-    if (item.movement === "new") {
-      movement.textContent = "NEW";
-
-    } else if (
-      item.movement === "up" &&
-      places > 0
-    ) {
-      movement.textContent = "↑ " + places;
-
-    } else if (
-      item.movement === "down" &&
-      places > 0
-    ) {
-      movement.textContent = "↓ " + places;
-
-    } else {
-      movement.textContent = "–";
-    }
+    const countryKey = String(item.country || "")
+      .trim().normalize("NFKC");
+    const currentMovement = movements.get(countryKey);
+    movement.textContent = currentMovement || "–";
 
     name.appendChild(movement);
 
