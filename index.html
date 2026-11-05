@@ -2772,7 +2772,7 @@ function updateChallengeResetCountdown() {
   const pad = number => String(number).padStart(2,"0");
 
   label.textContent = "⏳ " + pad(hours) + ":" + pad(minutes) + ":" +
-    pad(seconds) + " left before the daily challenge resets (12:00 AM KST)!";
+    pad(seconds) + " left before the daily challenge resets!";
 }
 
 updateChallengeResetCountdown();
