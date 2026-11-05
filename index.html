@@ -488,6 +488,16 @@ footer {
   .container { margin-top:22px; }
 }
 
+/* RANKING CONNECTION FALLBACK */
+.ranking-delay-notice {
+  margin:0 0 12px;
+  padding:10px 12px;
+  border-radius:8px;
+  background:#f3eef9;
+  color:#392451;
+  font-size:12px;
+}
+
 /* TOP 20: TWO COLUMNS ON DESKTOP AND MOBILE */
 .top20-columns {
   display:grid;
@@ -2208,13 +2218,62 @@ let dailyRankSnapshotDate = getKSTDate();
 // Cached displays avoid refetching on tab switches or after submissions.
 const rankingCache = { daily: null, overall: null };
 const rankingInFlight = { daily: false, overall: false };
+const rankingRetryAfter = { daily: 0, overall: 0 };
+const RANKING_RETRY_DELAY_MS = 60000;
+const RANKING_REQUEST_TIMEOUT_MS = 18000;
+const RANKING_STORAGE_PREFIX = "bts-ranking-safe-v2-";
 function rankingBucket() { return Math.floor(Date.now() / 300000); }
-function showCachedRanking(period) {
+function rankingStorageKey(period) { return RANKING_STORAGE_PREFIX + period; }
+function restoreRankingCache(period) {
+  try {
+    const raw = localStorage.getItem(rankingStorageKey(period));
+    if (!raw) return;
+    const saved = JSON.parse(raw);
+    if (!saved || typeof saved.html !== "string" ||
+        saved.html.length > 350000 || !Number.isFinite(saved.savedAt) ||
+        saved.savedAt > Date.now() || Date.now() - saved.savedAt > 86400000 ||
+        (period === "daily" && saved.kstDate !== getKSTDate())) return;
+    rankingCache[period] = saved;
+  } catch (error) {
+    console.warn("Ranking cache restore skipped:", error);
+  }
+}
+function saveRankingCache(period, entry) {
+  rankingCache[period] = entry;
+  try { localStorage.setItem(rankingStorageKey(period), JSON.stringify(entry)); }
+  catch (error) { console.warn("Ranking cache storage unavailable:", error); }
+}
+function showCachedRanking(period, delayed = false) {
   const cached = rankingCache[period];
-  if (!cached) return false;
-  document.getElementById("leaderboard").innerHTML = cached.html;
+  if (!cached || (period === "daily" && cached.kstDate !== getKSTDate())) return false;
+  const container = document.getElementById("leaderboard");
+  container.innerHTML = cached.html;
+  if (delayed) {
+    const notice = document.createElement("p");
+    notice.className = "ranking-delay-notice";
+    notice.setAttribute("role", "status");
+    notice.textContent = "💜 Rankings temporarily delayed. Showing the last successful update; retrying automatically.";
+    container.prepend(notice);
+  }
   return true;
 }
+function showRankingDelay(period) {
+  if (selectedRankingPeriod !== period) return;
+  if (!showCachedRanking(period, true)) {
+    document.getElementById("leaderboard").textContent =
+      "💜 Rankings are temporarily delayed. We'll try again automatically.";
+  }
+}
+async function rankingQuery(query) {
+  // Supabase PostgREST query builders support AbortSignal via abortSignal().
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), RANKING_REQUEST_TIMEOUT_MS);
+  try { return await query.abortSignal(controller.signal); }
+  finally { clearTimeout(timeout); }
+}
+restoreRankingCache("daily");
+restoreRankingCache("overall");
+showCachedRanking("daily");
 
 
 async function loadLeaderboard() {
@@ -2241,12 +2300,17 @@ async function loadLeaderboard() {
     return;
   }
   if (rankingInFlight[period]) {
-    showCachedRanking(period);
+    showCachedRanking(period, Boolean(cached && cached.bucket !== bucket));
+    return;
+  }
+  if (Date.now() < rankingRetryAfter[period]) {
+    showRankingDelay(period);
     return;
   }
   rankingInFlight[period] = true;
+  if (cached) showCachedRanking(period, cached.bucket !== bucket);
   try {
-  const {data,error} = await db
+  const {data,error} = await rankingQuery(db
     .from("country_rank_live")
     .select(
       "country,country_rank,progress_percent,movement,moved_by"
@@ -2254,7 +2318,7 @@ async function loadLeaderboard() {
     .eq("period",period)
     .order("country_rank",{ascending:true})
     .order("country",{ascending:true})
-    .limit(250);
+    .limit(250));
 
   if (requestId !== leaderboardRequestId) {
     return;
@@ -2262,9 +2326,8 @@ async function loadLeaderboard() {
 
   if (error) {
     console.error("Live ranking query failed:",error);
-    if (!showCachedRanking(period)) {
-      container.textContent = "Participation data is temporarily unavailable.";
-    }
+    rankingRetryAfter[period] = Date.now() + RANKING_RETRY_DELAY_MS;
+    showRankingDelay(period);
     return;
   }
 
@@ -2279,18 +2342,17 @@ async function loadLeaderboard() {
   // Overall rankings continue to use percentages from country_rank_live.
   const counts = new Map();
   if (daily) {
-    const result = await db
+    const result = await rankingQuery(db
       .from("country_daily_participation")
       .select("country,total_certificates")
-      .limit(250);
+      .limit(250));
 
     if (requestId !== leaderboardRequestId) return;
 
     if (result.error) {
       console.error("Daily certificate counts unavailable:",result.error);
-      if (!showCachedRanking(period)) {
-        container.textContent = "Daily certificate counts are temporarily unavailable.";
-      }
+      rankingRetryAfter[period] = Date.now() + RANKING_RETRY_DELAY_MS;
+      showRankingDelay(period);
       return;
     }
 
@@ -2307,7 +2369,7 @@ async function loadLeaderboard() {
   // If the SQL setup is not yet installed, the rest of the ranking still works.
   let leaderStreak = null;
   if (daily) {
-    const streakResult = await db.rpc("get_daily_rank_one_streak");
+    const streakResult = await rankingQuery(db.rpc("get_daily_rank_one_streak"));
     if (requestId !== leaderboardRequestId) return;
     if (!streakResult.error && streakResult.data?.length) {
       leaderStreak = streakResult.data[0];
@@ -2477,14 +2539,15 @@ async function loadLeaderboard() {
   if (missingCountries.length) {
     console.warn("Missing daily certificate counts for:", missingCountries);
   }
-  rankingCache[period] = {
-    bucket, kstDate: getKSTDate(), html: container.innerHTML
-  };
+  saveRankingCache(period, {
+    bucket, kstDate: getKSTDate(), html: container.innerHTML,
+    savedAt: Date.now()
+  });
+  rankingRetryAfter[period] = 0;
   } catch (error) {
     console.error("Ranking refresh failed:", error);
-    if (!showCachedRanking(period)) {
-      container.textContent = "Participation data is temporarily unavailable.";
-    }
+    rankingRetryAfter[period] = Date.now() + RANKING_RETRY_DELAY_MS;
+    showRankingDelay(period);
   } finally {
     rankingInFlight[period] = false;
   }
