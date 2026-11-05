@@ -3088,7 +3088,7 @@ setInterval(() => {
     <p class="archive-note">
       All ranked countries are saved.
       Top 20 appear first;
-      exact vote counts remain private.
+      historical totals show recorded certificates, not official MAMA votes.
     </p>
   `;
 
@@ -3174,6 +3174,12 @@ setInterval(() => {
       ? rows
       : rows.slice(0, 20);
 
+    // Archive RPC must return total_certificates for each country.
+    // Never substitute percentages for missing certificate totals.
+    const topTotal = Math.max(0, ...rows.map(item =>
+      Number(item.total_certificates) || 0
+    ));
+
     const archiveColumns = createTop20Columns(archiveBoard);
     const archiveRemaining = document.createElement("div");
     archiveRemaining.className = "remaining-countries";
@@ -3181,12 +3187,14 @@ setInterval(() => {
     for (const item of displayedRows) {
       const rank = Number(item.country_rank);
 
-      const pct = Number(
-        item.progress_percent
-      );
-
-      const share = Number.isFinite(pct)
-        ? Math.max(0, pct)
+      const rawTotal = item.total_certificates;
+      const totalVotes = rawTotal === null || rawTotal === undefined
+        ? null
+        : Number(rawTotal);
+      const validTotal = totalVotes !== null &&
+        Number.isSafeInteger(totalVotes) && totalVotes >= 0;
+      const barPercent = validTotal && topTotal > 0
+        ? Math.min(100, totalVotes / topTotal * 100)
         : 0;
 
       const row = document.createElement("div");
@@ -3227,8 +3235,9 @@ setInterval(() => {
 
       value.className = "percentage";
 
-      value.textContent =
-        share.toFixed(2) + "%";
+      value.textContent = validTotal
+        ? totalVotes.toLocaleString("en-US") + " votes"
+        : "Count unavailable";
 
       line.append(name, value);
 
@@ -3240,8 +3249,7 @@ setInterval(() => {
 
       fill.className = "progress-fill";
 
-      fill.style.width =
-        Math.min(100, share) + "%";
+      fill.style.width = barPercent + "%";
 
       track.appendChild(fill);
 
