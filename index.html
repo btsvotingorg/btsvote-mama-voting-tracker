@@ -798,6 +798,8 @@ footer {
   <p class="description">
     See which countries are leading today and across
     the entire MAMA voting.
+  <p class="country-ranking-period" id="rankingPeriod">
+    Current Date: Loading... | Rankings refresh every 5 minutes
   </p>
 
   <div class="country-ranking-tabs" role="tablist">
@@ -813,10 +815,6 @@ footer {
       Overall Ranking
     </button>
   </div>
-
-  <p class="country-ranking-period" id="rankingPeriod">
-    Today's country rankings (KST) — resets at midnight KST.
-  </p>
 
   <div id="leaderboard" role="tabpanel" aria-live="polite">
     <div class="empty">Loading participation data...</div>
@@ -2227,8 +2225,8 @@ async function loadLeaderboard() {
   const period = daily ? "daily" : "overall";
 
   rankingPeriod.textContent = daily
-    ? "KST voting date: " + getKSTDate() +
-      " · Resets at midnight KST · Rankings refresh every 5 minutes"
+    ? "Current Date: " + getKSTDate() +
+      " | Rankings refresh every 5 minutes"
     : "Accumulated ranking · All eligible submissions since tracking began";
 
   const bucket = rankingBucket();
