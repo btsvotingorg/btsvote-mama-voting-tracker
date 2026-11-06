@@ -718,6 +718,37 @@ footer {
 }
 
 </style>
+
+<style>
+/* Mobile-first correction: keep the two pastel panels, but stack them on phones. */
+@media (max-width: 740px) {
+  .army-top10-card { padding: 22px 14px; }
+  .army-top10-head { padding-bottom: 17px; }
+  .army-top10-card h2 { font-size: clamp(19px, 5vw, 25px); }
+  .army-top10-meta { font-size: 11px; line-height: 1.6; }
+  .army-top10-two-columns { grid-template-columns: minmax(0, 1fr); gap: 15px; }
+  .army-top10-panel { width: 100%; min-width: 0; padding: 14px 12px 11px; border-radius: 16px; }
+  .army-top10-panel-heading { font-size: 12px; letter-spacing: 1px; padding: 1px 5px 10px; }
+  .army-top10-two-columns .army-top10-table { width: 100%; table-layout: fixed; font-size: 12px; border-spacing: 0 7px; }
+  .army-top10-two-columns .army-top10-table th { font-size: 10px; letter-spacing: .3px; padding: 5px 7px; }
+  .army-top10-two-columns .army-top10-table td { padding: 12px 7px; font-size: 12px; line-height: 1.4; }
+  .army-top10-two-columns .army-top10-table th:first-child { width: 19%; }
+  .army-top10-two-columns .army-top10-table th:nth-child(2) { width: 34%; }
+  .army-top10-two-columns .army-top10-table th:nth-child(3) { width: 31%; }
+  .army-top10-two-columns .army-top10-table th:last-child { width: 16%; }
+  .army-top10-two-columns .army-top10-table td:first-child { white-space: normal; }
+  .army-top10-two-columns .army-top10-medal { font-size: 14px; }
+  .army-top10-two-columns .army-top10-movement { font-size: 10px; margin-left: 4px; }
+  .army-top10-two-columns .army-top10-movement.new { font-size: 9px; padding: 2px 4px; }
+  .army-top10-note { font-size: 10px; }
+}
+@media (max-width: 390px) {
+  .army-top10-card { padding: 18px 10px; }
+  .army-top10-panel { padding: 10px 7px; }
+  .army-top10-two-columns .army-top10-table td { padding: 11px 4px; font-size: 11px; }
+  .army-top10-two-columns .army-top10-table th { padding: 5px 4px; font-size: 9px; }
+}
+</style>
 </head>
 
 <body>
@@ -999,6 +1030,8 @@ footer {
     </div>
   </div>
   <p class="army-top10-note">
+    <span class="army-top10-note-line">🔒 Top 9 certificate totals remain confidential · Usernames partially masked</span>
+    <span class="army-top10-note-line">↻ Rankings & movement update every 30 minutes · Daily reset 12:00 AM KST</span>
     <span class="army-top10-note-line">Counts represent unique eligible uploads, not official MAMA votes.</span>
   </p>
 </section>
