@@ -680,6 +680,43 @@ footer {
   .army-top10-table th:last-child { width: 21%; }
   .army-top10-medal { font-size: 13px; margin-right: 0; }
 }
+
+/* Top contributor movement: compact, accessible indicators. */
+.army-top10-movement { display:inline-block; margin-left:5px; font-size:11px; font-weight:800; white-space:nowrap; }
+.army-top10-movement.up { color:#237c52; }
+.army-top10-movement.down { color:#b44a55; }
+.army-top10-movement.same { color:#9a91a5; }
+.army-top10-movement.new { background:#eee2ff; color:#6b3fa0; padding:2px 5px; border-radius:5px; font-size:10px; letter-spacing:.3px; }
+/* Two pastel-lavender ranking panels: 1–5 | 6–10 */
+.army-top10-two-columns { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:13px; align-items:start; }
+.army-top10-panel { min-width:0; padding:12px 10px 9px; border:1px solid #e9def5; border-radius:15px; background:linear-gradient(145deg,#f7f0ff,#f1e8fa); }
+.army-top10-panel-heading { display:flex; align-items:center; gap:7px; padding:1px 5px 8px; font-size:11px; font-weight:800; letter-spacing:1.2px; color:#79549c; }
+.army-top10-panel-dot { width:7px; height:7px; border-radius:50%; background:#b69ad6; }
+.army-top10-two-columns .army-top10-table { font-size:11px; border-spacing:0 5px; }
+.army-top10-two-columns .army-top10-table th { padding:6px 5px; font-size:9px; letter-spacing:.25px; }
+.army-top10-two-columns .army-top10-table td { padding:10px 5px; }
+.army-top10-two-columns .army-top10-table th:first-child { width:23%; }
+.army-top10-two-columns .army-top10-table th:nth-child(2) { width:30%; }
+.army-top10-two-columns .army-top10-table th:nth-child(3) { width:31%; }
+.army-top10-two-columns .army-top10-table th:last-child { width:16%; }
+.army-top10-two-columns .army-top10-table td:first-child { white-space:normal; }
+.army-top10-two-columns .army-top10-medal { font-size:12px; }
+.army-top10-two-columns .army-top10-movement { margin-left:3px; font-size:10px; }
+.army-top10-two-columns .army-top10-movement.new { font-size:9px; }
+@media(max-width:600px) {
+  .army-top10-two-columns { gap:7px; }
+  .army-top10-panel { padding:8px 4px; border-radius:11px; }
+  .army-top10-panel-heading { font-size:9px; letter-spacing:.6px; }
+  .army-top10-two-columns .army-top10-table { font-size:9px; }
+  .army-top10-two-columns .army-top10-table th { font-size:8px; padding:5px 2px; }
+  .army-top10-two-columns .army-top10-table td { padding:9px 2px; }
+  .army-top10-two-columns .army-top10-table th:first-child { width:23%; }
+  .army-top10-two-columns .army-top10-table th:nth-child(2) { width:30%; }
+  .army-top10-two-columns .army-top10-table th:nth-child(3) { width:30%; }
+  .army-top10-two-columns .army-top10-table th:last-child { width:17%; }
+  .army-top10-two-columns .army-top10-movement { font-size:9px; }
+}
+
 </style>
 </head>
 
@@ -945,15 +982,25 @@ footer {
     <p class="army-top10-subtitle">Every certificate makes a difference.</p>
   </div>
   <div id="armyTop10Status" class="army-top10-muted army-top10-status" role="status">Loading contributors...</div>
-  <div id="armyTop10TableWrap" class="army-top10-table-shell" hidden>
-    <table class="army-top10-table" aria-label="Daily top ten ARMY contributors">
-      <thead><tr><th scope="col">Rank</th><th scope="col">X Username</th><th scope="col">Country</th><th scope="col">Votes</th></tr></thead>
-      <tbody id="armyTop10Rows"></tbody>
-    </table>
+  <div id="armyTop10TableWrap" class="army-top10-two-columns" hidden>
+    <div class="army-top10-panel" aria-label="Contributors ranked one to five">
+      <div class="army-top10-panel-heading"><span class="army-top10-panel-dot"></span> TOP 1–5</div>
+      <table class="army-top10-table" aria-label="Daily ARMY contributors ranks 1 to 5">
+        <thead><tr><th scope="col">Rank</th><th scope="col">X Username</th><th scope="col">Country</th><th scope="col">Votes</th></tr></thead>
+        <tbody id="armyTop10Rows"></tbody>
+      </table>
+    </div>
+    <div class="army-top10-panel" aria-label="Contributors ranked six to ten">
+      <div class="army-top10-panel-heading"><span class="army-top10-panel-dot"></span> TOP 6–10</div>
+      <table class="army-top10-table" aria-label="Daily ARMY contributors ranks 6 to 10">
+        <thead><tr><th scope="col">Rank</th><th scope="col">X Username</th><th scope="col">Country</th><th scope="col">Votes</th></tr></thead>
+        <tbody id="armyTop10RowsSecond"></tbody>
+      </table>
+    </div>
   </div>
   <p class="army-top10-note">
     <span class="army-top10-note-line">🔒 Top 9 certificate totals remain confidential · Usernames partially masked</span>
-    <span class="army-top10-note-line">↻ Updates every 10 minutes · Resets 12:00 AM KST</span>
+    <span class="army-top10-note-line">↻ Updates every 10 minutes · Movement resets every 30 minutes · Daily totals reset 12:00 AM KST</span>
     <span class="army-top10-note-line">Counts represent unique eligible uploads, not official MAMA votes.</span>
   </p>
 </section>
@@ -3659,75 +3706,130 @@ setInterval(() => {
 </script>
 
 <script>
-/* Daily Top 10 ARMY contributors: independent 10-minute polling, midnight KST reset. */
+/* Daily Top 10 contributors: 10-minute refresh, 30-minute movement windows, midnight KST daily reset. */
 (() => {
   const rows = document.getElementById('armyTop10Rows');
+  const secondRows = document.getElementById('armyTop10RowsSecond');
   const wrap = document.getElementById('armyTop10TableWrap');
   const status = document.getElementById('armyTop10Status');
   const dateLabel = document.getElementById('armyTop10Date');
-  if (!rows || !wrap || !status || !dateLabel || typeof db === 'undefined') return;
+  if (!rows || !secondRows || !wrap || !status || !dateLabel || typeof db === 'undefined') return;
 
   const fmt = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'});
   const kstDate = () => fmt.format(new Date());
-  // Ten-minute shared KST clock boundaries (KST has no DST).
-  const bucket = () => Math.floor(Date.now() / 600000);
+  const refreshBucket = () => Math.floor(Date.now() / 600000);
+  const movementBucket = () => Math.floor(Date.now() / 1800000);
+  const cacheKey = 'bts-top10-movement-v1';
   let loadedKey = '';
   let loading = false;
   let retryAfter = 0;
   let generation = 0;
+
+  // Store the first successful ranking in each 30-minute KST window as
+  // the movement baseline. Storage is per-browser, not shared across visitors.
+  function readCache() {
+    try {
+      const value = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
+      return value && Array.isArray(value.baseline) && Array.isArray(value.latest) ? value : null;
+    } catch (_) { return null; }
+  }
+  function writeCache(value) {
+    try { sessionStorage.setItem(cacheKey, JSON.stringify(value)); } catch (_) {}
+  }
+  // The RPC only exposes masked usernames. Country + masked username is the
+  // best available identity, but two users could share the same masked value.
+  const identity = item => String(item.masked_username || '') + '\u0000' + String(item.country || '');
+  const snapshot = data => data
+    .filter(item => Number.isInteger(Number(item.contributor_rank)) && Number(item.contributor_rank) >= 1 && Number(item.contributor_rank) <= 10)
+    .map(item => ({id:identity(item), rank:Number(item.contributor_rank)}));
 
   function td(tr, value, className = '') {
     const cell = document.createElement('td');
     cell.textContent = value;
     if (className) cell.className = className;
     tr.appendChild(cell);
+    return cell;
+  }
+  function movementCell(cell, rank, id, baseline, previous) {
+    const oldRank = baseline.find(item => item.id === id)?.rank;
+    const previousLeader = previous.find(item => item.rank === 1)?.id;
+    // A NEW leader must have been observed previously; never label the
+    // initial load as NEW. The 30-minute reset clears arrows, not this check.
+    let label = '–', kind = 'same';
+    if (rank === 1 && previousLeader && previousLeader !== id) {
+      label = 'NEW!'; kind = 'new';
+    } else if (oldRank != null && rank < oldRank) {
+      label = '↑'; kind = 'up';
+    } else if (oldRank != null && rank > oldRank) {
+      label = '↓'; kind = 'down';
+    } else if (oldRank == null && baseline.length && rank !== 1) {
+      label = '↑'; kind = 'up';
+    }
+    const indicator = document.createElement('span');
+    indicator.className = 'army-top10-movement ' + kind;
+    indicator.textContent = label;
+    indicator.title = kind === 'new' ? 'New #1 contributor' :
+      kind === 'up' ? 'Moved up since this 30-minute window began' :
+      kind === 'down' ? 'Moved down since this 30-minute window began' :
+      'No movement recorded in this 30-minute window';
+    cell.appendChild(indicator);
   }
 
   async function load(force = false) {
     const today = kstDate();
-    const key = today + ':' + bucket();
+    const key = today + ':' + refreshBucket();
     if (loading || (!force && key === loadedKey) || (!force && Date.now() < retryAfter)) return;
     loading = true;
     const token = ++generation;
     if (!wrap.hidden && loadedKey.split(':')[0] !== today) {
       wrap.hidden = true;
       rows.replaceChildren();
+      secondRows.replaceChildren();
     }
-    dateLabel.textContent = today + ' (KST) • Updates every 10 minutes • Resets at 12:00 AM KST';
+    dateLabel.textContent = today + ' (KST) • Updates every 10 min • Movement resets every 30 min';
     if (wrap.hidden) status.textContent = 'Loading contributors...';
     try {
       const {data, error} = await db.rpc('get_daily_top_army_contributors');
       if (error) throw error;
       if (token !== generation || today !== kstDate()) return;
+      const items = (data || []).filter(item => Number.isInteger(Number(item.contributor_rank)) && Number(item.contributor_rank) >= 1 && Number(item.contributor_rank) <= 10)
+        .sort((a,b) => Number(a.contributor_rank) - Number(b.contributor_rank));
+      const nowSnapshot = snapshot(items);
+      const windowId = today + ':' + movementBucket();
+      const saved = readCache();
+      const sameDay = saved?.date === today;
+      const sameWindow = sameDay && saved.windowId === windowId;
+      const baseline = sameWindow ? saved.baseline : nowSnapshot;
+      const previous = sameDay ? saved.latest : [];
       rows.replaceChildren();
-      for (const item of (data || [])) {
+      secondRows.replaceChildren();
+      for (const item of items) {
         const rank = Number(item.contributor_rank);
-        if (!Number.isInteger(rank) || rank < 1 || rank > 10) continue;
         const tr = document.createElement('tr');
         if (rank === 10) tr.classList.add('army-top10-tenth');
-        td(tr, rank === 1 ? '🥇 01' : rank === 2 ? '🥈 02' : rank === 3 ? '🥉 03' : String(rank).padStart(2, '0'));
+        const rankCell = td(tr, rank === 1 ? '🥇 01' : rank === 2 ? '🥈 02' : rank === 3 ? '🥉 03' : String(rank).padStart(2, '0'));
+        movementCell(rankCell, rank, identity(item), baseline, previous);
         td(tr, String(item.masked_username || 'Hidden'));
         td(tr, String(item.country || '—'));
-        // Defense-in-depth: never render a count except for position 10.
+        // Never render a count except for position 10.
         td(tr, rank === 10 && item.total_certificates != null
           ? Number(item.total_certificates).toLocaleString('en-US') : '🔒', rank === 10 ? '' : 'army-top10-muted');
-        rows.appendChild(tr);
+        (rank <= 5 ? rows : secondRows).appendChild(tr);
       }
-      wrap.hidden = rows.children.length === 0;
-      status.textContent = rows.children.length ? '' : 'No eligible submissions yet today.';
+      // Only update movement state after a successful RPC response.
+      writeCache({date:today, windowId, baseline, latest:nowSnapshot});
+      wrap.hidden = (rows.children.length + secondRows.children.length) === 0;
+      status.textContent = (rows.children.length + secondRows.children.length) ? '' : 'No eligible submissions yet today.';
       loadedKey = key;
       retryAfter = 0;
     } catch (error) {
       console.error('Daily contributor leaderboard:', error);
       status.textContent = wrap.hidden ? 'Contributors temporarily unavailable. Retrying...' : 'Unable to refresh; showing the last results.';
       retryAfter = Date.now() + 60000;
-    } finally {
-      loading = false;
-    }
+    } finally { loading = false; }
   }
 
   load();
-  // Check for new KST date even between ten-minute boundaries.
   setInterval(() => {
     if (document.hidden) return;
     const today = kstDate();
@@ -3736,6 +3838,7 @@ setInterval(() => {
       retryAfter = 0;
       wrap.hidden = true;
       rows.replaceChildren();
+      secondRows.replaceChildren();
     }
     load();
   }, 15000);
