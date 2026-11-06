@@ -1000,7 +1000,7 @@ footer {
   </div>
   <p class="army-top10-note">
     <span class="army-top10-note-line">🔒 Top 9 certificate totals remain confidential · Usernames partially masked</span>
-    <span class="army-top10-note-line">↻ Updates every 10 minutes · Movement resets every 30 minutes · Daily totals reset 12:00 AM KST</span>
+    <span class="army-top10-note-line">↻ Rankings & movement update every 30 minutes · Daily reset 12:00 AM KST</span>
     <span class="army-top10-note-line">Counts represent unique eligible uploads, not official MAMA votes.</span>
   </p>
 </section>
@@ -3706,7 +3706,7 @@ setInterval(() => {
 </script>
 
 <script>
-/* Daily Top 10 contributors: 10-minute refresh, 30-minute movement windows, midnight KST daily reset. */
+/* Daily Top 10 contributors: synchronized 30-minute updates; NEW! for anyone entering the Top 10. */
 (() => {
   const rows = document.getElementById('armyTop10Rows');
   const secondRows = document.getElementById('armyTop10RowsSecond');
@@ -3717,20 +3717,19 @@ setInterval(() => {
 
   const fmt = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'});
   const kstDate = () => fmt.format(new Date());
-  const refreshBucket = () => Math.floor(Date.now() / 600000);
-  const movementBucket = () => Math.floor(Date.now() / 1800000);
-  const cacheKey = 'bts-top10-movement-v1';
+  const refreshBucket = () => Math.floor(Date.now() / 1800000);
+  const cacheKey = 'bts-top10-movement-synced-30m-v1';
   let loadedKey = '';
   let loading = false;
   let retryAfter = 0;
   let generation = 0;
 
-  // Store the first successful ranking in each 30-minute KST window as
-  // the movement baseline. Storage is per-browser, not shared across visitors.
+  // Compare each successful 30-minute snapshot against the previous one.
+  // Storage is per-browser, not shared across visitors.
   function readCache() {
     try {
       const value = JSON.parse(sessionStorage.getItem(cacheKey) || 'null');
-      return value && Array.isArray(value.baseline) && Array.isArray(value.latest) ? value : null;
+      return value && Array.isArray(value.latest) ? value : null;
     } catch (_) { return null; }
   }
   function writeCache(value) {
@@ -3750,28 +3749,26 @@ setInterval(() => {
     tr.appendChild(cell);
     return cell;
   }
-  function movementCell(cell, rank, id, baseline, previous) {
-    const oldRank = baseline.find(item => item.id === id)?.rank;
-    const previousLeader = previous.find(item => item.rank === 1)?.id;
-    // A NEW leader must have been observed previously; never label the
-    // initial load as NEW. The 30-minute reset clears arrows, not this check.
+  function movementCell(cell, rank, id, previous) {
+    const oldRank = previous.find(item => item.id === id)?.rank;
+    // NEW! means the contributor was absent from the previous Top 10,
+    // regardless of whether they enter at #1, #5, or #10.
+    // Do not mark everyone NEW! on the initial load or at midnight KST.
     let label = '–', kind = 'same';
-    if (rank === 1 && previousLeader && previousLeader !== id) {
+    if (oldRank == null && previous.length > 0) {
       label = 'NEW!'; kind = 'new';
     } else if (oldRank != null && rank < oldRank) {
       label = '↑'; kind = 'up';
     } else if (oldRank != null && rank > oldRank) {
       label = '↓'; kind = 'down';
-    } else if (oldRank == null && baseline.length && rank !== 1) {
-      label = '↑'; kind = 'up';
     }
     const indicator = document.createElement('span');
     indicator.className = 'army-top10-movement ' + kind;
     indicator.textContent = label;
-    indicator.title = kind === 'new' ? 'New #1 contributor' :
-      kind === 'up' ? 'Moved up since this 30-minute window began' :
-      kind === 'down' ? 'Moved down since this 30-minute window began' :
-      'No movement recorded in this 30-minute window';
+    indicator.title = kind === 'new' ? 'New entry into the Top 10 since the previous 30-minute update' :
+      kind === 'up' ? 'Moved up since the previous 30-minute update' :
+      kind === 'down' ? 'Moved down since the previous 30-minute update' :
+      'No movement since the previous 30-minute update';
     cell.appendChild(indicator);
   }
 
@@ -3786,7 +3783,7 @@ setInterval(() => {
       rows.replaceChildren();
       secondRows.replaceChildren();
     }
-    dateLabel.textContent = today + ' (KST) • Updates every 10 min • Movement resets every 30 min';
+    dateLabel.textContent = today + ' (KST) • Rankings & movement update every 30 min';
     if (wrap.hidden) status.textContent = 'Loading contributors...';
     try {
       const {data, error} = await db.rpc('get_daily_top_army_contributors');
@@ -3795,12 +3792,8 @@ setInterval(() => {
       const items = (data || []).filter(item => Number.isInteger(Number(item.contributor_rank)) && Number(item.contributor_rank) >= 1 && Number(item.contributor_rank) <= 10)
         .sort((a,b) => Number(a.contributor_rank) - Number(b.contributor_rank));
       const nowSnapshot = snapshot(items);
-      const windowId = today + ':' + movementBucket();
       const saved = readCache();
-      const sameDay = saved?.date === today;
-      const sameWindow = sameDay && saved.windowId === windowId;
-      const baseline = sameWindow ? saved.baseline : nowSnapshot;
-      const previous = sameDay ? saved.latest : [];
+      const previous = saved?.date === today ? saved.latest : [];
       rows.replaceChildren();
       secondRows.replaceChildren();
       for (const item of items) {
@@ -3808,7 +3801,7 @@ setInterval(() => {
         const tr = document.createElement('tr');
         if (rank === 10) tr.classList.add('army-top10-tenth');
         const rankCell = td(tr, rank === 1 ? '🥇 01' : rank === 2 ? '🥈 02' : rank === 3 ? '🥉 03' : String(rank).padStart(2, '0'));
-        movementCell(rankCell, rank, identity(item), baseline, previous);
+        movementCell(rankCell, rank, identity(item), previous);
         td(tr, String(item.masked_username || 'Hidden'));
         td(tr, String(item.country || '—'));
         // Never render a count except for position 10.
@@ -3817,7 +3810,7 @@ setInterval(() => {
         (rank <= 5 ? rows : secondRows).appendChild(tr);
       }
       // Only update movement state after a successful RPC response.
-      writeCache({date:today, windowId, baseline, latest:nowSnapshot});
+      writeCache({date:today, latest:nowSnapshot});
       wrap.hidden = (rows.children.length + secondRows.children.length) === 0;
       status.textContent = (rows.children.length + secondRows.children.length) ? '' : 'No eligible submissions yet today.';
       loadedKey = key;
