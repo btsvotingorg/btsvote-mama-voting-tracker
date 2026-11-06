@@ -639,6 +639,48 @@ footer {
 }
 
 </style>
+
+<style>
+/* Premium daily contributor leaderboard; scoped to avoid affecting other cards. */
+.army-top10-card { margin-top: 22px; padding: 26px 22px; border: 1px solid #e9e0f3; background: linear-gradient(160deg,#fff 0%,#fdfbff 100%); }
+.army-top10-head { text-align: center; padding: 3px 0 17px; }
+.army-top10-eyebrow { color: #8966b2; font-size: 10px; letter-spacing: 2.5px; font-weight: 800; text-transform: uppercase; }
+.army-top10-card h2 { margin: 7px 0 5px; color: #352448; font-size: clamp(17px, 3vw, 21px); letter-spacing: .3px; }
+.army-top10-head p { margin: 0; }
+.army-top10-meta { color: #8b8197; font-size: 12px; }
+.army-top10-subtitle { color: #978da3; font-size: 12px; margin-top: 6px !important; }
+.army-top10-table-shell { border-radius: 14px; padding: 7px; background: #f7f4fb; border: 1px solid #eee8f5; overflow-x: auto; }
+.army-top10-table { width: 100%; border-collapse: separate; border-spacing: 0 5px; table-layout: fixed; font-size: 13px; }
+.army-top10-table th { text-align: left; color: #93899e; text-transform: uppercase; letter-spacing: 1px; font-size: 10px; font-weight: 800; padding: 7px 10px; }
+.army-top10-table th:first-child { width: 14%; }
+.army-top10-table th:nth-child(2) { width: 34%; }
+.army-top10-table th:nth-child(3) { width: 32%; }
+.army-top10-table th:last-child { width: 20%; text-align: right; }
+.army-top10-table td { background: #fff; padding: 12px 10px; border-top: 1px solid #f0ebf5; border-bottom: 1px solid #f0ebf5; overflow-wrap: anywhere; vertical-align: middle; }
+.army-top10-table td:first-child { border-left: 1px solid #f0ebf5; border-radius: 9px 0 0 9px; font-weight: 800; color: #685b78; white-space: nowrap; }
+.army-top10-table td:last-child { border-right: 1px solid #f0ebf5; border-radius: 0 9px 9px 0; text-align: right; }
+.army-top10-table td:nth-child(2) { color: #3c2e4c; font-weight: 700; }
+.army-top10-table td:nth-child(3) { color: #82788d; }
+.army-top10-table tr.army-top10-tenth td { background: #f0e8fb; border-color: #d9c8f1; }
+.army-top10-table tr.army-top10-tenth td:last-child { color: #7546aa; font-weight: 900; font-size: 15px; }
+.army-top10-medal { font-size: 16px; margin-right: 4px; }
+.army-top10-muted { color: #a9a0b3 !important; letter-spacing: 1px; }
+.army-top10-note { margin: 15px 0 0; font-size: 11px; color: #958b9e; text-align: center; line-height: 1.7; }
+.army-top10-note .army-top10-note-line { display: block; }
+.army-top10-status { text-align: center; padding: 8px; font-size: 13px; }
+@media (max-width: 520px) {
+  .army-top10-card { padding: 19px 11px; }
+  .army-top10-table-shell { padding: 4px; }
+  .army-top10-table { font-size: 11px; }
+  .army-top10-table th { font-size: 9px; letter-spacing: .2px; padding: 6px 5px; }
+  .army-top10-table td { padding: 11px 5px; }
+  .army-top10-table th:first-child { width: 15%; }
+  .army-top10-table th:nth-child(2) { width: 34%; }
+  .army-top10-table th:nth-child(3) { width: 30%; }
+  .army-top10-table th:last-child { width: 21%; }
+  .army-top10-medal { font-size: 13px; margin-right: 0; }
+}
+</style>
 </head>
 
 <body>
@@ -891,6 +933,29 @@ footer {
       not official MAMA results.
     </p>
   </div>
+</section>
+
+
+<!-- DAILY TOP 10 ARMY CONTRIBUTORS -->
+<section class="card army-top10-card" aria-labelledby="armyTop10Heading">
+  <div class="army-top10-head">
+    <div class="army-top10-eyebrow">BTS Vote Project · MAMA 2026</div>
+    <h2 id="armyTop10Heading">🏆 ARMY TOP CONTRIBUTORS</h2>
+    <p class="army-top10-meta" id="armyTop10Date">Daily leaderboard · KST</p>
+    <p class="army-top10-subtitle">Every certificate makes a difference.</p>
+  </div>
+  <div id="armyTop10Status" class="army-top10-muted army-top10-status" role="status">Loading contributors...</div>
+  <div id="armyTop10TableWrap" class="army-top10-table-shell" hidden>
+    <table class="army-top10-table" aria-label="Daily top ten ARMY contributors">
+      <thead><tr><th scope="col">Rank</th><th scope="col">X Username</th><th scope="col">Country</th><th scope="col">Proofs</th></tr></thead>
+      <tbody id="armyTop10Rows"></tbody>
+    </table>
+  </div>
+  <p class="army-top10-note">
+    <span class="army-top10-note-line">🔒 Top 9 certificate totals remain confidential · Usernames partially masked</span>
+    <span class="army-top10-note-line">↻ Updates every 10 minutes · Resets 12:00 AM KST</span>
+    <span class="army-top10-note-line">Counts represent unique eligible uploads, not official MAMA votes.</span>
+  </p>
 </section>
 
 </main>
@@ -3592,5 +3657,93 @@ setInterval(() => {
 
 })();
 </script>
+
+<script>
+/* Daily Top 10 ARMY contributors: independent 10-minute polling, midnight KST reset. */
+(() => {
+  const rows = document.getElementById('armyTop10Rows');
+  const wrap = document.getElementById('armyTop10TableWrap');
+  const status = document.getElementById('armyTop10Status');
+  const dateLabel = document.getElementById('armyTop10Date');
+  if (!rows || !wrap || !status || !dateLabel || typeof db === 'undefined') return;
+
+  const fmt = new Intl.DateTimeFormat('en-CA', {timeZone:'Asia/Seoul',year:'numeric',month:'2-digit',day:'2-digit'});
+  const kstDate = () => fmt.format(new Date());
+  // Ten-minute shared KST clock boundaries (KST has no DST).
+  const bucket = () => Math.floor(Date.now() / 600000);
+  let loadedKey = '';
+  let loading = false;
+  let retryAfter = 0;
+  let generation = 0;
+
+  function td(tr, value, className = '') {
+    const cell = document.createElement('td');
+    cell.textContent = value;
+    if (className) cell.className = className;
+    tr.appendChild(cell);
+  }
+
+  async function load(force = false) {
+    const today = kstDate();
+    const key = today + ':' + bucket();
+    if (loading || (!force && key === loadedKey) || (!force && Date.now() < retryAfter)) return;
+    loading = true;
+    const token = ++generation;
+    if (!wrap.hidden && loadedKey.split(':')[0] !== today) {
+      wrap.hidden = true;
+      rows.replaceChildren();
+    }
+    dateLabel.textContent = today + ' (KST) • Updates every 10 minutes • Resets at 12:00 AM KST';
+    if (wrap.hidden) status.textContent = 'Loading contributors...';
+    try {
+      const {data, error} = await db.rpc('get_daily_top_army_contributors');
+      if (error) throw error;
+      if (token !== generation || today !== kstDate()) return;
+      rows.replaceChildren();
+      for (const item of (data || [])) {
+        const rank = Number(item.contributor_rank);
+        if (!Number.isInteger(rank) || rank < 1 || rank > 10) continue;
+        const tr = document.createElement('tr');
+        if (rank === 10) tr.classList.add('army-top10-tenth');
+        td(tr, rank === 1 ? '🥇 01' : rank === 2 ? '🥈 02' : rank === 3 ? '🥉 03' : String(rank).padStart(2, '0'));
+        td(tr, String(item.masked_username || 'Hidden'));
+        td(tr, String(item.country || '—'));
+        // Defense-in-depth: never render a count except for position 10.
+        td(tr, rank === 10 && item.total_certificates != null
+          ? Number(item.total_certificates).toLocaleString('en-US') : '🔒', rank === 10 ? '' : 'army-top10-muted');
+        rows.appendChild(tr);
+      }
+      wrap.hidden = rows.children.length === 0;
+      status.textContent = rows.children.length ? '' : 'No eligible submissions yet today.';
+      loadedKey = key;
+      retryAfter = 0;
+    } catch (error) {
+      console.error('Daily contributor leaderboard:', error);
+      status.textContent = wrap.hidden ? 'Contributors temporarily unavailable. Retrying...' : 'Unable to refresh; showing the last results.';
+      retryAfter = Date.now() + 60000;
+    } finally {
+      loading = false;
+    }
+  }
+
+  load();
+  // Check for new KST date even between ten-minute boundaries.
+  setInterval(() => {
+    if (document.hidden) return;
+    const today = kstDate();
+    if (loadedKey && loadedKey.split(':')[0] !== today) {
+      loadedKey = '';
+      retryAfter = 0;
+      wrap.hidden = true;
+      rows.replaceChildren();
+    }
+    load();
+  }, 15000);
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) load();
+  });
+})();
+</script>
+
 </body>
 </html>
