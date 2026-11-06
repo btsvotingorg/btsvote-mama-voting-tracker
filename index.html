@@ -995,7 +995,7 @@ footer {
       Overall Ranking accumulates eligible certificates
       across all dates.
       Daily Ranking displays unique submitted certificate counts.
-      Overall Ranking percentages show each country's share of submissions.
+      Overall Ranking percentages show progress relative to the leading country (100%).
       Pending and verified submissions count.
       These are community participation rankings,
       not official MAMA results.
@@ -2478,9 +2478,11 @@ async function showSharedRankingFallback(period) {
         value.textContent = Number.isSafeInteger(count) && count >= 0
           ? count.toLocaleString("en-US") : "—";
       } else {
-        // Overall Ranking: do not expose totals or numerical percentages.
-        value.textContent = "";
-        value.hidden = true;
+        // Display the same relative percentage used by the progress bar.
+        const pct = Number(item.progress_percent);
+        value.textContent = Number.isFinite(pct)
+          ? Math.max(0, Math.min(100, pct)).toFixed(2) + "%"
+          : "—";
       }
       line.append(name,value);
       const track = document.createElement("div");
@@ -2746,9 +2748,8 @@ async function loadLeaderboard() {
         missingCountries.push(item.country);
       }
     } else {
-      // Overall Ranking shows only country positions and progress bars.
-      value.textContent = "";
-      value.hidden = true;
+      // Match the percentage label to the existing progress bar.
+      value.textContent = Math.max(0, Math.min(100, safeShare)).toFixed(2) + "%";
     }
 
     line.append(name,value);
