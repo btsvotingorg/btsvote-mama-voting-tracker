@@ -947,49 +947,11 @@ const db = window.supabase.createClient(
    Counts Supabase Presence sessions, not unique people.
    Does not access or modify certificate data.
 ========================================== */
-(function startArmyOnlineCounter() {
-  const counter = document.getElementById("armyOnlineCount");
+// Realtime Presence disabled to reduce billable Realtime messages.
+// Hide the online count rather than display a misleading number.
+(function disableArmyOnlineCounter() {
   const widget = document.getElementById("armyOnlineWidget");
-  if (!counter || !widget) return;
-
-  // A fresh ID per browser tab prevents multiple visitors overwriting
-  // each other's Presence records.
-  const sessionId = (globalThis.crypto && crypto.randomUUID)
-    ? crypto.randomUUID()
-    : String(Date.now()) + "-" + Math.random().toString(36).slice(2);
-
-  const channel = db.channel("bts-public-army-online-v1", {
-    config: { presence: { key: sessionId } }
-  });
-
-  function updateCount() {
-    const state = channel.presenceState();
-    const count = Object.values(state).reduce(
-      (sum, presences) => sum + presences.length, 0
-    );
-    counter.textContent = count.toLocaleString("en-US");
-    widget.dataset.status = "online";
-  }
-
-  channel
-    .on("presence", { event: "sync" }, updateCount)
-    .on("presence", { event: "join" }, updateCount)
-    .on("presence", { event: "leave" }, updateCount)
-    .subscribe(async status => {
-      if (status === "SUBSCRIBED") {
-        try {
-          await channel.track({ joined_at: new Date().toISOString() });
-          updateCount();
-        } catch (error) {
-          console.warn("ARMY online tracking unavailable:", error);
-          counter.textContent = "Unavailable";
-          widget.dataset.status = "offline";
-        }
-      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
-        counter.textContent = "Unavailable";
-        widget.dataset.status = "offline";
-      }
-    });
+  if (widget) widget.hidden = true;
 })();
 
 /* ==========================================
@@ -2259,8 +2221,12 @@ const rankingInFlight = { daily: false, overall: false };
 const rankingRetryAfter = { daily: 0, overall: 0 };
 const RANKING_RETRY_DELAY_MS = 60000;
 const RANKING_REQUEST_TIMEOUT_MS = 18000;
-const RANKING_STORAGE_PREFIX = "bts-ranking-safe-v2-";
-function rankingBucket() { return Math.floor(Date.now() / 300000); }
+const RANKING_STORAGE_PREFIX = "bts-ranking-hidden-overall-v3-";
+// Daily ranking: shared five-minute windows. Overall: once per KST date,
+// changing exactly at midnight Korea Standard Time (UTC+09, no DST).
+function rankingBucket(period = "daily") {
+  return period === "overall" ? getKSTDate() : Math.floor(Date.now() / 300000);
+}
 function rankingStorageKey(period) { return RANKING_STORAGE_PREFIX + period; }
 function restoreRankingCache(period) {
   try {
@@ -2269,7 +2235,7 @@ function restoreRankingCache(period) {
     const saved = JSON.parse(raw);
     if (!saved || typeof saved.html !== "string" ||
         saved.html.length > 350000 || !Number.isFinite(saved.savedAt) ||
-        saved.savedAt > Date.now() || Date.now() - saved.savedAt > 86400000 ||
+        saved.savedAt > Date.now() || Date.now() - saved.savedAt > (period === "overall" ? 172800000 : 86400000) ||
         (period === "daily" && saved.kstDate !== getKSTDate())) return;
     rankingCache[period] = saved;
   } catch (error) {
@@ -2322,7 +2288,7 @@ async function showSharedRankingFallback(period) {
     }
     // Do not overwrite a successful fresh ranking that arrived meanwhile.
     const liveCache = rankingCache[period];
-    if (liveCache && liveCache.bucket === rankingBucket() &&
+    if (liveCache && liveCache.bucket === rankingBucket(period) &&
         (period !== "daily" || liveCache.kstDate === expectedDate)) return;
     const container = document.getElementById("leaderboard");
     container.replaceChildren();
@@ -2369,8 +2335,9 @@ async function showSharedRankingFallback(period) {
         value.textContent = Number.isSafeInteger(count) && count >= 0
           ? count.toLocaleString("en-US") : "—";
       } else {
-        const pct = Number(item.progress_percent);
-        value.textContent = Number.isFinite(pct) ? pct.toFixed(2) + "%" : "—";
+        // Overall Ranking: do not expose totals or numerical percentages.
+        value.textContent = "";
+        value.hidden = true;
       }
       line.append(name,value);
       const track = document.createElement("div");
@@ -2436,9 +2403,9 @@ async function loadLeaderboard() {
   rankingPeriod.textContent = daily
     ? "Current Date: " + getKSTDate() +
       " | Rankings refresh every 5 minutes"
-    : "Accumulated ranking · All eligible submissions since tracking began";
+    : "Accumulated ranking · Refreshes at 12:00 AM KST";
 
-  const bucket = rankingBucket();
+  const bucket = rankingBucket(period);
   const cached = rankingCache[period];
   if (cached && cached.bucket === bucket &&
       (!daily || cached.kstDate === getKSTDate())) {
@@ -2636,7 +2603,9 @@ async function loadLeaderboard() {
         missingCountries.push(item.country);
       }
     } else {
-      value.textContent = safeShare.toFixed(2) + "%";
+      // Overall Ranking shows only country positions and progress bars.
+      value.textContent = "";
+      value.hidden = true;
     }
 
     line.append(name,value);
@@ -2963,45 +2932,9 @@ async function loadChallengeHistory() {
 }
 
 /* ==========================================
-   REALTIME UPDATES
+   REALTIME UPDATES DISABLED
+   Periodic polling below handles refreshes without a Realtime channel.
 ========================================== */
-
-let leaderboardRefreshTimer = null;
-
-function scheduleLeaderboardRefresh() {
-  if (leaderboardRefreshTimer !== null) {
-    clearTimeout(leaderboardRefreshTimer);
-  }
-
-  leaderboardRefreshTimer = setTimeout(() => {
-    leaderboardRefreshTimer = null;
-
-    if (!document.hidden) {
-      loadDailyChallenge();
-    }
-  },2000);
-}
-
-db.channel("bts-country-ranking-movement")
-  .on(
-    "postgres_changes",
-    {
-      event:"UPDATE",
-      schema:"public",
-      table:"country_rank_ping"
-    },
-    scheduleLeaderboardRefresh
-  )
-  .subscribe(status => {
-    if (
-      status === "CHANNEL_ERROR" ||
-      status === "TIMED_OUT"
-    ) {
-      console.warn(
-        "Realtime temporarily unavailable; polling is still active."
-      );
-    }
-  });
 
 /* ==========================================
    DAILY CHALLENGE RESET COUNTDOWN (KST)
@@ -3047,18 +2980,20 @@ loadHourlyLeader();
    AUTOMATIC REFRESH
 ========================================== */
 
-// Hourly leader: refresh every 20 seconds.
+// Hourly leader: check at the beginning of each new KST hour.
+// Existing lock prevents repeat requests within the same hour.
 setInterval(() => {
-  if (!document.hidden) {
+  if (!document.hidden && lockedHourlyKey !== kstHourInfo().key) {
     loadHourlyLeader();
   }
-},20000);
+},60000);
 
-// Refresh on shared 5-minute clock boundaries, not 5 minutes after opening.
+// Daily: refresh on shared five-minute clock boundaries.
+// Overall: refresh only when the KST date changes at midnight.
 setInterval(() => {
   if (document.hidden) return;
   const cached = rankingCache[selectedRankingPeriod];
-  if (!cached || cached.bucket !== rankingBucket()) loadLeaderboard();
+  if (!cached || cached.bucket !== rankingBucket(selectedRankingPeriod)) loadLeaderboard();
 },5000);
 
 // Daily Challenge: refresh every minute.
@@ -3085,6 +3020,12 @@ setInterval(() => {
     displayedChallengeDate = today;
 
     resetChallengeDisplay();
+    // At midnight, invalidate both daily and overall caches.
+    // Load the visible leaderboard immediately; the other loads on tab selection.
+    rankingCache.daily = null;
+    rankingCache.overall = null;
+    rankingRetryAfter.daily = 0;
+    rankingRetryAfter.overall = 0;
     loadLeaderboard();
 
     if (!challengeLoading) {
@@ -3647,15 +3588,7 @@ setInterval(() => {
     }
   );
 
-  // REFRESH AVAILABLE ARCHIVES
-  setInterval(() => {
-    if (
-      !document.hidden &&
-      !panel.hidden
-    ) {
-      loadDates();
-    }
-  }, 300000);
+  // Archive dates load on demand; no background polling.
 
 })();
 </script>
