@@ -874,7 +874,7 @@ footer {
   <h2>GLOBAL ARMY DAILY CHALLENGE</h2>
 
   <p class="voting-day-countdown" id="votingDayCountdown">
-    Calculating days left to vote...
+    Calculating time left to vote...
   </p>
 
   <p class="challenge-reset" id="challengeResetCountdown" role="timer" style="margin:0 0 12px; color:var(--purple); font-weight:600;">
@@ -1288,20 +1288,15 @@ function updateVotingDayCountdown() {
     return;
   }
 
-  const todayKST = Date.parse(
-    getKSTDate() + "T00:00:00Z"
-  );
+  const remainingSeconds = Math.ceil((VOTING_END_EXCLUSIVE_UTC - now) / 1000);
+  const hours = Math.floor(remainingSeconds / 3600);
+  const minutes = Math.floor((remainingSeconds % 3600) / 60);
+  const seconds = remainingSeconds % 60;
+  const pad = value => String(value).padStart(2, "0");
 
-  const daysLeft = Math.round(
-    (VOTING_END_KST_DAY - todayKST) / 86400000
-  );
-
-  label.textContent = daysLeft === 0
-    ? "FINAL DAY OF VOTING!"
-    : daysLeft +
-      (daysLeft === 1
-        ? " DAY LEFT TO VOTE"
-        : " DAYS LEFT TO VOTE");
+  label.textContent =
+    "⏳ " + pad(hours) + ":" + pad(minutes) + ":" + pad(seconds) +
+    " LEFT TO VOTE";
 }
 
 function updateKSTDisplay() {
@@ -1312,7 +1307,7 @@ function updateKSTDisplay() {
 }
 
 updateKSTDisplay();
-setInterval(updateKSTDisplay,15000);
+setInterval(updateKSTDisplay,1000);
 
 /* ==========================================
    LAST COMPLETED HOUR ARMY TOP CONTRIBUTOR
