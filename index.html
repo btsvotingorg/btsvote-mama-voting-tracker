@@ -899,7 +899,7 @@ footer {
     <div class="challenge-label">DAILY PROGRESS</div>
 
     <div class="challenge-percentage" id="challengePercent">
-      0.00%
+      0 / 50,000
     </div>
 
     <div class="challenge-progress">
@@ -2830,7 +2830,7 @@ function resetChallengeDisplay() {
   );
 
   setChallengeText(
-    "challengePercent","0.00%"
+    "challengePercent","Loading..."
   );
 
   setChallengeText(
@@ -2853,7 +2853,7 @@ async function loadDailyChallenge() {
     const {data,error} = await db
       .from("daily_army_challenge")
       .select(
-        "challenge_date,progress_percent,goal_completed"
+        "challenge_date,progress_percent,goal_completed,submitted_votes,target_certificates"
       )
       .maybeSingle();
 
@@ -2907,9 +2907,13 @@ async function loadDailyChallenge() {
       ? Math.max(0,rawProgress)
       : 0;
 
+    const submittedVotes = Number(data.submitted_votes);
+    const targetVotes = Number(data.target_certificates);
     setChallengeText(
       "challengePercent",
-      progress.toFixed(2) + "%"
+      Number.isFinite(submittedVotes) && Number.isFinite(targetVotes)
+        ? submittedVotes.toLocaleString("en-US") + " / " + targetVotes.toLocaleString("en-US")
+        : "—"
     );
 
     document.getElementById(
