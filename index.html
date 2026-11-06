@@ -1774,71 +1774,60 @@ function extractCertificateDetails(rawText) {
   };
 }
 
+/* FAST SCANNER V2: two independent OCR lanes; fallback only when needed.
+   Worker reuse avoids repeatedly downloading language models. */
+const OCR_CONCURRENCY = 2;
 const ocrWorkerPromises = new Map();
+const ocrLaneLocks = new Map();
 
-async function getOCRWorker(language) {
-  if (!ocrWorkerPromises.has(language)) {
-    const promise = Tesseract.createWorker(language)
-      .catch(error => {
-        ocrWorkerPromises.delete(language);
-        throw error;
-      });
-
-    ocrWorkerPromises.set(language,promise);
+async function getOCRWorker(language,lane = 0) {
+  const key = language + ":" + lane;
+  if (!ocrWorkerPromises.has(key)) {
+    const promise = Tesseract.createWorker(language).catch(error => {
+      ocrWorkerPromises.delete(key);
+      throw error;
+    });
+    ocrWorkerPromises.set(key,promise);
   }
-
-  return ocrWorkerPromises.get(language);
+  return ocrWorkerPromises.get(key);
 }
 
-async function recognizeCertificate(file,language) {
-  const worker = await getOCRWorker(language);
-  const result = await worker.recognize(file);
-
-  return extractCertificateDetails(
-    result.data.text || ""
-  );
+// Serializes use of each worker; a worker cannot safely recognize two
+// images at the same time. English lanes remain independent.
+async function recognizeCertificate(file,language,lane = 0) {
+  const key = language + ":" + lane;
+  const prior = ocrLaneLocks.get(key) || Promise.resolve();
+  let release;
+  const lock = new Promise(resolve => { release = resolve; });
+  const tail = prior.catch(() => {}).then(() => lock);
+  ocrLaneLocks.set(key,tail);
+  await prior.catch(() => {});
+  try {
+    const worker = await getOCRWorker(language,lane);
+    const result = await worker.recognize(file);
+    return extractCertificateDetails(result.data.text || "");
+  } finally {
+    release();
+    if (ocrLaneLocks.get(key) === tail) ocrLaneLocks.delete(key);
+  }
 }
 
-async function scanCertificate(file) {
-  const english = await recognizeCertificate(
-    file,"eng"
-  );
-
-  if (
-    english.certificateNumber &&
-    english.participationDate
-  ) {
-    return english;
-  }
+async function scanCertificate(file,lane = 0) {
+  const english = await recognizeCertificate(file,"eng",lane);
+  if (english.certificateNumber && english.participationDate) return english;
 
   let certificateNumber = english.certificateNumber;
   let participationDate = english.participationDate;
-
-  const eastAsian = await recognizeCertificate(
-    file,"jpn+kor+eng"
-  );
-
+  const eastAsian = await recognizeCertificate(file,"jpn+kor+eng",0);
   certificateNumber ||= eastAsian.certificateNumber;
   participationDate ||= eastAsian.participationDate;
-
   if (certificateNumber && participationDate) {
-    return {
-      certificateNumber,
-      participationDate
-    };
+    return {certificateNumber,participationDate};
   }
-
-  const chinese = await recognizeCertificate(
-    file,"chi_sim+chi_tra+eng"
-  );
-
+  const chinese = await recognizeCertificate(file,"chi_sim+chi_tra+eng",0);
   certificateNumber ||= chinese.certificateNumber;
   participationDate ||= chinese.participationDate;
-
-  return {
-    certificateNumber,
-    participationDate
-  };
+  return {certificateNumber,participationDate};
 }
 
 /* ==========================================
@@ -2127,182 +2116,92 @@ form.addEventListener("submit",async event => {
   updateProgress(0,files.length,0,0,0);
 
   try {
-    for (const file of files) {
-      batchProgress.textContent =
-        "Scanning " + (done + 1) +
-        " of " + files.length;
+    // Two independent lanes keep memory use bounded on phones.
+    // Each lane scans, validates and uploads before taking another file.
+    let nextIndex = 0;
+    let authorizationBlocked = false;
 
-      let stop = false;
+    async function processLane(lane) {
+      while (nextIndex < files.length && !authorizationBlocked) {
+        const index = nextIndex++;
+        const file = files[index];
+        try {
+          const allowed = ["image/jpeg","image/png","image/webp"];
+          if (!allowed.includes(file.type) || !file.size ||
+              file.size > 5 * 1024 * 1024) {
+            failed++;
+            addResult(file.name,"failed","Invalid image or over 5 MB.");
+            continue;
+          }
 
-      try {
-        const allowed = [
-          "image/jpeg",
-          "image/png",
-          "image/webp"
-        ];
-
-        if (
-          !allowed.includes(file.type) ||
-          file.size === 0 ||
-          file.size > 5 * 1024 * 1024
-        ) {
-          failed++;
-
-          addResult(
-            file.name,
-            "failed",
-            "Invalid image or over 5 MB."
-          );
-
-        } else {
-          const scanned = await scanCertificate(file);
-
-          const certificate =
-            scanned.certificateNumber;
-
-          const participationDate =
-            scanned.participationDate;
+          batchProgress.textContent =
+            "Scanning certificates in parallel (" + (done + 1) +
+            " of " + files.length + " completed)";
+          const scanned = await scanCertificate(file,lane);
+          const certificate = scanned.certificateNumber;
+          const participationDate = scanned.participationDate;
 
           if (!certificate) {
             failed++;
-
-            addResult(
-              file.name,
-              "failed",
-              "Certificate reference number not detected."
-            );
-
-          } else if (!participationDate) {
-            failed++;
-
-            addResult(
-              file.name,
-              "failed",
-              "Participation date could not be detected. Please upload a clear certificate showing the participation date."
-            );
-
-          } else if (
-            !isWithinTimezoneWindow(participationDate)
-          ) {
-            failed++;
-
-            addResult(
-              file.name,
-              "failed",
-              "Certificate date " + participationDate +
-              " is outside the accepted timezone window " +
-              "(yesterday, today, or tomorrow relative to KST)."
-            );
-
-          } else if (seen.has(certificate)) {
-            duplicates++;
-
-            addResult(
-              file.name,
-              "duplicate",
-              "Repeated in this batch: " + certificate
-            );
-
-          } else {
-            seen.add(certificate);
-
-            batchProgress.textContent =
-              "Optimizing " + (done + 1) +
-              " of " + files.length;
-
-            const uploadFile =
-              await compressScreenshot(file);
-
-            const response =
-              await submitCertificate(
-                uploadFile,
-                certificate,
-                participationDate,
-                username,
-                selectedCountry
-              );
-
-            if (
-              response.status === 409 &&
-              response.data.duplicate
-            ) {
-              duplicates++;
-
-              addResult(
-                file.name,
-                "duplicate",
-                "Already submitted: " + certificate
-              );
-
-            } else if (
-              response.status === 401 ||
-              response.status === 403
-            ) {
-              failed++;
-              stop = true;
-
-              addResult(
-                file.name,
-                "failed",
-                "Server authorization blocked the submission."
-              );
-
-            } else if (!response.ok) {
-              failed++;
-
-              addResult(
-                file.name,
-                "failed",
-                response.data.error ||
-                response.data.message ||
-                "Submission failed."
-              );
-
-            } else {
-              pending++;
-
-              addResult(
-                file.name,
-                "accepted",
-                "Successfully submitted: " +
-                certificate +
-                " | Participation date: " +
-                participationDate +
-                " | Uploaded: " +
-                readableFileSize(uploadFile.size) +
-                (
-                  uploadFile.size < file.size
-                    ? " (original " +
-                      readableFileSize(file.size) + ")"
-                    : ""
-                )
-              );
-            }
+            addResult(file.name,"failed","Certificate reference number not detected.");
+            continue;
           }
+          if (!participationDate) {
+            failed++;
+            addResult(file.name,"failed",
+              "Participation date could not be detected. Please upload a clear certificate showing the participation date.");
+            continue;
+          }
+          if (!isWithinTimezoneWindow(participationDate)) {
+            failed++;
+            addResult(file.name,"failed","Certificate date " + participationDate +
+              " is outside the accepted timezone window (yesterday, today, or tomorrow relative to KST).");
+            continue;
+          }
+          // No await between checking and adding: protects against
+          // duplicate uploads even when lanes finish OCR simultaneously.
+          if (seen.has(certificate)) {
+            duplicates++;
+            addResult(file.name,"duplicate","Repeated in this batch: " + certificate);
+            continue;
+          }
+          seen.add(certificate);
+          if (authorizationBlocked) break;
+
+          const uploadFile = await compressScreenshot(file);
+          if (authorizationBlocked) break;
+          const response = await submitCertificate(uploadFile,certificate,
+            participationDate,username,selectedCountry);
+          if (response.status === 409 && response.data.duplicate) {
+            duplicates++;
+            addResult(file.name,"duplicate","Already submitted: " + certificate);
+          } else if (response.status === 401 || response.status === 403) {
+            failed++;
+            authorizationBlocked = true;
+            addResult(file.name,"failed","Server authorization blocked the submission.");
+          } else if (!response.ok) {
+            failed++;
+            addResult(file.name,"failed",response.data.error ||
+              response.data.message || "Submission failed.");
+          } else {
+            pending++;
+            addResult(file.name,"accepted","Successfully submitted: " +
+              certificate + " | Participation date: " + participationDate +
+              " | Uploaded: " + readableFileSize(uploadFile.size));
+          }
+        } catch (error) {
+          console.error("Processing error:",error);
+          failed++;
+          addResult(file.name,"failed","Could not process or upload this screenshot.");
+        } finally {
+          done++;
+          updateProgress(done,files.length,pending,duplicates,failed);
         }
-      } catch (error) {
-        console.error("Processing error:",error);
-        failed++;
-
-        addResult(
-          file.name,
-          "failed",
-          "Could not process or upload this screenshot."
-        );
-      } finally {
-        done++;
-
-        updateProgress(
-          done,
-          files.length,
-          pending,
-          duplicates,
-          failed
-        );
       }
-
-      if (stop) break;
     }
+
+    await Promise.all(Array.from({length:Math.min(OCR_CONCURRENCY,files.length)},
+      (_,lane) => processLane(lane)));
 
     batchSummary.hidden =
       duplicates === 0 && failed === 0;
