@@ -749,6 +749,19 @@ footer {
   .army-top10-two-columns .army-top10-table th { padding: 5px 4px; font-size: 9px; }
 }
 </style>
+<style>
+
+/* Expandable countries below the Top 20: native, accessible disclosure. */
+.more-countries-details { margin-top: 22px; border: 1px solid #e8dcf3; border-radius: 12px; background: #faf7fe; overflow: hidden; }
+.more-countries-details > summary { display:flex; align-items:center; justify-content:space-between; gap:10px; cursor:pointer; list-style:none; padding:14px 16px; color:#7651a8; font-size:13px; font-weight:700; }
+.more-countries-details > summary::-webkit-details-marker { display:none; }
+.more-countries-details > summary::after { content:'⌄'; font-size:20px; line-height:1; transition:transform .2s ease; }
+.more-countries-details[open] > summary::after { transform:rotate(180deg); }
+.more-countries-details > summary:hover, .more-countries-details > summary:focus-visible { background:#f0e6fa; }
+.more-countries-details > .remaining-countries { padding:0 14px 14px; }
+.more-countries-details .leaderboard-row { background:#fff; padding:11px 12px; margin:6px 0; border:1px solid #eee5f6; border-radius:9px; }
+@media(max-width:600px) { .more-countries-details > summary { padding:12px; font-size:12px; } .more-countries-details > .remaining-countries { padding:0 9px 10px; } }
+</style>
 </head>
 
 <body>
@@ -2499,10 +2512,13 @@ async function showSharedRankingFallback(period) {
       else rest.appendChild(row);
     }
     if (rest.childElementCount) {
-      const heading = document.createElement("h3");
-      heading.className = "other-countries-heading";
-      heading.textContent = "More Countries Represented";
-      container.append(heading,rest);
+      rest.classList.add("remaining-countries");
+      const details = document.createElement("details");
+      details.className = "more-countries-details";
+      const summary = document.createElement("summary");
+      summary.textContent = "Show more countries (Rank 21 onwards)";
+      details.append(summary,rest);
+      container.appendChild(details);
     }
   } catch (error) {
     console.warn("Shared ranking fallback unavailable:", error);
@@ -2791,10 +2807,12 @@ async function loadLeaderboard() {
   }
 
   if (remainingCountries.childElementCount) {
-    const heading = document.createElement("h3");
-    heading.className = "other-countries-heading";
-    heading.textContent = "More Countries Represented";
-    container.append(heading,remainingCountries);
+    const details = document.createElement("details");
+    details.className = "more-countries-details";
+    const summary = document.createElement("summary");
+    summary.textContent = "Show more countries (Rank 21 onwards)";
+    details.append(summary,remainingCountries);
+    container.appendChild(details);
   }
 
   if (missingCountries.length) {
