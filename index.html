@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+A<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
@@ -2365,7 +2365,7 @@ const rankingInFlight = { daily: false, overall: false };
 const rankingRetryAfter = { daily: 0, overall: 0 };
 const RANKING_RETRY_DELAY_MS = 60000;
 const RANKING_REQUEST_TIMEOUT_MS = 18000;
-const RANKING_STORAGE_PREFIX = "bts-ranking-hidden-overall-v3-";
+const RANKING_STORAGE_PREFIX = "bts-ranking-percent-visible-v4-";
 // Daily ranking: shared five-minute windows. Overall: once per KST date,
 // changing exactly at midnight Korea Standard Time (UTC+09, no DST).
 function rankingBucket(period = "daily") {
@@ -2381,6 +2381,8 @@ function restoreRankingCache(period) {
         saved.html.length > 350000 || !Number.isFinite(saved.savedAt) ||
         saved.savedAt > Date.now() || Date.now() - saved.savedAt > (period === "overall" ? 172800000 : 86400000) ||
         (period === "daily" && saved.kstDate !== getKSTDate())) return;
+    // Never restore an old overall snapshot without visible percentage labels.
+    if (period === "overall" && !/class="percentage"[^>]*>\s*\d+(?:\.\d+)?%/.test(saved.html)) return;
     rankingCache[period] = saved;
   } catch (error) {
     console.warn("Ranking cache restore skipped:", error);
@@ -2753,7 +2755,9 @@ async function loadLeaderboard() {
       }
     } else {
       // Match the percentage label to the existing progress bar.
-      value.textContent = Math.max(0, Math.min(100, safeShare)).toFixed(2) + "%";
+      value.textContent = Number.isFinite(share)
+        ? Math.max(0, Math.min(100, share)).toFixed(2) + "%"
+        : "—";
     }
 
     line.append(name,value);
