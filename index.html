@@ -2371,10 +2371,10 @@ function showCachedRanking(period, delayed = false) {
 // Read-only; never writes snapshots or certificate records.
 const sharedRankingInFlight = { daily: false, overall: false };
 async function showSharedRankingFallback(period) {
-  if (sharedRankingInFlight[period]) return;
-  if (selectedRankingPeriod !== period) return;
+  if (sharedRankingInFlight[period]) return false;
+  if (selectedRankingPeriod !== period) return false;
   // Prefer the last successful browser snapshot, including its movement arrows.
-  if (showCachedRanking(period, true)) return;
+  showCachedRanking(period, true);
   sharedRankingInFlight[period] = true;
   const expectedDate = getKSTDate();
   try {
@@ -2386,16 +2386,16 @@ async function showSharedRankingFallback(period) {
       .maybeSingle());
     if (error) throw error;
     if (selectedRankingPeriod !== period ||
-        (period === "daily" && getKSTDate() !== expectedDate)) return;
+        (period === "daily" && getKSTDate() !== expectedDate)) return false;
     const countries = data?.ranking_data?.countries;
     if (!Array.isArray(countries) || !countries.length) {
       console.warn("Shared ranking snapshot empty for", period, expectedDate);
-      return;
+      return false;
     }
     // Do not overwrite a successful fresh ranking that arrived meanwhile.
     const liveCache = rankingCache[period];
     if (liveCache && liveCache.bucket === rankingBucket(period) &&
-        (period !== "daily" || liveCache.kstDate === expectedDate)) return;
+        (period !== "daily" || liveCache.kstDate === expectedDate)) return true;
     const container = document.getElementById("leaderboard");
     container.replaceChildren();
     const notice = document.createElement("p");
@@ -2470,8 +2470,18 @@ async function showSharedRankingFallback(period) {
       details.append(summary,rest);
       container.appendChild(details);
     }
+    // Cache the rendered snapshot for the current five-minute window.
+    // No certificate data or ranking snapshots are written to Supabase.
+    saveRankingCache(period, {
+      html: container.innerHTML,
+      savedAt: Date.now(),
+      kstDate: expectedDate,
+      bucket: rankingBucket(period)
+    });
+    return true;
   } catch (error) {
     console.warn("Shared ranking fallback unavailable:", error);
+    return false;
   } finally {
     sharedRankingInFlight[period] = false;
   }
@@ -2494,11 +2504,7 @@ async function rankingQuery(query) {
 restoreRankingCache("daily");
 restoreRankingCache("overall");
 showCachedRanking("daily");
-// Proactively display the shared snapshot for first-time visitors.
-// Do not wait for a live ranking query to time out.
-if (!rankingCache.daily) {
-  void showSharedRankingFallback("daily");
-}
+// The main leaderboard loader fetches the lightweight shared snapshot first.
 
 async function loadLeaderboard() {
   const requestId = ++leaderboardRequestId;
@@ -2536,6 +2542,14 @@ async function loadLeaderboard() {
   rankingInFlight[period] = true;
   if (cached) showCachedRanking(period, cached.bucket !== bucket);
   try {
+  // Prefer the shared five-minute snapshot over expensive live aggregate views.
+  // Only fall back to live queries if the shared snapshot is unavailable.
+  const snapshotLoaded = await showSharedRankingFallback(period);
+  if (requestId !== leaderboardRequestId) return;
+  if (snapshotLoaded) {
+    rankingRetryAfter[period] = 0;
+    return;
+  }
   const {data,error} = await rankingQuery(db
     .from("country_rank_live")
     .select(
