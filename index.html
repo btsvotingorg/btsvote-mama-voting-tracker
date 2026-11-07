@@ -343,6 +343,8 @@ button:disabled { opacity:.6; cursor:wait; }
 }
 .hourly-note { display:none; }
 
+/* Country momentum badge: current daily share vs accumulated voting share. */
+.country-fire { display:inline-block; margin-left:5px; font-size:14px; vertical-align:middle; cursor:help; }
 /* COUNTRY LEADERBOARD */
 .leaderboard-row {
   padding:15px 0;
@@ -2442,6 +2444,38 @@ function showCachedRanking(period, delayed = false) {
   }
   return true;
 }
+// A fire means today's share is at least 1.5× its overall share,
+// with at least 100 daily certificates and 0.5% of today's activity.
+// This compares relative performance, not merely the biggest countries.
+let overallCountryShares = new Map();
+async function loadCountryMomentumBaseline() {
+  try {
+    const { data, error } = await rankingQuery(db.from("ranking_snapshots")
+      .select("ranking_data")
+      .eq("period", "overall")
+      .eq("kst_date", getKSTDate())
+      .maybeSingle());
+    if (error) throw error;
+    const map = new Map();
+    for (const item of data?.ranking_data?.countries || []) {
+      const pct = Number(item.progress_percent);
+      if (item.country && Number.isFinite(pct) && pct > 0)
+        map.set(String(item.country).trim().normalize("NFKC"), pct);
+    }
+    if (map.size) overallCountryShares = map;
+  } catch (error) { console.warn("Country momentum comparison unavailable:", error); }
+}
+function addCountryFire(name, country, dailyShare, dailyCount) {
+  const baseline = overallCountryShares.get(String(country || "").trim().normalize("NFKC"));
+  if (!(baseline > 0) || !(dailyCount >= 100) || !(dailyShare >= 0.5) ||
+      dailyShare < baseline * 1.5) return;
+  const badge = document.createElement("span");
+  badge.className = "country-fire";
+  badge.textContent = "🔥";
+  badge.title = "On fire! Today's share is at least 50% above this country's overall voting share.";
+  badge.setAttribute("aria-label", "On fire: stronger participation than overall average");
+  name.appendChild(badge);
+}
 // Shared Supabase snapshot fallback for first-time visitors.
 // Read-only; never writes snapshots or certificate records.
 const sharedRankingInFlight = { daily: false, overall: false };
@@ -2471,6 +2505,7 @@ async function showSharedRankingFallback(period) {
     const liveCache = rankingCache[period];
     if (liveCache && liveCache.bucket === rankingBucket(period) &&
         (period !== "daily" || liveCache.kstDate === expectedDate)) return true;
+    if (period === "daily") await loadCountryMomentumBaseline();
     const container = document.getElementById("leaderboard");
     container.replaceChildren();
     const notice = document.createElement("p");
@@ -2508,7 +2543,9 @@ async function showSharedRankingFallback(period) {
       // Movement from the server view may use a different baseline.
       // Do not claim it is the previous browser 5-minute comparison.
       movement.textContent = "–";
-      name.appendChild(movement);
+      if (period !== "daily") name.appendChild(movement);
+      if (period === "daily") addCountryFire(name, country,
+        Number(item.progress_percent), Number(item.total_certificates));
       const value = document.createElement("span");
       value.className = "percentage";
       if (period === "daily") {
@@ -2699,6 +2736,9 @@ async function loadLeaderboard() {
     dailyRankSnapshotDate = getKSTDate();
   }
 
+  if (daily) await loadCountryMomentumBaseline();
+  if (requestId !== leaderboardRequestId) return;
+
   // Movement is relative to the PREVIOUS successful fetch of this period.
   // If a country stays at the same rank, show a dash on this refresh.
   const previousRanks = rankSnapshots[period];
@@ -2780,7 +2820,9 @@ async function loadLeaderboard() {
     const currentMovement = movements.get(countryKey);
     movement.textContent = currentMovement || "–";
 
-    name.appendChild(movement);
+    if (!daily) name.appendChild(movement);
+    if (daily) addCountryFire(name, item.country,
+      Number(item.progress_percent), counts.get(countryKey) || 0);
 
     const value = document.createElement("span");
     value.className = "percentage";
@@ -3899,7 +3941,7 @@ setInterval(() => {
         const tr = document.createElement('tr');
         if (rank === 10) tr.classList.add('army-top10-tenth');
         const rankCell = td(tr, rank === 1 ? '🥇 01' : rank === 2 ? '🥈 02' : rank === 3 ? '🥉 03' : String(rank).padStart(2, '0'));
-        movementCell(rankCell, rank, identity(item), previous);
+        // Daily Top 10: display ranks without arrows or NEW badges.
         td(tr, String(item.masked_username || 'Hidden'));
         td(tr, String(item.country || '—'));
         // Never render a count except for position 10.
