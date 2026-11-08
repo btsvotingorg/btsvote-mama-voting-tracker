@@ -9,6 +9,10 @@
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@6/dist/tesseract.min.js"></script>
 
+<script>
+// Hide pre-reveal UI on and after the scheduled KST reveal, without exposing results.
+if (Date.now() >= Date.parse('2026-11-08T15:00:00Z')) document.documentElement.classList.add('final-reveal-time');
+</script>
 <style>
 :root {
   --purple:#7651a8;
@@ -640,6 +644,44 @@ footer {
   white-space: nowrap;
 }
 
+
+/* MAMA 2026 final results: midnight purple awards-stage visual */
+#finalResults{display:none}
+.final-reveal-time main.container,.final-reveal-time body>header,.final-reveal-time body>footer{display:none!important}
+.final-reveal-time #finalResults{display:block}
+#finalResults{min-height:100vh;background:radial-gradient(ellipse at 50% 0%,#4c1887 0%,#180c30 37%,#0a0616 80%);color:#fff;font-family:Arial,Helvetica,sans-serif;padding:22px 14px 65px;line-height:1.5}
+#finalResults .final-inner{max-width:1250px;margin:auto}
+#finalResults .final-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;border-bottom:1px solid #9562d466;padding:8px 4px 20px;margin-bottom:24px}
+#finalResults .final-logo{font-weight:900;letter-spacing:2px;font-size:clamp(17px,3vw,25px)}
+#finalResults .final-tag{font-size:11px;letter-spacing:2px;color:#d6b7ff}
+#finalResults .final-hero{display:grid;grid-template-columns:1fr 1.6fr;gap:20px;align-items:stretch}
+#finalResults .final-title{display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:25px 10px;text-shadow:0 0 24px #a857ff}
+#finalResults .final-title .crown{font-size:46px}
+#finalResults .final-title h1{font-size:clamp(27px,4.5vw,54px);line-height:1.15;letter-spacing:1px;margin:10px 0}
+#finalResults .final-title h1 span{display:block;color:#e9c8ff}
+#finalResults .final-banner{border:1px solid #ae70fb;border-radius:16px;background:linear-gradient(125deg,#321357,#130d28);box-shadow:inset 0 0 30px #8f3cef33,0 0 22px #8f3cef33;text-align:center;padding:26px 22px}
+#finalResults .final-banner h2{font-size:clamp(20px,2.7vw,30px);line-height:1.25;margin:0 0 12px}
+#finalResults .final-banner p{color:#e9d8ff;margin:8px 0}
+#finalResults .final-date{display:inline-block;border-radius:50px;background:#e4b9ff;color:#210b3a;font-weight:900;padding:10px 22px;margin:12px 0;font-size:clamp(14px,2vw,20px)}
+#finalResults .final-total{max-width:780px;margin:22px auto 28px;text-align:center;border:2px solid #b877ff;border-radius:20px;background:linear-gradient(120deg,#321050,#1c1039,#3b145b);box-shadow:0 0 22px #9c44f766;padding:18px 16px}
+#finalResults .final-total .label{font-size:clamp(16px,2.5vw,25px);font-weight:900;letter-spacing:2px}
+#finalResults .final-total .number{font-size:clamp(39px,8vw,78px);font-weight:900;line-height:1.15;color:#f3d9ff;text-shadow:0 0 22px #bb66ff;overflow-wrap:anywhere}
+#finalResults .final-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+#finalResults .final-panel{border:1px solid #a766e8;border-radius:16px;padding:20px 17px;background:linear-gradient(155deg,#211137,#110b22);box-shadow:0 0 18px #6b28a533;min-width:0}
+#finalResults .final-panel h2{text-align:center;font-size:clamp(17px,2.4vw,25px);margin:0 0 4px}
+#finalResults .final-panel .sub{text-align:center;color:#bda6d5;font-size:12px;margin:0 0 18px}
+#finalResults .final-list{display:grid;gap:6px}
+#finalResults .final-row{display:grid;grid-template-columns:38px minmax(0,1fr) auto;gap:8px;align-items:center;background:#49256877;border:1px solid #7d48aa55;border-radius:9px;padding:10px 11px;font-size:13px}
+#finalResults .final-row:nth-child(1){background:linear-gradient(90deg,#73501e,#342044);border-color:#d7ad51}
+#finalResults .final-row:nth-child(2){background:linear-gradient(90deg,#56506d,#30203e);border-color:#aaa5bd}
+#finalResults .final-row:nth-child(3){background:linear-gradient(90deg,#69402c,#30203e);border-color:#c58d63}
+#finalResults .final-rank{font-weight:900;text-align:center;font-size:18px}
+#finalResults .final-name{font-weight:700;min-width:0;overflow-wrap:anywhere}
+#finalResults .final-votes{font-weight:900;white-space:nowrap;text-align:right}
+#finalResults .final-country-note{display:block;color:#c5a5dd;font-size:11px;font-weight:400}
+#finalResults .final-foot{text-align:center;color:#c6aedb;font-size:12px;margin-top:28px}
+#finalResults .final-status{text-align:center;color:#e8d2ff;margin:20px auto;padding:14px}
+@media(max-width:700px){#finalResults .final-hero,#finalResults .final-grid{grid-template-columns:1fr}#finalResults .final-title{padding:10px}#finalResults .final-banner{padding:20px 13px}#finalResults .final-row{grid-template-columns:30px minmax(0,1fr) auto;padding:9px 7px;font-size:12px}#finalResults .final-votes{font-size:12px}#finalResults .final-panel{padding:17px 10px}}
 </style>
 
 <style>
@@ -920,6 +962,18 @@ footer {color:#a899bc;letter-spacing:.5px;}
   <p>Teamwork makes the Dreamwork. 💜</p>
 </header>
 
+<section id="finalResults" aria-label="MAMA 2026 Global ARMY Final Results">
+ <div class="final-inner">
+  <div class="final-nav"><div class="final-logo">💜 BTS ARMY <span style="color:#b58ee4">│</span> MAMA 2026</div><div class="final-tag">BTS VOTE TRACKER · FINAL RESULTS</div></div>
+  <div class="final-hero">
+   <div class="final-title"><div class="crown">👑</div><h1>MAMA 2026<span>GLOBAL ARMY</span>FINAL RESULTS</h1><p>TEAMWORK MAKES THE DREAM WORK 💜</p></div>
+   <div class="final-banner"><h2>📣 ARMY, THE FIGHT IS NOT YET OVER!</h2><p>We've completed another chapter of our voting journey, but there's still one more battle ahead!</p><div class="final-date">📅 MAMA LIVE VOTING — NOVEMBER 20</div><h2>⏰ SET YOUR ALARMS!</h2><p>Let's unite once again and give BTS our strongest support. Every ARMY counts!</p></div>
+  </div>
+  <div class="final-total"><div class="label">🗳️ TOTAL VOTES RECORDED</div><div class="number" id="finalVoteTotal">—</div><div style="font-size:12px;color:#dbc2ed">Unique certificates submitted through the BTS Vote Tracker</div></div>
+  <div class="final-grid"><div class="final-panel"><h2>🌍 OVERALL TOP COUNTRIES</h2><p class="sub">Final country rankings · exact recorded votes</p><div class="final-list" id="finalCountries"><p class="final-status">Loading final results…</p></div></div><div class="final-panel"><h2>🏆 OVERALL TOP CONTRIBUTORS</h2><p class="sub">Top 20 ARMY contributors · votes revealed</p><div class="final-list" id="finalContributors"><p class="final-status">Loading final results…</p></div></div></div>
+  <p class="final-foot">Community-submitted certificates, not official MAMA vote totals. Counts are frozen at November 9, 2026, 12:00 AM KST. 💜</p>
+ </div>
+</section>
 <main class="container">
 
 <section class="intro">
@@ -2444,36 +2498,43 @@ function showCachedRanking(period, delayed = false) {
   }
   return true;
 }
-// A fire means today's share is at least 1.5× its overall share,
-// with at least 100 daily certificates and 0.5% of today's activity.
-// This compares relative performance, not merely the biggest countries.
-let overallCountryShares = new Map();
+// Country momentum is computed on the server using private vote counts.
+// The public RPC returns only a country name and a 1–3 fire level.
+let countryMomentumTiers = new Map();
+let countryMomentumDay = "";
 async function loadCountryMomentumBaseline() {
+  const day = getKSTDate();
+  if (countryMomentumDay !== day) {
+    countryMomentumTiers = new Map();
+    countryMomentumDay = day;
+  }
   try {
-    const { data, error } = await rankingQuery(db.from("ranking_snapshots")
-      .select("ranking_data")
-      .eq("period", "overall")
-      .eq("kst_date", getKSTDate())
-      .maybeSingle());
+    const { data, error } = await rankingQuery(db.rpc("get_country_momentum_tiers"));
     if (error) throw error;
-    const map = new Map();
-    for (const item of data?.ranking_data?.countries || []) {
-      const pct = Number(item.progress_percent);
-      if (item.country && Number.isFinite(pct) && pct > 0)
-        map.set(String(item.country).trim().normalize("NFKC"), pct);
-    }
-    if (map.size) overallCountryShares = map;
-  } catch (error) { console.warn("Country momentum comparison unavailable:", error); }
+    if (day !== getKSTDate()) return;
+    countryMomentumTiers = new Map((data || []).map(item => [
+      String(item.country || "").trim().normalize("NFKC").toLocaleLowerCase(),
+      Number(item.fire_level)
+    ]).filter(([country, level]) => country && level >= 1 && level <= 3));
+  } catch (error) {
+    console.warn("Country momentum badges temporarily unavailable:", error);
+    // Retain the last successful result during transient network failures.
+  }
 }
 function addCountryFire(name, country, dailyShare, dailyCount) {
-  const baseline = overallCountryShares.get(String(country || "").trim().normalize("NFKC"));
-  if (!(baseline > 0) || !(dailyCount >= 100) || !(dailyShare >= 0.5) ||
-      dailyShare < baseline * 1.5) return;
+  const key = String(country || "").trim().normalize("NFKC").toLocaleLowerCase();
+  const level = countryMomentumTiers.get(key) || 0;
+  if (!level) return;
   const badge = document.createElement("span");
   badge.className = "country-fire";
-  badge.textContent = "🔥";
-  badge.title = "On fire! Today's share is at least 50% above this country's overall voting share.";
-  badge.setAttribute("aria-label", "On fire: stronger participation than overall average");
+  badge.textContent = "🔥".repeat(level);
+  const labels = {
+    1: "On Fire — today's share is at least 25% above overall share",
+    2: "Heating Up — today's share is at least 50% above overall share",
+    3: "Unstoppable — today's share is at least 100% above overall share"
+  };
+  badge.title = labels[level];
+  badge.setAttribute("aria-label", labels[level]);
   name.appendChild(badge);
 }
 // Shared Supabase snapshot fallback for first-time visitors.
@@ -3999,5 +4060,43 @@ setInterval(() => {
 })();
 </script>
 
+
+<script>
+(function(){
+ const cutoff=Date.parse('2026-11-08T15:00:00Z');
+ let loaded=false;
+ function makeRow(item,index,type){
+   const row=document.createElement('div');row.className='final-row';
+   const rank=document.createElement('span');rank.className='final-rank';rank.textContent=index<3?['🥇','🥈','🥉'][index]:String(index+1);
+   const name=document.createElement('span');name.className='final-name';
+   name.textContent=type==='country'?String(item.country||'Unknown'):String(item.username||'Unknown');
+   if(type==='contributor'){
+     const country=document.createElement('small');country.className='final-country-note';country.textContent=String(item.country||'');name.appendChild(country);
+   }
+   const votes=document.createElement('span');votes.className='final-votes';votes.textContent=Number(item.votes||0).toLocaleString('en-US')+' votes';
+   row.append(rank,name,votes);return row;
+ }
+ async function show(){
+   if(Date.now()<cutoff||loaded)return;
+   document.documentElement.classList.add('final-reveal-time');
+   if(!window.supabase){document.getElementById('finalCountries').textContent='Unable to connect. Please refresh.';return;}
+   loaded=true;
+   try{
+     const client=window.supabase.createClient('https://vnhvyhfkvvqnlghikgck.supabase.co','sb_publishable_TmHSZ9xy4DzbzpdDte3E2g_RtSk6KfI');
+     const {data,error}=await client.rpc('get_mama_2026_final_results');
+     if(error)throw error;
+     if(!data||!data.unlocked)throw new Error('Results are not yet unlocked');
+     document.getElementById('finalVoteTotal').textContent=Number(data.total_votes||0).toLocaleString('en-US');
+     const countries=document.getElementById('finalCountries');countries.replaceChildren();
+     (data.countries||[]).forEach((v,i)=>countries.appendChild(makeRow(v,i,'country')));
+     if(!(data.countries||[]).length)countries.textContent='No recorded certificates.';
+     const contributors=document.getElementById('finalContributors');contributors.replaceChildren();
+     (data.contributors||[]).forEach((v,i)=>contributors.appendChild(makeRow(v,i,'contributor')));
+     if(!(data.contributors||[]).length)contributors.textContent='No recorded contributors.';
+   }catch(e){console.error('Final reveal:',e);loaded=false;document.getElementById('finalCountries').textContent='Final results temporarily unavailable. Retrying automatically…';document.getElementById('finalContributors').textContent='Waiting for results…';}
+ }
+ show();setInterval(show,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)show()});
+})();
+</script>
 </body>
 </html>
