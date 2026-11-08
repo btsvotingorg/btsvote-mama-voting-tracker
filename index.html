@@ -4179,8 +4179,21 @@ setInterval(() => {
        }
      }else countries.textContent='No recorded certificates.';
      const contributors=document.getElementById('finalContributors');contributors.replaceChildren();
-     (data.contributors||[]).forEach((v,i)=>contributors.appendChild(makeRow(v,i,'contributor')));
-     if(!(data.contributors||[]).length)contributors.textContent='No recorded contributors.';
+     const topContributors=Array.isArray(data.contributors)?data.contributors.slice(0,20):[];
+     if(topContributors.length){
+       const top20=document.createElement('div');top20.className='final-country-top20';
+       for(const [start,end] of [[0,10],[10,20]]){
+         const column=document.createElement('div');column.className='final-country-column';
+         topContributors.slice(start,end).forEach((item,offset)=>{
+           const index=start+offset;
+           const row=makeRow(item,index,'contributor');
+           if(index<3)row.classList.add(['medal-gold','medal-silver','medal-bronze'][index]);
+           column.appendChild(row);
+         });
+         top20.appendChild(column);
+       }
+       contributors.appendChild(top20);
+     }else contributors.textContent='No recorded contributors.';
    }catch(e){console.error('Final reveal:',e);loaded=false;document.getElementById('finalCountries').textContent='Final results temporarily unavailable. Retrying automatically…';document.getElementById('finalContributors').textContent='Waiting for results…';}
  }
  show();setInterval(show,15000);document.addEventListener('visibilitychange',()=>{if(!document.hidden)show()});
