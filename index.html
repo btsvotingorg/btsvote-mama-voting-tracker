@@ -682,6 +682,69 @@ footer {
 #finalResults .final-foot{text-align:center;color:#c6aedb;font-size:12px;margin-top:28px}
 #finalResults .final-status{text-align:center;color:#e8d2ff;margin:20px auto;padding:14px}
 @media(max-width:700px){#finalResults .final-hero,#finalResults .final-grid{grid-template-columns:1fr}#finalResults .final-title{padding:10px}#finalResults .final-banner{padding:20px 13px}#finalResults .final-row{grid-template-columns:30px minmax(0,1fr) auto;padding:9px 7px;font-size:12px}#finalResults .final-votes{font-size:12px}#finalResults .final-panel{padding:17px 10px}}
+
+/* Final reveal: Top 20 countries in two ranked columns, expandable remainder */
+#finalResults .final-country-top20 {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  align-items:start;
+}
+#finalResults .final-country-column {display:grid;gap:6px;min-width:0}
+#finalResults .final-country-column .final-row {
+  grid-template-columns:27px minmax(0,1fr);
+  gap:4px 7px;
+  padding:9px 8px;
+  font-size:11px;
+}
+#finalResults .final-country-column .final-rank {font-size:15px}
+#finalResults .final-country-column .final-votes {
+  grid-column:2;
+  text-align:left;
+  color:#e4c6ff;
+  font-size:11px;
+}
+#finalResults .final-country-column .final-row {
+  background:#49256877;
+  border-color:#7d48aa55;
+}
+#finalResults .final-country-column .final-row.medal-gold {
+  background:linear-gradient(90deg,#73501e,#342044);
+  border-color:#d7ad51;
+}
+#finalResults .final-country-column .final-row.medal-silver {
+  background:linear-gradient(90deg,#56506d,#30203e);
+  border-color:#aaa5bd;
+}
+#finalResults .final-country-column .final-row.medal-bronze {
+  background:linear-gradient(90deg,#69402c,#30203e);
+  border-color:#c58d63;
+}
+#finalResults .final-more-countries {margin-top:16px;border:1px solid #8253b1;border-radius:11px;overflow:hidden}
+#finalResults .final-more-countries summary {
+  list-style:none;
+  cursor:pointer;
+  text-align:center;
+  padding:12px;
+  color:#f1dbff;
+  background:#43235f;
+  font-size:12px;
+  font-weight:800;
+}
+#finalResults .final-more-countries summary::-webkit-details-marker {display:none}
+#finalResults .final-more-countries summary:hover,
+#finalResults .final-more-countries summary:focus-visible {background:#623586}
+#finalResults .final-more-countries .final-remaining-list {display:grid;gap:6px;padding:10px}
+#finalResults .final-more-countries .final-row {background:#49256877;border-color:#7d48aa55}
+@media(max-width:480px) {
+  #finalResults .final-country-top20 {grid-template-columns:1fr}
+  #finalResults .final-country-column .final-row {
+    grid-template-columns:32px minmax(0,1fr) auto;
+    font-size:12px;
+  }
+  #finalResults .final-country-column .final-votes {grid-column:auto;text-align:right}
+}
+
 </style>
 
 <style>
@@ -4088,8 +4151,33 @@ setInterval(() => {
      if(!data||!data.unlocked)throw new Error('Results are not yet unlocked');
      document.getElementById('finalVoteTotal').textContent=Number(data.total_votes||0).toLocaleString('en-US');
      const countries=document.getElementById('finalCountries');countries.replaceChildren();
-     (data.countries||[]).forEach((v,i)=>countries.appendChild(makeRow(v,i,'country')));
-     if(!(data.countries||[]).length)countries.textContent='No recorded certificates.';
+     const allCountries=Array.isArray(data.countries)?data.countries:[];
+     if(allCountries.length){
+       const top20=document.createElement('div');top20.className='final-country-top20';
+       for(const [start,end] of [[0,10],[10,20]]){
+         const column=document.createElement('div');column.className='final-country-column';
+         allCountries.slice(start,end).forEach((item,offset)=>{
+           const index=start+offset;
+           const row=makeRow(item,index,'country');
+           if(index<3)row.classList.add(['medal-gold','medal-silver','medal-bronze'][index]);
+           column.appendChild(row);
+         });
+         top20.appendChild(column);
+       }
+       countries.appendChild(top20);
+       if(allCountries.length>20){
+         const more=document.createElement('details');more.className='final-more-countries';
+         const summary=document.createElement('summary');
+         summary.textContent='▼ VIEW MORE COUNTRIES (21–'+allCountries.length+')';
+         const remaining=document.createElement('div');remaining.className='final-remaining-list';
+         allCountries.slice(20).forEach((item,offset)=>remaining.appendChild(makeRow(item,offset+20,'country')));
+         more.append(summary,remaining);
+         more.addEventListener('toggle',()=>{
+           summary.textContent=more.open?'▲ SHOW LESS':'▼ VIEW MORE COUNTRIES (21–'+allCountries.length+')';
+         });
+         countries.appendChild(more);
+       }
+     }else countries.textContent='No recorded certificates.';
      const contributors=document.getElementById('finalContributors');contributors.replaceChildren();
      (data.contributors||[]).forEach((v,i)=>contributors.appendChild(makeRow(v,i,'contributor')));
      if(!(data.contributors||[]).length)contributors.textContent='No recorded contributors.';
